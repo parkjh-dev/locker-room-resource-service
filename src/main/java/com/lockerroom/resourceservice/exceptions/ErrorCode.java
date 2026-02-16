@@ -1,0 +1,76 @@
+package com.lockerroom.resourceservice.exceptions;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+
+@Getter
+@RequiredArgsConstructor
+public enum ErrorCode {
+
+    // AUTH
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_001"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "AUTH_002"),
+    TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "AUTH_003"),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_004"),
+
+    // USER
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001"),
+    DUPLICATE_USER(HttpStatus.CONFLICT, "USER_002"),
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "USER_003"),
+    USER_DISABLED(HttpStatus.FORBIDDEN, "USER_004"),
+
+    // POST
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "POST_001"),
+    POST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "POST_002"),
+    DUPLICATE_POST(HttpStatus.CONFLICT, "POST_003"),
+
+    // COMMENT
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMENT_001"),
+    COMMENT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "COMMENT_002"),
+    COMMENT_DEPTH_EXCEEDED(HttpStatus.BAD_REQUEST, "COMMENT_003"),
+
+    // BOARD
+    BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "BOARD_001"),
+    BOARD_ACCESS_DENIED(HttpStatus.FORBIDDEN, "BOARD_002"),
+
+    // NOTICE
+    NOTICE_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTICE_001"),
+
+    // INQUIRY
+    INQUIRY_NOT_FOUND(HttpStatus.NOT_FOUND, "INQUIRY_001"),
+    INQUIRY_ACCESS_DENIED(HttpStatus.FORBIDDEN, "INQUIRY_002"),
+
+    // REQUEST
+    REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "REQUEST_001"),
+    REQUEST_ACCESS_DENIED(HttpStatus.FORBIDDEN, "REQUEST_002"),
+
+    // NOTIFICATION
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_001"),
+
+    // REPORT
+    DUPLICATE_REPORT(HttpStatus.CONFLICT, "REPORT_001"),
+    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_002"),
+
+    // SPORT
+    SPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "SPORT_001"),
+
+    // DUPLICATE
+    DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "USER_005"),
+    IDEMPOTENCY_DUPLICATE(HttpStatus.CONFLICT, "COMMON_005"),
+
+    // FILE
+    FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE_001"),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_002"),
+    FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_003"),
+
+    // COMMON
+    BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON_001"),
+    INVALID_INPUT(HttpStatus.BAD_REQUEST, "COMMON_002"),
+    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_003"),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_004");
+
+    private final HttpStatus httpStatus;
+    private final String code;
+
+}
