@@ -27,10 +27,6 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
-jwt:
-  secret: test-secret-key-for-testing-must-be-at-least-256-bits-long-enough
-  expiration: 3600000
-
 aws:
   s3:
     bucket: test-bucket

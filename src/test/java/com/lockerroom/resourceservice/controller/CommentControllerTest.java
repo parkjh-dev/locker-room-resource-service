@@ -4,7 +4,6 @@ import tools.jackson.databind.ObjectMapper;
 import com.lockerroom.resourceservice.configuration.SecurityConfig;
 import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
 import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
-import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.AuthorInfo;
 import com.lockerroom.resourceservice.dto.response.CommentResponse;
 import com.lockerroom.resourceservice.service.CommentService;
@@ -15,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,6 +24,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -39,6 +40,9 @@ class CommentControllerTest {
 
     @MockitoBean
     private CommentService commentService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     private static final Long USER_ID = 1L;
     private static final Long POST_ID = 100L;
@@ -112,8 +116,8 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(post("/api/v1/posts/{postId}/comments", POST_ID)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -132,8 +136,8 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(post("/api/v1/posts/{postId}/comments", POST_ID)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -160,8 +164,8 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(put("/api/v1/comments/{commentId}", COMMENT_ID)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -180,8 +184,8 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(put("/api/v1/comments/{commentId}", COMMENT_ID)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -202,8 +206,8 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(delete("/api/v1/comments/{commentId}", COMMENT_ID)
-                            .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
+                            .header("X-User-Id", USER_ID.toString()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"));
 
@@ -229,8 +233,8 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(post("/api/v1/comments/{commentId}/replies", COMMENT_ID)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -249,8 +253,8 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(post("/api/v1/comments/{commentId}/replies", COMMENT_ID)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());

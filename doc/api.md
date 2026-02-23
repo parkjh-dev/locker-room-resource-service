@@ -89,11 +89,32 @@ Idempotency-Key: {UUID}
 
 ## 1. auth-service (`/api/v1/auth`)
 
-> **TBD**: 인증 서버 구현 방식 (자체 JWT vs Keycloak/OIDC) 미결정. 아래 명세는 자체 JWT 구현 기준이며, Keycloak 도입 시 일부 API 스펙이 변경될 수 있음.
+> 인증/인가는 **Keycloak(OIDC)**으로 처리한다. 로그인, 로그아웃, 토큰 갱신, SSO 인증, 비밀번호 재설정은 프론트엔드가 Keycloak과 직접 통신한다.
+> auth-service는 Keycloak Admin API를 활용하여 **회원가입**, **프로필 보완** 등 비즈니스 로직이 필요한 API만 담당한다.
 
-### 1.1 POST `/auth/signup` - 로컬 회원가입
+### Keycloak 엔드포인트 (프론트엔드 → Keycloak 직접 호출)
+
+> Base URL: `{keycloak-url}/realms/{realm}/protocol/openid-connect`
+
+| 기능 | Method | 엔드포인트 | 설명 |
+|------|--------|-----------|------|
+| 인증 요청 | GET | `/auth` | Authorization Code Flow + PKCE, Keycloak 로그인 페이지 Redirect |
+| 토큰 발급 | POST | `/token` | Authorization Code → Access Token + Refresh Token 교환 |
+| 토큰 갱신 | POST | `/token` | `grant_type=refresh_token`으로 Access Token 갱신 |
+| 로그아웃 | POST | `/logout` | Keycloak 세션 종료, 토큰 무효화 |
+| 사용자 정보 | GET | `/userinfo` | Access Token으로 사용자 정보 조회 |
+| SSO 로그인 | GET | `/auth?kc_idp_hint={provider}` | Identity Provider Brokering (google, kakao, naver) |
+| 비밀번호 재설정 | - | Keycloak 로그인 페이지 내 "Forgot Password" | Keycloak이 SMTP로 재설정 메일 발송 |
+
+> **인증 흐름**: 프론트엔드가 Keycloak Authorization Code Flow + PKCE로 토큰을 발급받고, API 요청 시 `Authorization: Bearer {accessToken}` 헤더를 포함한다. 각 서비스는 Keycloak JWKS 공개키로 토큰을 검증한다.
+
+---
+
+### 1.1 POST `/auth/signup` - 회원가입
 
 **인증**: 불필요
+
+> Keycloak Admin API로 사용자를 생성하고, 로컬 DB에 사용자 정보와 응원팀을 저장한다.
 
 **Request Body**
 ```json
@@ -129,6 +150,15 @@ Idempotency-Key: {UUID}
 }
 ```
 
+> 회원가입 후 로그인은 프론트엔드가 Keycloak Authorization Code Flow를 통해 직접 수행한다.
+
+**처리 흐름**
+1. 이메일/닉네임 중복 검증
+2. Keycloak Admin API로 사용자 생성 (이메일, 비밀번호)
+3. 로컬 DB에 users 레코드 생성 (keycloak_id 매핑)
+4. 로컬 DB에 user_teams 레코드 생성
+5. 실패 시 Keycloak 사용자 삭제 (보상 트랜잭션)
+
 **에러 코드**
 | 코드 | 상태 | 설명 |
 |------|------|------|
@@ -138,179 +168,16 @@ Idempotency-Key: {UUID}
 
 ---
 
-### 1.2 POST `/auth/login` - 로컬 로그인
+### 1.2 POST `/auth/profile/complete` - SSO 프로필 보완
 
-**인증**: 불필요
+**인증**: 필수 (Keycloak Access Token)
 
-**Request Body**
-```json
-{
-  "email": "user@example.com",
-  "password": "Password1!"
-}
-```
-
-| 필드 | 타입 | 필수 | 유효성 검증 |
-|------|------|------|-------------|
-| email | string | O | 이메일 형식 |
-| password | string | O | 비밀번호 |
-
-**Response 200**
-```json
-{
-  "code": "SUCCESS",
-  "message": "로그인되었습니다.",
-  "data": {
-    "accessToken": "eyJhbGciOiJSUzI1NiIs...",
-    "refreshToken": "dGhpcyBpcyBhIHJlZnJl...",
-    "tokenType": "Bearer",
-    "expiresIn": 1800,
-    "user": {
-      "id": 42,
-      "email": "user@example.com",
-      "nickname": "축구팬",
-      "role": "USER"
-    }
-  }
-}
-```
-
-**에러 코드**
-| 코드 | 상태 | 설명 |
-|------|------|------|
-| AUTH_INVALID_CREDENTIALS | 401 | 이메일 또는 비밀번호 불일치 |
-| USER_SUSPENDED | 403 | 정지된 계정 |
-| COMMON_RATE_LIMIT_EXCEEDED | 429 | 로그인 시도 횟수 초과 |
-
----
-
-### 1.3 POST `/auth/logout` - 로그아웃
-
-**인증**: 필수
-
-**Request Header**
-```
-Authorization: Bearer {accessToken}
-```
-
-**Response 200**
-```json
-{
-  "code": "SUCCESS",
-  "message": "로그아웃되었습니다.",
-  "data": null
-}
-```
-
-> Access Token은 Redis 블랙리스트에 등록되며, 남은 만료 시간만큼 유지된다.
-
----
-
-### 1.4 POST `/auth/token/refresh` - 토큰 갱신
-
-**인증**: 불필요
+> Keycloak Identity Provider Brokering으로 첫 SSO 로그인한 사용자가 닉네임과 응원팀을 설정한다.
+> 프론트엔드는 로그인 후 `GET /users/me`를 호출하여 로컬 프로필이 없으면(404) 이 API로 프로필을 보완한다.
 
 **Request Body**
 ```json
 {
-  "refreshToken": "dGhpcyBpcyBhIHJlZnJl..."
-}
-```
-
-**Response 200**
-```json
-{
-  "code": "SUCCESS",
-  "message": "토큰이 갱신되었습니다.",
-  "data": {
-    "accessToken": "eyJhbGciOiJSUzI1NiIs...",
-    "refreshToken": "bmV3IHJlZnJlc2ggdG9r...",
-    "tokenType": "Bearer",
-    "expiresIn": 1800
-  }
-}
-```
-
-**에러 코드**
-| 코드 | 상태 | 설명 |
-|------|------|------|
-| AUTH_TOKEN_EXPIRED | 401 | Refresh Token 만료 |
-| AUTH_TOKEN_INVALID | 401 | 유효하지 않은 Refresh Token |
-
----
-
-### 1.5 GET `/auth/oauth/{provider}` - SSO 로그인 시작
-
-**인증**: 불필요
-
-**Path Parameter**
-| 파라미터 | 타입 | 설명 |
-|----------|------|------|
-| provider | string | SSO 제공자 (`google`, `kakao`, `naver`) |
-
-**Response**: OAuth Provider 로그인 페이지로 302 Redirect
-
----
-
-### 1.6 GET `/auth/oauth/{provider}/callback` - SSO 콜백
-
-**인증**: 불필요
-
-**Query Parameter**
-| 파라미터 | 타입 | 설명 |
-|----------|------|------|
-| code | string | OAuth Authorization Code |
-| state | string | CSRF 방지 state 값 |
-
-**Response 200** (기존 회원)
-```json
-{
-  "code": "SUCCESS",
-  "message": "로그인되었습니다.",
-  "data": {
-    "accessToken": "eyJhbGciOiJSUzI1NiIs...",
-    "refreshToken": "dGhpcyBpcyBhIHJlZnJl...",
-    "tokenType": "Bearer",
-    "expiresIn": 1800,
-    "isNewUser": false,
-    "user": {
-      "id": 42,
-      "email": "user@example.com",
-      "nickname": "축구팬",
-      "role": "USER"
-    }
-  }
-}
-```
-
-**Response 200** (신규 회원 - 팀 선택 필요)
-```json
-{
-  "code": "SUCCESS",
-  "message": "추가 정보 입력이 필요합니다.",
-  "data": {
-    "isNewUser": true,
-    "tempToken": "dGVtcG9yYXJ5IHRva2Vu...",
-    "email": "user@gmail.com",
-    "provider": "GOOGLE"
-  }
-}
-```
-
-> 신규 SSO 회원은 `tempToken`을 사용하여 닉네임/팀 선택 후 가입을 완료해야 한다.
-
----
-
-### 1.7 POST `/auth/oauth/complete` - SSO 가입 완료
-
-**인증**: 불필요 (tempToken으로 인증)
-
-> SSO 콜백에서 `isNewUser: true`를 받은 신규 회원이 닉네임과 응원팀을 선택하여 가입을 완료한다.
-
-**Request Body**
-```json
-{
-  "tempToken": "dGVtcG9yYXJ5IHRva2Vu...",
   "nickname": "축구팬",
   "teams": [
     { "sportId": 1, "teamId": 3 }
@@ -320,100 +187,37 @@ Authorization: Bearer {accessToken}
 
 | 필드 | 타입 | 필수 | 유효성 검증 |
 |------|------|------|-------------|
-| tempToken | string | O | SSO 콜백에서 발급된 임시 토큰 |
 | nickname | string | O | 2~20자, 특수문자 불가 |
 | teams | array | O | 최소 1개 종목, 종목당 1팀 |
 | teams[].sportId | long | O | 존재하는 종목 ID |
 | teams[].teamId | long | O | 해당 종목의 팀 ID |
 
-**Response 201**
+**Response 200**
 ```json
 {
   "code": "SUCCESS",
-  "message": "회원가입이 완료되었습니다.",
+  "message": "프로필이 완료되었습니다.",
   "data": {
-    "accessToken": "eyJhbGciOiJSUzI1NiIs...",
-    "refreshToken": "dGhpcyBpcyBhIHJlZnJl...",
-    "tokenType": "Bearer",
-    "expiresIn": 1800,
-    "user": {
-      "id": 43,
-      "email": "user@gmail.com",
-      "nickname": "축구팬",
-      "role": "USER",
-      "provider": "GOOGLE"
-    }
+    "userId": 43,
+    "email": "user@gmail.com",
+    "nickname": "축구팬"
   }
 }
 ```
 
-> 가입 완료 즉시 Access Token + Refresh Token을 발급하여 별도 로그인 없이 서비스 이용 가능.
+**처리 흐름**
+1. Access Token의 `sub` 클레임으로 Keycloak 사용자 식별
+2. 로컬 DB에 이미 프로필이 있으면 409 에러
+3. Keycloak UserInfo에서 이메일, provider 정보 조회
+4. 로컬 DB에 users 레코드 생성 (keycloak_id 매핑)
+5. 로컬 DB에 user_teams 레코드 생성
 
 **에러 코드**
 | 코드 | 상태 | 설명 |
 |------|------|------|
-| AUTH_TOKEN_EXPIRED | 401 | tempToken 만료 (10분) |
-| AUTH_TOKEN_INVALID | 401 | 유효하지 않은 tempToken |
 | USER_NICKNAME_DUPLICATED | 409 | 이미 사용 중인 닉네임 |
+| USER_PROFILE_ALREADY_COMPLETE | 409 | 이미 프로필이 완료된 사용자 |
 | COMMON_INVALID_PARAMETER | 400 | 유효성 검증 실패 |
-
----
-
-### 1.8 POST `/auth/password/find` - 비밀번호 재설정 메일 발송
-
-**인증**: 불필요
-
-**Request Body**
-```json
-{
-  "email": "user@example.com"
-}
-```
-
-**Response 200**
-```json
-{
-  "code": "SUCCESS",
-  "message": "비밀번호 재설정 메일이 발송되었습니다.",
-  "data": null
-}
-```
-
-> 존재하지 않는 이메일이라도 동일한 응답을 반환한다 (보안).
-
----
-
-### 1.9 PUT `/auth/password/reset` - 비밀번호 재설정
-
-**인증**: 불필요
-
-**Request Body**
-```json
-{
-  "token": "reset-token-from-email",
-  "newPassword": "NewPassword1!"
-}
-```
-
-| 필드 | 타입 | 필수 | 유효성 검증 |
-|------|------|------|-------------|
-| token | string | O | 이메일로 발송된 재설정 토큰 |
-| newPassword | string | O | 8~20자, 영문+숫자+특수문자 포함 |
-
-**Response 200**
-```json
-{
-  "code": "SUCCESS",
-  "message": "비밀번호가 변경되었습니다.",
-  "data": null
-}
-```
-
-**에러 코드**
-| 코드 | 상태 | 설명 |
-|------|------|------|
-| AUTH_TOKEN_EXPIRED | 401 | 재설정 토큰 만료 |
-| AUTH_TOKEN_INVALID | 401 | 유효하지 않은 재설정 토큰 |
 
 ---
 
@@ -1977,6 +1781,7 @@ Authorization: Bearer {accessToken}
 | USER | USER_SUSPENDED | 403 | 정지된 사용자 |
 | USER | USER_EMAIL_DUPLICATED | 409 | 이메일 중복 |
 | USER | USER_NICKNAME_DUPLICATED | 409 | 닉네임 중복 |
+| USER | USER_PROFILE_ALREADY_COMPLETE | 409 | 이미 프로필 완료된 사용자 |
 | POST | POST_NOT_FOUND | 404 | 게시글 없음 |
 | POST | POST_ACCESS_DENIED | 403 | 게시글 접근 권한 없음 |
 | POST | POST_ALREADY_REPORTED | 409 | 이미 신고한 게시글 |
@@ -1997,3 +1802,4 @@ Authorization: Bearer {accessToken}
 | 버전 | 날짜 | 작성자 | 변경 내용 |
 |------|------|--------|----------|
 | 1.0 | 2026-02-15 | - | 초안 작성 |
+| 1.1 | 2026-02-16 | - | 인증 서버 Keycloak 확정. auth-service API 재구성 (login/logout/token/SSO/password → Keycloak 직접 처리) |

@@ -2,7 +2,6 @@ package com.lockerroom.resourceservice.controller;
 
 import tools.jackson.databind.ObjectMapper;
 import com.lockerroom.resourceservice.configuration.SecurityConfig;
-import com.lockerroom.resourceservice.security.GatewayAuthenticationFilter;
 import com.lockerroom.resourceservice.dto.request.NoticeCreateRequest;
 import com.lockerroom.resourceservice.dto.request.ReportProcessRequest;
 import com.lockerroom.resourceservice.dto.request.SuspendRequest;
@@ -19,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -28,12 +28,12 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AdminController.class)
-@Import({SecurityConfig.class, GatewayAuthenticationFilter.class})
+@Import(SecurityConfig.class)
 class AdminControllerTest {
 
     @Autowired
@@ -44,6 +44,9 @@ class AdminControllerTest {
 
     @MockitoBean
     private AdminService adminService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     private static final String BASE_URL = "/api/v1/admin";
     private static final Long ADMIN_ID = 1L;
@@ -69,9 +72,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/users")
-                            .with(user(ADMIN_ID.toString()).roles("ADMIN"))
+                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
                             .header("X-User-Id", ADMIN_ID.toString())
-                            .header("X-User-Role", "ADMIN")
                             .param("size", "20"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -88,20 +90,19 @@ class AdminControllerTest {
         void getUsers_asUser_returns403() throws Exception {
             // when & then
             mockMvc.perform(get(BASE_URL + "/users")
-                            .with(user("2").roles("USER"))
-                            .header("X-User-Id", "2")
-                            .header("X-User-Role", "USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
+                            .header("X-User-Id", "2"))
                     .andExpect(status().isForbidden());
 
             verify(adminService, never()).getUsers(any());
         }
 
         @Test
-        @DisplayName("should return 403 when no auth headers provided")
-        void getUsers_noAuth_returns403() throws Exception {
+        @DisplayName("should return 401 when no auth provided")
+        void getUsers_noAuth_returns401() throws Exception {
             // when & then
             mockMvc.perform(get(BASE_URL + "/users"))
-                    .andExpect(status().isForbidden());
+                    .andExpect(status().isUnauthorized());
 
             verify(adminService, never()).getUsers(any());
         }
@@ -123,9 +124,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/users/{userId}/suspend", 10L)
-                            .with(user(ADMIN_ID.toString()).roles("ADMIN"))
+                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
                             .header("X-User-Id", ADMIN_ID.toString())
-                            .header("X-User-Role", "ADMIN")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -144,9 +144,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/users/{userId}/suspend", 10L)
-                            .with(user("2").roles("USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", "2")
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
@@ -175,9 +174,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/notices")
-                            .with(user(ADMIN_ID.toString()).roles("ADMIN"))
+                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
                             .header("X-User-Id", ADMIN_ID.toString())
-                            .header("X-User-Role", "ADMIN")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -199,9 +197,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/notices")
-                            .with(user("2").roles("USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", "2")
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
@@ -219,9 +216,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/notices")
-                            .with(user(ADMIN_ID.toString()).roles("ADMIN"))
+                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
                             .header("X-User-Id", ADMIN_ID.toString())
-                            .header("X-User-Role", "ADMIN")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -251,9 +247,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/reports")
-                            .with(user(ADMIN_ID.toString()).roles("ADMIN"))
+                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
                             .header("X-User-Id", ADMIN_ID.toString())
-                            .header("X-User-Role", "ADMIN")
                             .param("size", "20"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -270,9 +265,8 @@ class AdminControllerTest {
         void getReports_asUser_returns403() throws Exception {
             // when & then
             mockMvc.perform(get(BASE_URL + "/reports")
-                            .with(user("2").roles("USER"))
-                            .header("X-User-Id", "2")
-                            .header("X-User-Role", "USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
+                            .header("X-User-Id", "2"))
                     .andExpect(status().isForbidden());
 
             verify(adminService, never()).getReports(any());
@@ -292,9 +286,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/reports/{reportId}", 1L)
-                            .with(user(ADMIN_ID.toString()).roles("ADMIN"))
+                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
                             .header("X-User-Id", ADMIN_ID.toString())
-                            .header("X-User-Role", "ADMIN")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -311,9 +304,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/reports/{reportId}", 1L)
-                            .with(user("2").roles("USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", "2")
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
@@ -342,9 +334,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/notices/{noticeId}", 1L)
-                            .with(user(ADMIN_ID.toString()).roles("ADMIN"))
+                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
                             .header("X-User-Id", ADMIN_ID.toString())
-                            .header("X-User-Role", "ADMIN")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -367,9 +358,8 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(delete(BASE_URL + "/notices/{noticeId}", 1L)
-                            .with(user(ADMIN_ID.toString()).roles("ADMIN"))
-                            .header("X-User-Id", ADMIN_ID.toString())
-                            .header("X-User-Role", "ADMIN"))
+                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
+                            .header("X-User-Id", ADMIN_ID.toString()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"));
 
@@ -381,9 +371,8 @@ class AdminControllerTest {
         void deleteNotice_asUser_returns403() throws Exception {
             // when & then
             mockMvc.perform(delete(BASE_URL + "/notices/{noticeId}", 1L)
-                            .with(user("2").roles("USER"))
-                            .header("X-User-Id", "2")
-                            .header("X-User-Role", "USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
+                            .header("X-User-Id", "2"))
                     .andExpect(status().isForbidden());
 
             verify(adminService, never()).deleteNotice(any());

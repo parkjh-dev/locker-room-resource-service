@@ -62,67 +62,74 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 | GW-SEC-001 | CORS 처리 | 허용 Origin 환경별 설정, Credentials 허용 |
 | GW-SEC-002 | 허용 Method | GET, POST, PUT, DELETE, OPTIONS |
 | GW-SEC-003 | 허용 Header | Authorization, Content-Type, Idempotency-Key |
-| GW-SEC-004 | JWT 사전 검증 | 토큰 유효성만 확인 (만료, 형식), 권한 확인은 각 서비스에서 수행 |
-| GW-SEC-005 | 블랙리스트 확인 | Redis에서 Access Token 블랙리스트 조회 |
+| GW-SEC-004 | JWT 사전 검증 | Keycloak JWKS 공개키로 토큰 서명/만료 검증, 권한 확인은 각 서비스에서 수행 |
 
 ---
 
 ## 3. Auth Service 요구사항
 
-> **TBD**: 자체 JWT 구현 vs Keycloak(OIDC) 도입 미결정. 아래는 자체 구현 기준.
+> 인증/인가는 **Keycloak(OIDC)**으로 처리한다. auth-service는 Keycloak Admin API를 활용한 회원가입, 프로필 보완 API를 제공한다.
 
-### 3.1 회원가입
-
-| ID | 요구사항 | 상세 |
-|----|----------|------|
-| AUTH-REG-001 | 로컬 회원가입 | 이메일+비밀번호+닉네임+응원팀 기반 가입 |
-| AUTH-REG-002 | 이메일 유니크 | 전체 시스템에서 이메일 중복 불가 |
-| AUTH-REG-003 | 닉네임 유니크 | 전체 시스템에서 닉네임 중복 불가 |
-| AUTH-REG-004 | 비밀번호 해시 | BCrypt 알고리즘으로 해시 저장, 평문 저장 금지 |
-| AUTH-REG-005 | 비밀번호 정책 | 8~20자, 영문+숫자+특수문자 각 1개 이상 포함 |
-| AUTH-REG-006 | 응원팀 필수 | 종목별 1팀 필수 선택, 가입 시점에 user_teams 동시 생성 |
-| AUTH-REG-007 | SSO 회원가입 | OAuth 콜백 → tempToken 발급 → 추가 정보 입력 → 가입 완료 (2단계) |
-| AUTH-REG-008 | tempToken 관리 | Redis 저장, TTL 10분, 1회 사용 후 삭제 |
-
-### 3.2 로그인
+### 3.1 Keycloak 설정
 
 | ID | 요구사항 | 상세 |
 |----|----------|------|
-| AUTH-LOGIN-001 | 로컬 로그인 | 이메일+비밀번호 검증 → Access Token + Refresh Token 발급 |
-| AUTH-LOGIN-002 | SSO 로그인 | OAuth Provider 인증 → 기존 회원 시 토큰 발급, 신규 시 가입 흐름 |
-| AUTH-LOGIN-003 | 정지 계정 차단 | user_suspensions 확인, 정지 기간 중이면 로그인 거부 (403) |
-| AUTH-LOGIN-004 | 탈퇴 계정 차단 | deleted_at IS NOT NULL인 계정 로그인 거부 |
-| AUTH-LOGIN-005 | 지원 SSO Provider | Google, Kakao, Naver |
+| AUTH-KC-001 | Realm 구성 | `locker-room` Realm 생성, 클라이언트/역할/IdP 설정 |
+| AUTH-KC-002 | Client 등록 | 프론트엔드(Public, PKCE), auth-service(Confidential, Admin API용), ai-service(Confidential, Client Credentials) |
+| AUTH-KC-003 | Realm Role | `user`, `admin` 역할 생성, 회원가입 시 기본 `user` 역할 부여 |
+| AUTH-KC-004 | Identity Provider | Google, Kakao, Naver를 Keycloak IdP로 등록 |
+| AUTH-KC-005 | SMTP 설정 | Keycloak Realm에 SMTP 설정, 비밀번호 재설정 이메일 자동 발송 |
+| AUTH-KC-006 | 토큰 설정 | Access Token 30분, Refresh Token 7일, 슬라이딩 갱신 활성화 |
 
-### 3.3 토큰 관리
-
-| ID | 요구사항 | 상세 |
-|----|----------|------|
-| AUTH-TK-001 | Access Token 생성 | JWT 형식, Claims: userId, email, role |
-| AUTH-TK-002 | Access Token 만료 | 30분 |
-| AUTH-TK-003 | Refresh Token 생성 | 불투명 토큰 또는 JWT, Redis 저장 |
-| AUTH-TK-004 | Refresh Token 만료 | 7일, 슬라이딩 방식 (갱신 시 만료 시간 재설정) |
-| AUTH-TK-005 | 토큰 갱신 | Refresh Token 검증 → 새 Access + Refresh Token 발급 |
-| AUTH-TK-006 | 로그아웃 | Access Token Redis 블랙리스트 등록 (남은 TTL), Refresh Token 삭제 |
-| AUTH-TK-007 | 블랙리스트 키 | `blacklist:{accessToken}`, TTL = 토큰 남은 만료 시간 |
-| AUTH-TK-008 | Refresh Token 키 | `refresh:{userId}`, TTL = 7일 |
-
-### 3.4 비밀번호 재설정
+### 3.2 회원가입
 
 | ID | 요구사항 | 상세 |
 |----|----------|------|
-| AUTH-PW-001 | 재설정 요청 | 이메일 입력 → 재설정 토큰 생성 → Kafka로 이메일 발송 이벤트 |
-| AUTH-PW-002 | 보안 응답 | 존재하지 않는 이메일이라도 동일한 성공 응답 (이메일 열거 방지) |
-| AUTH-PW-003 | 재설정 토큰 | UUID, Redis 저장, TTL 30분, 1회 사용 |
-| AUTH-PW-004 | 비밀번호 변경 | 토큰 검증 → BCrypt 해시 → 저장 → 기존 Refresh Token 전체 삭제 |
+| AUTH-REG-001 | 로컬 회원가입 | Keycloak Admin API로 사용자 생성 + 로컬 DB에 응원팀 저장 |
+| AUTH-REG-002 | 이메일 유니크 | Keycloak + 로컬 DB 모두에서 이메일 중복 불가 |
+| AUTH-REG-003 | 닉네임 유니크 | 로컬 DB에서 닉네임 중복 불가 |
+| AUTH-REG-004 | 비밀번호 정책 | Keycloak Password Policy 설정 (8~20자, 영문+숫자+특수문자) |
+| AUTH-REG-005 | 응원팀 필수 | 종목별 1팀 필수 선택, 가입 시점에 user_teams 동시 생성 |
+| AUTH-REG-006 | keycloak_id 매핑 | 로컬 users 테이블에 Keycloak User ID(UUID) 저장 |
+| AUTH-REG-007 | 보상 트랜잭션 | 로컬 DB 저장 실패 시 Keycloak 사용자 삭제 |
 
-### 3.5 서비스 간 인증
+### 3.3 SSO 프로필 보완
 
 | ID | 요구사항 | 상세 |
 |----|----------|------|
-| AUTH-S2S-001 | Client Credentials | ai-service → auth-service 토큰 요청 → resource-service API 호출 |
-| AUTH-S2S-002 | Scope 구분 | 서비스 간 토큰은 scope로 일반 사용자 토큰과 구분 |
-| AUTH-S2S-003 | 토큰 만료 | 서비스 간 토큰 1시간 만료 |
+| AUTH-SSO-001 | IdP 자동 생성 | Keycloak Identity Provider Brokering으로 SSO 사용자 자동 생성 |
+| AUTH-SSO-002 | 프로필 감지 | 프론트엔드가 GET /users/me → 404 시 프로필 보완 필요로 판단 |
+| AUTH-SSO-003 | 프로필 보완 | POST /auth/profile/complete로 닉네임, 응원팀 설정 |
+| AUTH-SSO-004 | 중복 방지 | 이미 프로필이 완료된 사용자는 409 에러 |
+| AUTH-SSO-005 | 지원 SSO Provider | Google, Kakao, Naver (Keycloak IdP) |
+
+### 3.4 로그인/로그아웃/토큰 (Keycloak 직접 처리)
+
+| ID | 요구사항 | 상세 |
+|----|----------|------|
+| AUTH-TK-001 | 로그인 | 프론트엔드 → Keycloak Authorization Code Flow + PKCE |
+| AUTH-TK-002 | SSO 로그인 | 프론트엔드 → Keycloak IdP Brokering (kc_idp_hint 파라미터) |
+| AUTH-TK-003 | 토큰 갱신 | 프론트엔드 → Keycloak Token Endpoint (grant_type=refresh_token) |
+| AUTH-TK-004 | 로그아웃 | 프론트엔드 → Keycloak Logout Endpoint (세션 종료 + 토큰 무효화) |
+| AUTH-TK-005 | 정지 계정 차단 | Gateway 또는 Resource Server에서 JWT 클레임 기반 검증 |
+| AUTH-TK-006 | 비밀번호 재설정 | Keycloak 로그인 페이지 "Forgot Password" (SMTP로 자동 발송) |
+
+### 3.5 토큰 검증 (각 서비스 공통)
+
+| ID | 요구사항 | 상세 |
+|----|----------|------|
+| AUTH-VERIFY-001 | JWT 검증 | spring-boot-starter-oauth2-resource-server + Keycloak JWKS 공개키 |
+| AUTH-VERIFY-002 | 역할 매핑 | JwtAuthConverter로 Keycloak `realm_access.roles` → Spring Security GrantedAuthority |
+| AUTH-VERIFY-003 | issuer 검증 | JWT의 `iss` 클레임이 Keycloak Realm URL과 일치하는지 검증 |
+| AUTH-VERIFY-004 | 만료 검증 | JWT의 `exp` 클레임으로 토큰 만료 자동 검증 |
+
+### 3.6 서비스 간 인증 (Client Credentials)
+
+| ID | 요구사항 | 상세 |
+|----|----------|------|
+| AUTH-S2S-001 | Client Credentials | ai-service → Keycloak Token Endpoint에서 토큰 발급 → resource-service API 호출 |
+| AUTH-S2S-002 | 클라이언트 구분 | JWT의 `azp`(authorized party) 클레임으로 서비스 간 호출 판별 |
+| AUTH-S2S-003 | 토큰 만료 | Keycloak Client 설정에서 서비스 간 토큰 1시간 만료 |
 
 ---
 
@@ -301,10 +308,9 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 
 | ID | 요구사항 | 상세 |
 |----|----------|------|
-| NOTI-KF-001 | 구독 토픽 | `notification.*`, `email.*` |
+| NOTI-KF-001 | 구독 토픽 | `notification.*` |
 | NOTI-KF-002 | Consumer Group | `notification-consumer-group` |
 | NOTI-KF-003 | 파티셔닝 | `notification.*`: userId 기반 (동일 사용자 순서 보장) |
-| NOTI-KF-004 | 파티셔닝 | `email.*`: 파티션 1개 (발송량 적음, 순서 보장) |
 
 ### 6.2 인앱 알림
 
@@ -318,17 +324,16 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 
 | ID | 요구사항 | 상세 |
 |----|----------|------|
-| NOTI-EMAIL-001 | 비밀번호 재설정 | `email.password-reset` 토픽 consume → SMTP 발송 |
-| NOTI-EMAIL-002 | 이메일 템플릿 | HTML 템플릿 기반, 재설정 링크 포함 |
-| NOTI-EMAIL-003 | 발신 주소 | `noreply@lockerroom.com` (설정 외부화) |
+| NOTI-EMAIL-001 | 비밀번호 재설정 | Keycloak이 SMTP로 직접 발송 (notification-service 미관여) |
+| NOTI-EMAIL-002 | 이메일 템플릿 | Keycloak Realm 이메일 템플릿 설정 |
+| NOTI-EMAIL-003 | 발신 주소 | Keycloak SMTP 설정에서 `noreply@lockerroom.com` 지정 |
 
 ### 6.4 재시도 / DLQ
 
 | ID | 요구사항 | 상세 |
 |----|----------|------|
 | NOTI-DLQ-001 | 알림 재시도 | 3회 (5s / 30s / 60s) |
-| NOTI-DLQ-002 | 이메일 재시도 | 5회 (10s / 30s / 60s / 300s / 600s) |
-| NOTI-DLQ-003 | DLQ 토픽 | `notification.dlq`, `email.dlq` |
+| NOTI-DLQ-002 | DLQ 토픽 | `notification.dlq` |
 | NOTI-DLQ-004 | DLQ 재처리 | 관리자 대시보드 수동 재처리 또는 스케줄러 일괄 재처리 |
 
 ---
@@ -365,12 +370,10 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 
 | Key 패턴 | Value | TTL | 용도 |
 |----------|-------|-----|------|
-| `refresh:{userId}` | Refresh Token | 7일 (슬라이딩) | 토큰 갱신 |
-| `blacklist:{accessToken}` | "true" | 토큰 남은 만료 시간 | 로그아웃된 토큰 차단 |
 | `idempotency:{key}` | 응답 JSON | 24시간 | 멱등성 보장 |
-| `password-reset:{token}` | userId | 30분 | 비밀번호 재설정 |
-| `temp-oauth:{tempToken}` | OAuth 정보 JSON | 10분 | SSO 신규 회원 가입 |
 | `rate-limit:{key}` | 요청 카운트 | 1분 | Rate Limiting |
+
+> 토큰 관리(발급, 갱신, 블랙리스트), 비밀번호 재설정, SSO 임시 토큰은 Keycloak이 자체 관리하므로 Redis에 저장하지 않는다.
 
 ### 7.4 데이터 보존 정책
 
@@ -422,12 +425,12 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 | ID | 요구사항 | 상세 |
 |----|----------|------|
 | SEC-001 | HTTPS 필수 | 모든 환경에서 TLS 1.2+ 적용 (로컬 제외) |
-| SEC-002 | 비밀번호 해시 | BCrypt (cost factor 10 이상) |
+| SEC-002 | 비밀번호 해시 | Keycloak Password Policy에서 관리 (BCrypt) |
 | SEC-003 | SQL Injection | JPA Parameterized Query 사용, Native Query 시 파라미터 바인딩 필수 |
 | SEC-004 | XSS 방지 | 입출력 데이터 이스케이핑, HTML 태그 필터링 |
 | SEC-005 | CSRF | JWT 기반 Stateless이므로 CSRF 토큰 불필요, CORS로 제어 |
 | SEC-006 | 민감 정보 로깅 금지 | 비밀번호, 토큰 등 로그에 남기지 않음 |
-| SEC-007 | 환경 변수 | JWT Secret, DB Password, AWS Credentials 등 환경 변수로 관리 (.env, application.yml 외부화) |
+| SEC-007 | 환경 변수 | Keycloak Client Secret, DB Password, AWS Credentials 등 환경 변수로 관리 (.env, application.yml 외부화) |
 | SEC-008 | 의존성 보안 | 정기적 의존성 취약점 스캔 (Dependabot, OWASP Dependency Check) |
 
 ---
@@ -452,7 +455,7 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 | AVAIL-001 | 서비스 가용률 | 99.5% (월간) |
 | AVAIL-002 | 서비스 격리 | 개별 서비스 장애가 전체 시스템에 전파되지 않음 |
 | AVAIL-003 | Kafka 장애 대응 | Kafka 장애 시에도 동기 API는 정상 동작 (알림만 지연) |
-| AVAIL-004 | Redis 장애 대응 | Redis 장애 시 Rate Limiting/멱등성 비활성화, 인증은 JWT 자체 검증으로 동작 |
+| AVAIL-004 | Redis 장애 대응 | Redis 장애 시 Rate Limiting/멱등성 비활성화, 인증은 Keycloak JWKS 기반 JWT 검증으로 독립 동작 |
 | AVAIL-005 | 장애 복구 | RTO ≤ 1시간, RPO ≤ 1시간 |
 | AVAIL-006 | DB 백업 | 일별 전체 백업 + 실시간 바이너리 로그 |
 | AVAIL-007 | 무중단 배포 | Rolling Deployment 적용 |
@@ -518,3 +521,4 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 |------|------|--------|----------|
 | 1.0 | 2026-02-15 | - | 초안 작성 |
 | 1.1 | 2026-02-15 | - | MariaDB Connector/J 드라이버 명시 |
+| 1.2 | 2026-02-16 | - | 인증 서버 Keycloak 확정. Auth Service 요구사항 재구성, Redis 토큰 저장 제거, email.password-reset Kafka 토픽 제거, Gateway 블랙리스트 제거 |

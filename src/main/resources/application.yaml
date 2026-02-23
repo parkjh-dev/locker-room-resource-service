@@ -36,13 +36,15 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://auth.greatpark.co.kr/realms/locker-room
+
   h2:
     console:
       enabled: false
-
-jwt:
-  secret: ${JWT_SECRET:your-secret-key-here-change-in-production-must-be-at-least-256-bits}
-  expiration: 3600000
 
 aws:
   s3:

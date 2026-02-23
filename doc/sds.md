@@ -86,13 +86,13 @@ com.lockerroom.{servicename}/
 │   ├── ErrorCode.java                # Enum
 │   └── ErrorResponse.java
 ├── security/
-│   ├── JwtTokenProvider.java
-│   ├── JwtAuthenticationFilter.java
-│   └── CustomUserDetailsService.java
+│   └── JwtAuthConverter.java        # Keycloak JWT → Spring Security 권한 매핑
 └── utils/
     ├── MessageUtils.java
     └── Constants.java
 ```
+
+> 각 서비스(resource-service, ai-service)는 `spring-boot-starter-oauth2-resource-server`를 사용하여 Keycloak JWKS 공개키로 JWT를 검증한다. `JwtAuthConverter`는 Keycloak JWT의 `realm_access.roles`를 Spring Security GrantedAuthority로 변환한다.
 
 ### 2.2 네이밍 규칙
 
@@ -400,56 +400,41 @@ public class CorsConfig {
 
 ## 4. Auth Service
 
-> **TBD**: 인증 서버 구현 방식 미결정
-> - **방안 A**: JWT 기반 자체 구현 (아래 명세 기준)
-> - **방안 B**: Keycloak(OIDC) 도입 → auth-service가 Keycloak 앞단 래퍼 역할
-> - Keycloak 도입 시 JwtTokenProvider, TokenBlacklistService 등 자체 구현 대신 Keycloak Adapter 사용
+> 인증/인가는 **Keycloak(OIDC)**으로 처리한다. auth-service는 Keycloak Admin API를 활용하여 회원가입, 프로필 보완 등 비즈니스 로직을 담당하는 경량 래퍼 서비스다.
 
 ### 4.1 패키지 구조
 
 ```
 com.lockerroom.authservice/
 ├── configuration/
-│   ├── SecurityConfig.java
-│   └── RedisConfig.java
+│   ├── SecurityConfig.java          # OAuth2 Resource Server 설정
+│   ├── KeycloakAdminConfig.java     # Keycloak Admin Client 설정
+│   └── SwaggerConfig.java
 ├── controller/
-│   ├── AuthController.java
-│   └── OAuthController.java
+│   └── AuthController.java          # signup, profile/complete
 ├── service/
 │   ├── AuthService.java
-│   ├── OAuthService.java
+│   ├── KeycloakUserService.java     # Keycloak Admin API 호출
 │   ├── impl/
 │   │   ├── AuthServiceImpl.java
-│   │   └── OAuthServiceImpl.java
+│   │   └── KeycloakUserServiceImpl.java
 ├── security/
-│   ├── JwtTokenProvider.java
-│   ├── JwtAuthenticationFilter.java
-│   ├── TokenBlacklistService.java
-│   └── CustomUserDetailsService.java
+│   └── JwtAuthConverter.java        # Keycloak JWT → Spring Security 권한 매핑
 ├── dto/
 │   ├── request/
 │   │   ├── SignupRequest.java
-│   │   ├── LoginRequest.java
-│   │   ├── TokenRefreshRequest.java
-│   │   ├── PasswordFindRequest.java
-│   │   ├── PasswordResetRequest.java
-│   │   └── OAuthCompleteRequest.java
+│   │   └── ProfileCompleteRequest.java
 │   └── response/
-│       ├── LoginResponse.java
-│       ├── TokenResponse.java
-│       └── OAuthCallbackResponse.java
+│       └── UserResponse.java
 ├── model/
 │   ├── entity/
-│   │   ├── User.java
-│   │   ├── UserTeam.java
-│   │   └── UserWithdrawal.java
+│   │   ├── User.java                # keycloakId 필드 포함
+│   │   └── UserTeam.java
 │   └── enums/
-│       ├── Role.java
-│       └── OAuthProvider.java
+│       └── Role.java
 ├── repository/
 │   ├── UserRepository.java
-│   ├── UserTeamRepository.java
-│   └── UserWithdrawalRepository.java
+│   └── UserTeamRepository.java
 ├── mapper/
 │   └── UserMapper.java
 ├── exceptions/
@@ -460,130 +445,139 @@ com.lockerroom.authservice/
     └── MessageUtils.java
 ```
 
-### 4.2 JWT 토큰 관리
+### 4.2 Keycloak 연동 설정
 
-#### JwtTokenProvider
+#### application.yml
+```yaml
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/locker-room}
+
+keycloak:
+  admin:
+    server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8180}
+    realm: ${KEYCLOAK_REALM:locker-room}
+    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
+    client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+```
+
+#### SecurityConfig
 ```java
-@Component
-public class JwtTokenProvider {
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
 
-    @Value("${jwt.secret}")
-    private String secretKey;
+    private final JwtAuthConverter jwtAuthConverter;
 
-    @Value("${jwt.access-token-expiration}")
-    private long accessTokenExpiration;    // 30분 (1800000ms)
-
-    @Value("${jwt.refresh-token-expiration}")
-    private long refreshTokenExpiration;   // 7일 (604800000ms)
-
-    // Access Token 생성
-    public String generateAccessToken(Long userId, String email, String role) { ... }
-
-    // Refresh Token 생성
-    public String generateRefreshToken(Long userId) { ... }
-
-    // 토큰 검증
-    public boolean validateToken(String token) { ... }
-
-    // 토큰에서 Claims 추출
-    public Claims getClaims(String token) { ... }
-
-    // 토큰 남은 만료 시간 (밀리초)
-    public long getRemainingExpiration(String token) { ... }
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/v1/auth/signup").permitAll()
+                .requestMatchers("/api/v1/auth/**").authenticated()
+                .anyRequest().permitAll()
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter))
+            );
+        return http.build();
+    }
 }
 ```
 
-#### Token 저장 전략
-| 토큰 | 저장소 | Key 패턴 | TTL |
-|------|--------|----------|-----|
-| Access Token | 클라이언트 (메모리/헤더) | - | 30분 |
-| Refresh Token | Redis | `refresh:{userId}` | 7일 (슬라이딩) |
-| Blacklisted Access | Redis | `blacklist:{token}` | 토큰 남은 만료 시간 |
+#### KeycloakUserService (Keycloak Admin API 호출)
+```java
+@Service
+@RequiredArgsConstructor
+public class KeycloakUserServiceImpl implements KeycloakUserService {
+
+    private final Keycloak keycloakAdmin;  // KeycloakAdminConfig에서 Bean 등록
+
+    @Value("${keycloak.admin.realm}")
+    private String realm;
+
+    @Override
+    public String createUser(String email, String password) {
+        UserRepresentation user = new UserRepresentation();
+        user.setEmail(email);
+        user.setUsername(email);
+        user.setEnabled(true);
+
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue(password);
+        credential.setTemporary(false);
+        user.setCredentials(List.of(credential));
+
+        Response response = keycloakAdmin.realm(realm).users().create(user);
+        if (response.getStatus() == 201) {
+            return CreatedResponseUtil.getCreatedId(response);  // Keycloak User ID
+        }
+        throw new CustomException(ErrorCode.USER_EMAIL_DUPLICATED);
+    }
+
+    @Override
+    public void deleteUser(String keycloakId) {
+        keycloakAdmin.realm(realm).users().get(keycloakId).remove();
+    }
+}
+```
 
 ### 4.3 인증 흐름
 
 ```
-[로컬 로그인]
-Client → POST /auth/login
-    → AuthServiceImpl.login()
-        → UserRepository.findByEmail()
-        → PasswordEncoder.matches()
-        → JwtTokenProvider.generateAccessToken()
-        → JwtTokenProvider.generateRefreshToken()
-        → Redis에 Refresh Token 저장
-    ← LoginResponse (accessToken, refreshToken, user)
+[회원가입]
+Client → POST /auth/signup
+    → AuthServiceImpl.signup()
+        → 이메일/닉네임 중복 검증
+        → KeycloakUserService.createUser() (Keycloak Admin API)
+        → User 엔티티 생성 (keycloakId 매핑)
+        → UserTeam 엔티티 생성
+        → 실패 시 KeycloakUserService.deleteUser() (보상 트랜잭션)
+    ← UserResponse
+
+[로그인 / 토큰 갱신 / 로그아웃]
+    → 프론트엔드가 Keycloak과 직접 통신 (auth-service 미관여)
+    → Authorization Code Flow + PKCE
 
 [SSO 로그인 - 기존 회원]
-Client → GET /auth/oauth/{provider}
-    → OAuth Provider 로그인 페이지로 Redirect
-    → 사용자 인증 후 콜백
-    → GET /auth/oauth/{provider}/callback?code=xxx
-        → OAuthServiceImpl.processCallback()
-            → OAuth Provider에 Access Token 요청
-            → User Info 조회
-            → 기존 회원: Access Token + Refresh Token 발급
-    ← OAuthCallbackResponse (isNewUser: false, tokens)
+    → Keycloak Identity Provider Brokering이 자동 처리
+    → 프론트엔드가 Keycloak에서 토큰 수령
+    → GET /users/me 호출 → 로컬 프로필 존재 → 정상 사용
 
-[SSO 가입 - 신규 회원 (2단계)]
-  Step 1) GET /auth/oauth/{provider}/callback?code=xxx
-        → OAuthServiceImpl.processCallback()
-            → User Info 조회 → DB에 없음
-            → tempToken 발급 (Redis 저장, 10분 TTL)
-              ※ tempToken에 email, provider, providerId 정보 포함
-        ← OAuthCallbackResponse (isNewUser: true, tempToken)
-
-  Step 2) 프론트엔드: 추가 정보 입력 페이지 렌더링 (닉네임, 응원팀 선택)
-
-  Step 3) POST /auth/oauth/complete
-        → OAuthServiceImpl.completeRegistration()
-            → Redis에서 tempToken 검증 및 OAuth 정보 복원
+[SSO 로그인 - 신규 회원 (프로필 보완)]
+  Step 1) Keycloak이 IdP(Google/Kakao/Naver) 인증 + 사용자 자동 생성
+  Step 2) 프론트엔드가 Keycloak에서 토큰 수령
+  Step 3) GET /users/me → 404 (로컬 프로필 없음)
+  Step 4) 프론트엔드: 닉네임/응원팀 입력 페이지 렌더링
+  Step 5) POST /auth/profile/complete
+        → AuthServiceImpl.completeProfile()
+            → JWT sub 클레임으로 Keycloak 사용자 식별
+            → Keycloak UserInfo에서 이메일, provider 조회
             → 닉네임 중복 검증
-            → User 엔티티 생성 (provider, providerId 포함)
+            → User 엔티티 생성 (keycloakId, provider 포함)
             → UserTeam 엔티티 생성
-            → Access Token + Refresh Token 발급
-            → Redis에서 tempToken 삭제
-        ← LoginResponse (tokens, user)
+        ← UserResponse
 
-[토큰 갱신]
-Client → POST /auth/token/refresh
-    → AuthServiceImpl.refreshToken()
-        → Redis에서 Refresh Token 검증
-        → 새 Access Token + Refresh Token 발급
-        → Redis Refresh Token 갱신 (슬라이딩)
-    ← TokenResponse
-
-[로그아웃]
-Client → POST /auth/logout
-    → AuthServiceImpl.logout()
-        → Access Token을 Redis 블랙리스트에 등록 (남은 TTL)
-        → Redis에서 Refresh Token 삭제
-    ← 200 OK
+[비밀번호 재설정]
+    → Keycloak 로그인 페이지 "Forgot Password" 기능 사용
+    → Keycloak이 SMTP로 재설정 이메일 직접 발송
+    → auth-service 미관여
 ```
 
-### 4.4 비밀번호 재설정 흐름
-
-```
-1. POST /auth/password/find { email }
-   → 재설정 토큰 생성 (UUID, Redis에 30분 TTL 저장)
-   → Kafka `email.password-reset` 이벤트 발행
-   → notification-service가 이메일 발송
-
-2. 사용자가 이메일 링크 클릭 → 프론트엔드 재설정 페이지
-
-3. PUT /auth/password/reset { token, newPassword }
-   → Redis에서 토큰 검증
-   → 비밀번호 변경 (BCrypt 해시)
-   → Redis에서 토큰 삭제
-   → 기존 Refresh Token 전체 삭제 (재로그인 유도)
-```
-
-### 4.5 서비스 간 인증 (Client Credentials)
+### 4.4 서비스 간 인증 (Client Credentials)
 
 ```
 ai-service → resource-service 호출 시:
-1. ai-service가 auth-service에 Client Credentials 토큰 요청
-2. 발급받은 토큰으로 resource-service API 호출
-3. resource-service는 토큰의 scope로 서비스 간 호출 여부 판별
+1. ai-service가 Keycloak Token Endpoint에 Client Credentials 토큰 요청
+   POST /realms/{realm}/protocol/openid-connect/token
+   grant_type=client_credentials&client_id=ai-service&client_secret=xxx
+2. 발급받은 Access Token으로 resource-service API 호출
+3. resource-service는 JWT의 azp(클라이언트)와 scope로 서비스 간 호출 판별
 ```
 
 ---
@@ -1093,10 +1087,18 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
 
-jwt:
-  secret: ${JWT_SECRET}
-  access-token-expiration: 1800000     # 30분
-  refresh-token-expiration: 604800000  # 7일
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/locker-room}
+
+keycloak:
+  admin:
+    server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8180}
+    realm: ${KEYCLOAK_REALM:locker-room}
+    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:admin-cli}
+    client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
 
 aws:
   s3:
@@ -1265,3 +1267,4 @@ public class SwaggerConfig {
 |------|------|--------|----------|
 | 1.0 | 2026-02-15 | - | 초안 작성 |
 | 1.1 | 2026-02-15 | - | 패키지명 규칙 변경 (com.lockerroom.resourceservice), 빌드 도구 Maven 변경, MariaDB Connector/J 명시 |
+| 1.2 | 2026-02-16 | - | 인증 서버 Keycloak 확정. Auth Service JWT 자체 구현 → Keycloak 연동으로 변경, application.yml Keycloak 설정 추가 |

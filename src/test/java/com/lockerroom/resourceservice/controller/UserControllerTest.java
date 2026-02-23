@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,6 +25,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -39,6 +41,9 @@ class UserControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     private static final String BASE_URL = "/api/v1/users";
     private static final Long USER_ID = 1L;
@@ -68,8 +73,8 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/me")
-                            .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
+                            .header("X-User-Id", USER_ID.toString()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
                     .andExpect(jsonPath("$.data.id").value(USER_ID))
@@ -98,8 +103,8 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/me")
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -117,8 +122,8 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/me")
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -140,8 +145,8 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(delete(BASE_URL + "/me")
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -171,8 +176,8 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/me/posts")
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .param("size", "20"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -205,8 +210,8 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/me/comments")
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .param("size", "20"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -240,8 +245,8 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/me/likes")
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .param("size", "20"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))

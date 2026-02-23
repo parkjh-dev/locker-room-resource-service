@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,6 +25,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -39,6 +41,9 @@ class PostControllerTest {
 
     @MockitoBean
     private PostService postService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
 
     private static final String BASE_URL = "/api/v1/posts";
     private static final Long USER_ID = 1L;
@@ -77,8 +82,8 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -97,8 +102,8 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -114,8 +119,8 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -137,8 +142,8 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/{postId}", POST_ID)
-                            .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
+                            .header("X-User-Id", USER_ID.toString()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
                     .andExpect(jsonPath("$.data.id").value(POST_ID))
@@ -149,8 +154,8 @@ class PostControllerTest {
         }
 
         @Test
-        @DisplayName("should return post detail without userId header")
-        void getDetail_withoutUserId_success() throws Exception {
+        @DisplayName("should return post detail without auth (public endpoint)")
+        void getDetail_withoutAuth_success() throws Exception {
             // given
             PostDetailResponse response = createPostDetailResponse();
             when(postService.getDetail(eq(POST_ID), any())).thenReturn(response);
@@ -183,8 +188,8 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/{postId}", POST_ID)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -203,8 +208,8 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/{postId}", POST_ID)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -225,8 +230,8 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(delete(BASE_URL + "/{postId}", POST_ID)
-                            .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
+                            .header("X-User-Id", USER_ID.toString()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"));
 
@@ -247,8 +252,8 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/{postId}/like", POST_ID)
-                            .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER"))
+                            .with(jwt().authorities(() -> "ROLE_USER"))
+                            .header("X-User-Id", USER_ID.toString()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
                     .andExpect(jsonPath("$.data.postId").value(POST_ID))
@@ -273,8 +278,8 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/{postId}/report", POST_ID)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -294,8 +299,8 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/{postId}/report", POST_ID)
+                            .with(jwt().authorities(() -> "ROLE_USER"))
                             .header("X-User-Id", USER_ID.toString())
-                            .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
