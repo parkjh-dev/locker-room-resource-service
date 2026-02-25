@@ -415,10 +415,10 @@ com.lockerroom.resourceservice/
 
 | 레이어 | 대상 | 도구 | 테스트 수 | 상태 |
 |--------|------|------|:---------:|:----:|
-| Unit | Service (7개) | JUnit 5 + Mockito | 74 | [x] |
+| Unit | Service (12개) | JUnit 5 + Mockito | 138 | [x] |
 | Controller | Controller (4개) | @WebMvcTest + MockMvc | 39 | [x] |
 | Integration | Repository (5개) | @DataJpaTest + H2 | 64 | [x] |
-| **합계** | **16개 파일** | | **178** (1 skipped) | **PASS** |
+| **합계** | **21개 파일** | | **242** (1 skipped) | **PASS** |
 
 ---
 
