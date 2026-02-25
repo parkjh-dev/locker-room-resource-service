@@ -153,7 +153,7 @@ public class CursorPageRequest {
     @Min(1) @Max(100)
     private int size = 20;
 
-    private String sort = "created_at";
+    private String sort = "createdAt";
 }
 ```
 
@@ -175,6 +175,7 @@ public enum ErrorCode {
     USER_SUSPENDED(HttpStatus.FORBIDDEN, "USER_SUSPENDED"),
     USER_EMAIL_DUPLICATED(HttpStatus.CONFLICT, "USER_EMAIL_DUPLICATED"),
     USER_NICKNAME_DUPLICATED(HttpStatus.CONFLICT, "USER_NICKNAME_DUPLICATED"),
+    USER_PROFILE_ALREADY_COMPLETE(HttpStatus.CONFLICT, "USER_PROFILE_ALREADY_COMPLETE"),
 
     // POST
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "POST_NOT_FOUND"),
@@ -1312,3 +1313,4 @@ public class SwaggerConfig {
 | 1.1 | 2026-02-15 | - | 패키지명 규칙 변경 (com.lockerroom.resourceservice), 빌드 도구 Maven 변경, MariaDB Connector/J 명시 |
 | 1.2 | 2026-02-16 | - | 인증 서버 Keycloak 확정. Auth Service JWT 자체 구현 → Keycloak 연동으로 변경, application.yml Keycloak 설정 추가 |
 | 1.3 | 2026-02-25 | - | Spring Boot Actuator 추가. 기술 스택 테이블 및 모니터링 섹션(10.5) 신규 작성 |
+| 1.4 | 2026-02-25 | - | Phase 20 반영: CursorPageRequest sort 기본값 camelCase 통일, ErrorCode에 USER_PROFILE_ALREADY_COMPLETE 추가 |

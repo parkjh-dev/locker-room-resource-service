@@ -168,7 +168,7 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 |----|----------|------|
 | RES-POST-001 | 게시글 작성 | 게시판 접근 권한 검증 → 저장 → QNA 게시판이면 Kafka 이벤트 발행 |
 | RES-POST-002 | 게시글 목록 | Cursor 기반 페이지네이션, 기본 20건, 최대 100건 |
-| RES-POST-003 | 게시글 정렬 | created_at(기본), like_count |
+| RES-POST-003 | 게시글 정렬 | createdAt(기본), likeCount (camelCase) |
 | RES-POST-004 | 게시글 검색 | keyword + searchType (TITLE, CONTENT, TITLE_CONTENT, NICKNAME) |
 | RES-POST-005 | 게시글 상세 | 조회 시 view_count +1, 인증 사용자는 isLiked 포함 |
 | RES-POST-006 | 게시글 수정 | 작성자 본인만, 첨부파일 변경 시 제거된 파일 S3 삭제 |
@@ -525,3 +525,4 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 | 1.1 | 2026-02-15 | - | MariaDB Connector/J 드라이버 명시 |
 | 1.2 | 2026-02-16 | - | 인증 서버 Keycloak 확정. Auth Service 요구사항 재구성, Redis 토큰 저장 제거, email.password-reset Kafka 토픽 제거, Gateway 블랙리스트 제거 |
 | 1.3 | 2026-02-25 | - | 모니터링 섹션 TBD 해소. Spring Boot Actuator 기반 헬스체크/메트릭/로그 제어 요구사항 확정 (MON-001~006) |
+| 1.4 | 2026-02-25 | - | Phase 20 반영: 게시글 정렬 파라미터 camelCase 통일 (created_at→createdAt, like_count→likeCount) |

@@ -55,7 +55,7 @@ Idempotency-Key: {UUID}
 |----------|------|------|--------|------|
 | cursor | string | X | null | 이전 응답의 nextCursor 값 |
 | size | int | X | 20 | 조회 개수 (최대 100) |
-| sort | string | X | created_at | 정렬 기준 (created_at, like_count) |
+| sort | string | X | createdAt | 정렬 기준 (createdAt, likeCount) |
 
 ### HTTP 상태 코드
 | 코드 | 설명 |
@@ -525,7 +525,7 @@ Idempotency-Key: {UUID}
 |----------|------|------|--------|------|
 | cursor | string | X | null | 커서 |
 | size | int | X | 20 | 조회 개수 |
-| sort | string | X | created_at | 정렬 (created_at, like_count) |
+| sort | string | X | createdAt | 정렬 (createdAt, likeCount) |
 | keyword | string | X | null | 검색 키워드 |
 | searchType | string | X | TITLE_CONTENT | TITLE, CONTENT, TITLE_CONTENT, NICKNAME |
 
@@ -1803,3 +1803,4 @@ Idempotency-Key: {UUID}
 |------|------|--------|----------|
 | 1.0 | 2026-02-15 | - | 초안 작성 |
 | 1.1 | 2026-02-16 | - | 인증 서버 Keycloak 확정. auth-service API 재구성 (login/logout/token/SSO/password → Keycloak 직접 처리) |
+| 1.2 | 2026-02-25 | - | Phase 20 반영: sort 파라미터 camelCase 통일 (created_at→createdAt, like_count→likeCount), 에러코드 시맨틱 코드 확정 |
