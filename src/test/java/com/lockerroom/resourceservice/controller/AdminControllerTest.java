@@ -360,7 +360,7 @@ class AdminControllerTest {
     class DeleteNotice {
 
         @Test
-        @DisplayName("should delete notice and return 200")
+        @DisplayName("should delete notice and return 204")
         void deleteNotice_asAdmin_success() throws Exception {
             // given
             doNothing().when(adminService).deleteNotice(1L);
@@ -368,8 +368,7 @@ class AdminControllerTest {
             // when & then
             mockMvc.perform(delete(BASE_URL + "/notices/{noticeId}", 1L)
                             .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_ADMIN")))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value("SUCCESS"));
+                    .andExpect(status().isNoContent());
 
             verify(adminService).deleteNotice(1L);
         }

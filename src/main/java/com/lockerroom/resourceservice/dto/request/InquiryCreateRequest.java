@@ -10,7 +10,7 @@ import java.util.List;
 public record InquiryCreateRequest(
         @NotNull InquiryType type,
         @NotBlank @Size(max = 200) String title,
-        @NotBlank String content,
+        @NotBlank @Size(max = 5000) String content,
         List<Long> fileIds
 ) {
 }

@@ -249,10 +249,9 @@ class RequestServiceImplTest {
         }
 
         @Test
-        @DisplayName("should throw exception when request is deleted")
+        @DisplayName("should throw exception when entity not found")
         void getDetail_deleted_throwsException() {
-            request.softDelete();
-            when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+            when(requestRepository.findById(1L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> requestService.getDetail(1L, 1L));

@@ -173,10 +173,9 @@ class NoticeServiceImplTest {
         }
 
         @Test
-        @DisplayName("should throw exception when notice is deleted")
+        @DisplayName("should throw exception when entity not found")
         void getDetail_deleted_throwsException() {
-            notice.softDelete();
-            when(noticeRepository.findById(1L)).thenReturn(Optional.of(notice));
+            when(noticeRepository.findById(1L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> noticeService.getDetail(1L));

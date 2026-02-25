@@ -178,7 +178,6 @@ public class UserServiceImpl implements UserService {
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 }

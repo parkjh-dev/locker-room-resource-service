@@ -215,10 +215,9 @@ class PostServiceImplTest {
         }
 
         @Test
-        @DisplayName("should throw exception when post is deleted")
+        @DisplayName("should throw exception when entity not found")
         void getDetail_deletedPost_throwsException() {
-            post.softDelete();
-            when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(postRepository.findById(1L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> postService.getDetail(1L, 1L));
@@ -430,7 +429,7 @@ class PostServiceImplTest {
             CustomException exception = assertThrows(CustomException.class,
                     () -> postService.report(1L, 1L, request));
 
-            assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.DUPLICATE_REPORT);
+            assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.POST_ALREADY_REPORTED);
             verify(postReportRepository, never()).save(any(PostReport.class));
         }
 

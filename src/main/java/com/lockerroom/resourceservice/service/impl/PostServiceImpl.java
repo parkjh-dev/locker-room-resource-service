@@ -143,7 +143,7 @@ public class PostServiceImpl implements PostService {
         User user = findUserById(userId);
 
         if (postReportRepository.existsByPostIdAndUserId(postId, userId)) {
-            throw new CustomException(ErrorCode.DUPLICATE_REPORT);
+            throw new CustomException(ErrorCode.POST_ALREADY_REPORTED);
         }
 
         PostReport report1 = PostReport.builder()
@@ -169,13 +169,11 @@ public class PostServiceImpl implements PostService {
 
     private Post findPostById(Long postId) {
         return postRepository.findById(postId)
-                .filter(p -> !p.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
     }
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 

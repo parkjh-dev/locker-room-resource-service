@@ -228,7 +228,7 @@ class CommentControllerTest {
     class Delete {
 
         @Test
-        @DisplayName("should delete a comment and return 200")
+        @DisplayName("should delete a comment and return 204")
         void delete_success() throws Exception {
             // given
             doNothing().when(commentService).delete(COMMENT_ID, USER_ID);
@@ -236,8 +236,7 @@ class CommentControllerTest {
             // when & then
             mockMvc.perform(delete("/api/v1/comments/{commentId}", COMMENT_ID)
                             .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value("SUCCESS"));
+                    .andExpect(status().isNoContent());
 
             verify(commentService).delete(COMMENT_ID, USER_ID);
         }

@@ -346,12 +346,10 @@ class AdminServiceImplTest {
         }
 
         @Test
-        @DisplayName("should throw exception when notice is deleted")
+        @DisplayName("should throw exception when entity not found")
         void updateNotice_deleted() {
-            Notice notice = Notice.builder().id(1L).title("제목").content("내용").admin(admin).build();
-            notice.softDelete();
             NoticeCreateRequest request = new NoticeCreateRequest("제목", "내용", false, NoticeScope.ALL, null);
-            when(noticeRepository.findById(1L)).thenReturn(Optional.of(notice));
+            when(noticeRepository.findById(1L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> adminService.updateNotice(1L, 1L, request));

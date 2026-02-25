@@ -24,14 +24,14 @@ public class FileController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("targetType") TargetType targetType) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(fileService.upload(userId, file, targetType)));
+                .body(ApiResponse.success("파일이 업로드되었습니다.", fileService.upload(userId, file, targetType)));
     }
 
     @DeleteMapping("/{fileId}")
-    public ResponseEntity<ApiResponse<Void>> delete(
+    public ResponseEntity<Void> delete(
             @PathVariable Long fileId,
             @CurrentUserId Long userId) {
         fileService.delete(fileId, userId);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ResponseEntity.noContent().build();
     }
 }

@@ -37,7 +37,7 @@ public class NotificationController {
             @PathVariable Long notificationId,
             @CurrentUserId Long userId) {
         notificationService.markAsRead(notificationId, userId);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ResponseEntity.ok(ApiResponse.success("알림을 읽음 처리했습니다."));
     }
 
     @PutMapping("/read-all")

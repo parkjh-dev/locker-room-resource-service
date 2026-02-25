@@ -118,10 +118,9 @@ class UserServiceImplTest {
         }
 
         @Test
-        @DisplayName("should throw exception when user is deleted")
+        @DisplayName("should throw exception when entity not found")
         void getMyInfo_deletedUser_throwsException() {
-            user.softDelete();
-            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> userService.getMyInfo(1L));

@@ -148,7 +148,6 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public NoticeDetailResponse updateNotice(Long noticeId, Long adminId, NoticeCreateRequest request) {
         Notice notice = noticeRepository.findById(noticeId)
-                .filter(n -> !n.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
 
         notice.updateTitle(request.title());
@@ -171,7 +170,6 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public void deleteNotice(Long noticeId) {
         Notice notice = noticeRepository.findById(noticeId)
-                .filter(n -> !n.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
 
         notice.softDelete();
@@ -192,7 +190,6 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public InquiryDetailResponse replyInquiry(Long inquiryId, Long adminId, InquiryReplyRequest request) {
         Inquiry inquiry = inquiryRepository.findById(inquiryId)
-                .filter(i -> !i.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.INQUIRY_NOT_FOUND));
 
         User admin = findUserById(adminId);
@@ -245,7 +242,6 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public RequestDetailResponse processRequest(Long requestId, Long adminId, RequestProcessRequest request) {
         Request entity = requestRepository.findById(requestId)
-                .filter(r -> !r.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.REQUEST_NOT_FOUND));
 
         User admin = findUserById(adminId);
@@ -340,7 +336,6 @@ public class AdminServiceImpl implements AdminService {
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 }

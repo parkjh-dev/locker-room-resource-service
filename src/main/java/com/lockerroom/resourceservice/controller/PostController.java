@@ -26,14 +26,14 @@ public class PostController {
             @CurrentUserId Long userId,
             @Valid @RequestBody PostCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(postService.create(userId, request)));
+                .body(ApiResponse.success("게시글이 작성되었습니다.", postService.create(userId, request)));
     }
 
     @GetMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostDetailResponse>> getDetail(
             @PathVariable Long postId,
             @CurrentUserId(required = false) Long userId) {
-        return ResponseEntity.ok(ApiResponse.success(postService.getDetail(postId, userId)));
+        return ResponseEntity.ok(ApiResponse.success("게시글을 조회했습니다.", postService.getDetail(postId, userId)));
     }
 
     @PutMapping("/{postId}")
@@ -41,15 +41,15 @@ public class PostController {
             @PathVariable Long postId,
             @CurrentUserId Long userId,
             @Valid @RequestBody PostUpdateRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(postService.update(postId, userId, request)));
+        return ResponseEntity.ok(ApiResponse.success("게시글이 수정되었습니다.", postService.update(postId, userId, request)));
     }
 
     @DeleteMapping("/{postId}")
-    public ResponseEntity<ApiResponse<Void>> delete(
+    public ResponseEntity<Void> delete(
             @PathVariable Long postId,
             @CurrentUserId Long userId) {
         postService.delete(postId, userId);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ResponseEntity.noContent().build();
     }
 
     @Idempotent
@@ -57,7 +57,7 @@ public class PostController {
     public ResponseEntity<ApiResponse<LikeResponse>> toggleLike(
             @PathVariable Long postId,
             @CurrentUserId Long userId) {
-        return ResponseEntity.ok(ApiResponse.success(postService.toggleLike(postId, userId)));
+        return ResponseEntity.ok(ApiResponse.success("좋아요가 처리되었습니다.", postService.toggleLike(postId, userId)));
     }
 
     @Idempotent
@@ -67,6 +67,6 @@ public class PostController {
             @CurrentUserId Long userId,
             @Valid @RequestBody ReportRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(postService.report(postId, userId, request)));
+                .body(ApiResponse.success("신고가 접수되었습니다.", postService.report(postId, userId, request)));
     }
 }

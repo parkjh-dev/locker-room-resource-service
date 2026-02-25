@@ -239,7 +239,7 @@ class PostControllerTest {
     class Delete {
 
         @Test
-        @DisplayName("should delete a post and return 200")
+        @DisplayName("should delete a post and return 204")
         void delete_success() throws Exception {
             // given
             doNothing().when(postService).delete(POST_ID, USER_ID);
@@ -247,8 +247,7 @@ class PostControllerTest {
             // when & then
             mockMvc.perform(delete(BASE_URL + "/{postId}", POST_ID)
                             .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value("SUCCESS"));
+                    .andExpect(status().isNoContent());
 
             verify(postService).delete(POST_ID, USER_ID);
         }

@@ -540,33 +540,44 @@ com.lockerroom.resourceservice/
 
 ---
 
-### 11.6 [낮음] 코드 품질 및 명세 정합성
+### 11.6 [낮음] 코드 품질 및 명세 정합성 ✅ (완료)
 
 #### 11.6.1 ErrorCode 형식 통일
-- [ ] ErrorCode `code` 값을 SDS 명세 형식으로 변경 (`USER_001` → `USER_NOT_FOUND` 등)
-- [ ] `exceptions_ko.properties` 키도 함께 변경
-- [ ] 누락 에러코드 추가: `FILE_TYPE_NOT_ALLOWED`, `FILE_COUNT_EXCEEDED`, `COMMON_RATE_LIMIT_EXCEEDED`, `COMMON_DUPLICATE_REQUEST`
+- [x] `exceptions_ko.properties` 키를 ErrorCode `code` 값과 일치하도록 전면 재작성
+  - `AUTH_001` → `AUTH_INVALID_CREDENTIALS`, `USER_001` → `USER_NOT_FOUND` 등 모든 키 변환
+- [x] 누락 에러코드 메시지 추가: `FILE_TYPE_NOT_ALLOWED`, `FILE_COUNT_EXCEEDED`, `COMMON_RATE_LIMIT_EXCEEDED`
+- [x] 기존 누락 코드 메시지 추가: `USER_NICKNAME_DUPLICATED`, `USER_PROFILE_ALREADY_COMPLETE`, `COMMENT_REPLY_DEPTH_EXCEEDED`, `BOARD_*`, `NOTICE_*`, `INQUIRY_*`, `REQUEST_*`, `NOTIFICATION_*`, `REPORT_*`, `SPORT_*`
+- [x] `DUPLICATE_REPORT` → `POST_ALREADY_REPORTED` 참조 오류 수정 (PostServiceImpl, PostServiceImplTest)
 
 #### 11.6.2 DTO 유효성 검증 보강
-- [ ] `CommentCreateRequest.content` — `@Size(max = 1000)` 추가
-- [ ] `ReportRequest.reason` — `@Size(max = 500)` 추가
-- [ ] `PostCreateRequest.content` — `@Size(max = 10000)` 추가
-- [ ] `PostCreateRequest.fileIds` — `@Size(max = 5)` 추가
-- [ ] `InquiryCreateRequest.content` — `@Size(max = 5000)` 추가
+- [x] `CommentCreateRequest.content` — `@Size(max = 1000)` 추가
+- [x] `ReportRequest.reason` — `@Size(max = 500)` 추가
+- [x] `PostCreateRequest.content` — `@Size(max = 10000)` 추가
+- [x] `PostCreateRequest.fileIds` — `@Size(max = 5)` 추가
+- [x] `InquiryCreateRequest.content` — `@Size(max = 5000)` 추가
 
 #### 11.6.3 Soft Delete `@SQLRestriction` 적용
-- [ ] `@SQLRestriction("deleted_at IS NULL")` 또는 Hibernate `@SoftDelete` 적용 검토 (SDS 2.7)
-- [ ] 적용 시 기존 수동 필터 (`.filter(p -> !p.isDeleted())`) 제거
-- [ ] 삭제된 데이터 조회 필요 시 Native Query 전환
+- [x] `BaseEntity`에 `@SQLRestriction("deleted_at IS NULL")` 적용 — 모든 엔티티에 자동 soft-delete 필터링
+- [x] 전체 서비스에서 수동 `.filter(e -> !e.isDeleted())` 패턴 제거 (총 15건)
+  - PostServiceImpl, CommentServiceImpl, UserServiceImpl, NoticeServiceImpl, AdminServiceImpl, InquiryServiceImpl, RequestServiceImpl, FileServiceImpl
+- [x] 관련 단위 테스트: `softDelete()` + `Optional.of()` 패턴을 `Optional.empty()`로 변경 (DB 레벨 필터 반영)
 
 #### 11.6.4 HTTP 상태코드 정합
-- [ ] `PostController.delete()` — `204 No Content` 반환으로 변경
-- [ ] `CommentController.delete()` — `204 No Content` 반환으로 변경
-- [ ] `AdminController.deleteNotice()` — `204 No Content` 반환으로 변경
+- [x] `PostController.delete()` — `204 No Content` 반환으로 변경
+- [x] `CommentController.delete()` — `204 No Content` 반환으로 변경
+- [x] `AdminController.deleteNotice()` — `204 No Content` 반환으로 변경
+- [x] `UserController.withdraw()` — `204 No Content` 반환으로 변경
+- [x] `FileController.delete()` — `204 No Content` 반환으로 변경
 
 #### 11.6.5 ApiResponse 성공 메시지 세분화
-- [ ] `ApiResponse.success(T data)` 사용처에서 API별 맞춤 메시지 전달
-- [ ] 예: `ApiResponse.success("게시글이 작성되었습니다.", data)` (SDS 2.3 참조)
+- [x] `ApiResponse.success(String message, T data)`, `ApiResponse.success(String message)` 오버로드 추가
+- [x] 전체 Controller 변경 작업(POST/PUT/DELETE 엔드포인트 맞춤 메시지 적용)
+  - PostController: 작성/조회/수정/좋아요/신고
+  - CommentController: 작성/수정/답글
+  - AdminController: 정지/신고처리/공지작성·수정/문의답변/요청처리
+  - UserController: 정보수정
+  - NotificationController: 읽음처리
+  - RequestController, InquiryController, FileController: 생성 메시지
 
 ---
 
@@ -578,7 +589,7 @@ com.lockerroom.resourceservice/
 3. ✅ 11.3 파일 처리 — 완료 (MIME 검증 + 매직넘버 + 크기 분리 + 연결/해제 + 물리 삭제)
 4. ✅ 11.4 관리자 기능 — 완료 (필터 4개 + 자동 생성 + action 세분화)
 5. ✅ 11.5 비즈니스 로직 — 완료 (ADMIN 삭제 허용, 비밀번호 검증, teamId 필터, 알림 건수, 댓글 커서 페이지네이션)
-6. 11.6 코드 품질 — ErrorCode 형식, DTO 검증, 상태코드 등
+6. ✅ 11.6 코드 품질 — 완료 (ErrorCode 통일, DTO 검증, @SQLRestriction, 204 정합, 맞춤 메시지)
 ```
 
 ---

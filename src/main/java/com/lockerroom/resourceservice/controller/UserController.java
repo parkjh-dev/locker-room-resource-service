@@ -28,15 +28,15 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponse>> updateMyInfo(
             @CurrentUserId Long userId,
             @Valid @RequestBody UserUpdateRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(userService.updateMyInfo(userId, request)));
+        return ResponseEntity.ok(ApiResponse.success("회원 정보가 수정되었습니다.", userService.updateMyInfo(userId, request)));
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<ApiResponse<Void>> withdraw(
+    public ResponseEntity<Void> withdraw(
             @CurrentUserId Long userId,
             @RequestBody WithdrawRequest request) {
         userService.withdraw(userId, request);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/me/posts")

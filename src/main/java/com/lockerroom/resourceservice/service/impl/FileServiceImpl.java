@@ -114,7 +114,6 @@ public class FileServiceImpl implements FileService {
     @Transactional
     public void delete(Long fileId, Long userId) {
         FileEntity file = fileRepository.findById(fileId)
-                .filter(f -> !f.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.FILE_NOT_FOUND));
 
         if (!file.getUser().getId().equals(userId)) {

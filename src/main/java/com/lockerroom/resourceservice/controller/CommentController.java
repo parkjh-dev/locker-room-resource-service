@@ -35,7 +35,7 @@ public class CommentController {
             @CurrentUserId Long userId,
             @Valid @RequestBody CommentCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(commentService.create(postId, userId, request)));
+                .body(ApiResponse.success("댓글이 작성되었습니다.", commentService.create(postId, userId, request)));
     }
 
     @PutMapping("/api/v1/comments/{commentId}")
@@ -43,15 +43,15 @@ public class CommentController {
             @PathVariable Long commentId,
             @CurrentUserId Long userId,
             @Valid @RequestBody CommentUpdateRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(commentService.update(commentId, userId, request)));
+        return ResponseEntity.ok(ApiResponse.success("댓글이 수정되었습니다.", commentService.update(commentId, userId, request)));
     }
 
     @DeleteMapping("/api/v1/comments/{commentId}")
-    public ResponseEntity<ApiResponse<Void>> delete(
+    public ResponseEntity<Void> delete(
             @PathVariable Long commentId,
             @CurrentUserId Long userId) {
         commentService.delete(commentId, userId);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ResponseEntity.noContent().build();
     }
 
     @Idempotent
@@ -61,6 +61,6 @@ public class CommentController {
             @CurrentUserId Long userId,
             @Valid @RequestBody CommentCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(commentService.createReply(null, commentId, userId, request)));
+                .body(ApiResponse.success("답글이 작성되었습니다.", commentService.createReply(null, commentId, userId, request)));
     }
 }

@@ -32,7 +32,7 @@ public class AdminController {
             @CurrentUserId Long adminId,
             @Valid @RequestBody SuspendRequest request) {
         adminService.suspendUser(userId, adminId, request);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ResponseEntity.ok(ApiResponse.success("사용자가 정지되었습니다."));
     }
 
     @GetMapping("/reports")
@@ -48,7 +48,7 @@ public class AdminController {
             @CurrentUserId Long adminId,
             @Valid @RequestBody ReportProcessRequest request) {
         adminService.processReport(reportId, adminId, request);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ResponseEntity.ok(ApiResponse.success("신고가 처리되었습니다."));
     }
 
     @PostMapping("/notices")
@@ -56,7 +56,7 @@ public class AdminController {
             @CurrentUserId Long adminId,
             @Valid @RequestBody NoticeCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(adminService.createNotice(adminId, request)));
+                .body(ApiResponse.success("공지사항이 작성되었습니다.", adminService.createNotice(adminId, request)));
     }
 
     @PutMapping("/notices/{noticeId}")
@@ -64,14 +64,14 @@ public class AdminController {
             @PathVariable Long noticeId,
             @CurrentUserId Long adminId,
             @Valid @RequestBody NoticeCreateRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(adminService.updateNotice(noticeId, adminId, request)));
+        return ResponseEntity.ok(ApiResponse.success("공지사항이 수정되었습니다.", adminService.updateNotice(noticeId, adminId, request)));
     }
 
     @DeleteMapping("/notices/{noticeId}")
-    public ResponseEntity<ApiResponse<Void>> deleteNotice(
+    public ResponseEntity<Void> deleteNotice(
             @PathVariable Long noticeId) {
         adminService.deleteNotice(noticeId);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/inquiries")
@@ -88,7 +88,7 @@ public class AdminController {
             @CurrentUserId Long adminId,
             @Valid @RequestBody InquiryReplyRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(adminService.replyInquiry(inquiryId, adminId, request)));
+                .body(ApiResponse.success("문의 답변이 등록되었습니다.", adminService.replyInquiry(inquiryId, adminId, request)));
     }
 
     @GetMapping("/requests")
@@ -104,6 +104,6 @@ public class AdminController {
             @PathVariable Long requestId,
             @CurrentUserId Long adminId,
             @Valid @RequestBody RequestProcessRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(adminService.processRequest(requestId, adminId, request)));
+        return ResponseEntity.ok(ApiResponse.success("요청이 처리되었습니다.", adminService.processRequest(requestId, adminId, request)));
     }
 }

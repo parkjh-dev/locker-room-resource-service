@@ -183,19 +183,16 @@ public class CommentServiceImpl implements CommentService {
 
     private Post findPostById(Long postId) {
         return postRepository.findById(postId)
-                .filter(p -> !p.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
     }
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
     private Comment findCommentById(Long commentId) {
         return commentRepository.findById(commentId)
-                .filter(c -> !c.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
     }
 

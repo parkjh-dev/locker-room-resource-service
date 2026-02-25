@@ -87,13 +87,11 @@ public class RequestServiceImpl implements RequestService {
 
     private Request findRequestById(Long requestId) {
         return requestRepository.findById(requestId)
-                .filter(r -> !r.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.REQUEST_NOT_FOUND));
     }
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 }

@@ -109,13 +109,11 @@ public class InquiryServiceImpl implements InquiryService {
 
     private Inquiry findInquiryById(Long inquiryId) {
         return inquiryRepository.findById(inquiryId)
-                .filter(i -> !i.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.INQUIRY_NOT_FOUND));
     }
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 }

@@ -28,7 +28,7 @@ public class InquiryController {
             @CurrentUserId Long userId,
             @Valid @RequestBody InquiryCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(inquiryService.create(userId, request)));
+                .body(ApiResponse.success("문의가 등록되었습니다.", inquiryService.create(userId, request)));
     }
 
     @GetMapping

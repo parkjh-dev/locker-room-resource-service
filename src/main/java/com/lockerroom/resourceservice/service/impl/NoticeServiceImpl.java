@@ -49,7 +49,6 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     public NoticeDetailResponse getDetail(Long noticeId) {
         Notice notice = noticeRepository.findById(noticeId)
-                .filter(n -> !n.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.NOTICE_NOT_FOUND));
 
         return noticeMapper.toDetailResponse(notice);

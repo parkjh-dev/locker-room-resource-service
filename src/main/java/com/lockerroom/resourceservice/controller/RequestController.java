@@ -28,7 +28,7 @@ public class RequestController {
             @CurrentUserId Long userId,
             @Valid @RequestBody RequestCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(requestService.create(userId, request)));
+                .body(ApiResponse.success("요청이 등록되었습니다.", requestService.create(userId, request)));
     }
 
     @GetMapping

@@ -236,10 +236,9 @@ class InquiryServiceImplTest {
         }
 
         @Test
-        @DisplayName("should throw exception when inquiry is deleted")
+        @DisplayName("should throw exception when entity not found")
         void getDetail_deleted() {
-            inquiry.softDelete();
-            when(inquiryRepository.findById(1L)).thenReturn(Optional.of(inquiry));
+            when(inquiryRepository.findById(1L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> inquiryService.getDetail(1L, 1L));
