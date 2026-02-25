@@ -11,5 +11,7 @@ public interface PostReportRepository extends JpaRepository<PostReport, Long> {
 
     boolean existsByPostIdAndUserId(Long postId, Long userId);
 
-    List<PostReport> findByStatus(ReportStatus status, Pageable pageable);
+    List<PostReport> findByStatusOrderByIdDesc(ReportStatus status, Pageable pageable);
+
+    List<PostReport> findByStatusAndIdLessThanOrderByIdDesc(ReportStatus status, Long cursorId, Pageable pageable);
 }

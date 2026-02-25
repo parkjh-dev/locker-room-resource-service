@@ -72,8 +72,10 @@ public class BoardServiceImpl implements BoardService {
                                                                   CursorPageRequest pageRequest) {
         validateBoardAccess(boardId, userId);
 
+        Long cursorId = pageRequest.decodeCursor();
+
         List<Post> posts = postRepository.searchByBoard(boardId, searchType, keyword,
-                PageRequest.of(0, pageRequest.getSize() + 1));
+                cursorId, PageRequest.of(0, pageRequest.getSize() + 1));
 
         boolean hasNext = posts.size() > pageRequest.getSize();
         List<Post> resultPosts = hasNext ? posts.subList(0, pageRequest.getSize()) : posts;
@@ -82,7 +84,9 @@ public class BoardServiceImpl implements BoardService {
                 .map(postMapper::toListResponse)
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultPosts.get(resultPosts.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultPosts.get(resultPosts.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<PostListResponse>builder()
                 .items(items)

@@ -19,6 +19,9 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
 
     @Query("SELECT pl FROM PostLike pl JOIN FETCH pl.post p JOIN FETCH p.board JOIN FETCH p.user " +
            "WHERE pl.user.id = :userId AND p.deletedAt IS NULL " +
-           "ORDER BY pl.createdAt DESC")
-    List<PostLike> findByUserIdWithPost(@Param("userId") Long userId, Pageable pageable);
+           "AND (:cursor IS NULL OR pl.id < :cursor) " +
+           "ORDER BY pl.id DESC")
+    List<PostLike> findByUserIdWithPost(@Param("userId") Long userId,
+                                        @Param("cursor") Long cursor,
+                                        Pageable pageable);
 }

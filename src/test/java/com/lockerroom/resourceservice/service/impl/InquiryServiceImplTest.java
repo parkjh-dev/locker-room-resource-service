@@ -135,7 +135,7 @@ class InquiryServiceImplTest {
             InquiryListResponse listResponse = new InquiryListResponse(
                     1L, InquiryType.BUG, "로그인 오류", InquiryStatus.PENDING, null);
 
-            when(inquiryRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(inquiryRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(List.of(inquiry));
             when(inquiryMapper.toListResponse(inquiry)).thenReturn(listResponse);
 
@@ -158,7 +158,7 @@ class InquiryServiceImplTest {
             InquiryListResponse listResponse = new InquiryListResponse(
                     1L, InquiryType.BUG, "로그인 오류", InquiryStatus.PENDING, null);
 
-            when(inquiryRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(inquiryRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(List.of(inquiry, inquiry2));
             when(inquiryMapper.toListResponse(inquiry)).thenReturn(listResponse);
 
@@ -167,7 +167,7 @@ class InquiryServiceImplTest {
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isTrue();
-            assertThat(result.getNextCursor()).isEqualTo("1");
+            assertThat(result.getNextCursor()).isEqualTo(CursorPageRequest.encodeCursor(1L));
         }
 
         @Test
@@ -176,7 +176,7 @@ class InquiryServiceImplTest {
             CursorPageRequest pageRequest = new CursorPageRequest();
             pageRequest.setSize(20);
 
-            when(inquiryRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(inquiryRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(Collections.emptyList());
 
             CursorPageResponse<InquiryListResponse> result =

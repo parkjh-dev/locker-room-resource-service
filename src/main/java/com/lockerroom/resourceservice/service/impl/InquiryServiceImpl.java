@@ -19,6 +19,7 @@ import com.lockerroom.resourceservice.repository.UserRepository;
 import com.lockerroom.resourceservice.service.InquiryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,8 +56,12 @@ public class InquiryServiceImpl implements InquiryService {
 
     @Override
     public CursorPageResponse<InquiryListResponse> getMyList(Long userId, CursorPageRequest pageRequest) {
-        List<Inquiry> inquiries = inquiryRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
-                userId, PageRequest.of(0, pageRequest.getSize() + 1));
+        Long cursorId = pageRequest.decodeCursor();
+        Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
+
+        List<Inquiry> inquiries = (cursorId != null)
+                ? inquiryRepository.findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(userId, cursorId, pageable)
+                : inquiryRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(userId, pageable);
 
         boolean hasNext = inquiries.size() > pageRequest.getSize();
         List<Inquiry> resultInquiries = hasNext ? inquiries.subList(0, pageRequest.getSize()) : inquiries;
@@ -65,7 +70,9 @@ public class InquiryServiceImpl implements InquiryService {
                 .map(inquiryMapper::toListResponse)
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultInquiries.get(resultInquiries.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultInquiries.get(resultInquiries.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<InquiryListResponse>builder()
                 .items(items)

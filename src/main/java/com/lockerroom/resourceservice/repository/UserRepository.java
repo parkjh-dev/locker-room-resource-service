@@ -17,5 +17,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByNickname(String nickname);
 
-    List<User> findByDeletedAtIsNullOrderByCreatedAtDesc(Pageable pageable);
+    List<User> findByDeletedAtIsNullOrderByIdDesc(Pageable pageable);
+
+    List<User> findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long cursorId, Pageable pageable);
 }

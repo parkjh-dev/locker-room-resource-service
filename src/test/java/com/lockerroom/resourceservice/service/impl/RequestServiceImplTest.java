@@ -166,7 +166,7 @@ class RequestServiceImplTest {
                     1L, RequestType.TEAM, "New Team", RequestStatus.PENDING, null
             );
 
-            when(requestRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(requestRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(List.of(request, request2));
             when(requestMapper.toListResponse(request)).thenReturn(response1);
 
@@ -174,7 +174,7 @@ class RequestServiceImplTest {
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isTrue();
-            assertThat(result.getNextCursor()).isEqualTo("1");
+            assertThat(result.getNextCursor()).isEqualTo(CursorPageRequest.encodeCursor(1L));
         }
 
         @Test
@@ -187,7 +187,7 @@ class RequestServiceImplTest {
                     1L, RequestType.TEAM, "New Team", RequestStatus.PENDING, null
             );
 
-            when(requestRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(requestRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(List.of(request));
             when(requestMapper.toListResponse(request)).thenReturn(response1);
 
@@ -204,7 +204,7 @@ class RequestServiceImplTest {
             CursorPageRequest pageRequest = new CursorPageRequest();
             pageRequest.setSize(10);
 
-            when(requestRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(requestRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(Collections.emptyList());
 
             CursorPageResponse<RequestListResponse> result = requestService.getMyList(1L, pageRequest);

@@ -249,7 +249,7 @@ class PostLikeRepositoryTest {
 
             // when
             List<PostLike> results = postLikeRepository
-                    .findByUserIdWithPost(user.getId(), defaultPageable);
+                    .findByUserIdWithPost(user.getId(), null, defaultPageable);
 
             // then
             assertThat(results).hasSize(1);
@@ -288,7 +288,7 @@ class PostLikeRepositoryTest {
 
             // when
             List<PostLike> results = postLikeRepository
-                    .findByUserIdWithPost(user.getId(), defaultPageable);
+                    .findByUserIdWithPost(user.getId(), null, defaultPageable);
 
             // then
             assertThat(results).hasSize(1);
@@ -302,7 +302,7 @@ class PostLikeRepositoryTest {
 
             // when
             List<PostLike> results = postLikeRepository
-                    .findByUserIdWithPost(user.getId(), defaultPageable);
+                    .findByUserIdWithPost(user.getId(), null, defaultPageable);
 
             // then
             assertThat(results).isEmpty();
@@ -332,7 +332,7 @@ class PostLikeRepositoryTest {
 
             // when
             List<PostLike> results = postLikeRepository
-                    .findByUserIdWithPost(user.getId(), defaultPageable);
+                    .findByUserIdWithPost(user.getId(), null, defaultPageable);
 
             // then
             assertThat(results).hasSize(1);

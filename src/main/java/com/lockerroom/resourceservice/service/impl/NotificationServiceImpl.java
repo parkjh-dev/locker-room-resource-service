@@ -12,6 +12,7 @@ import com.lockerroom.resourceservice.repository.NotificationRepository;
 import com.lockerroom.resourceservice.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,9 +29,12 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public CursorPageResponse<NotificationResponse> getMyList(Long userId, CursorPageRequest pageRequest) {
-        List<Notification> notifications = notificationRepository
-                .findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
-                        userId, PageRequest.of(0, pageRequest.getSize() + 1));
+        Long cursorId = pageRequest.decodeCursor();
+        Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
+
+        List<Notification> notifications = (cursorId != null)
+                ? notificationRepository.findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(userId, cursorId, pageable)
+                : notificationRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(userId, pageable);
 
         boolean hasNext = notifications.size() > pageRequest.getSize();
         List<Notification> resultNotifications = hasNext
@@ -40,7 +44,9 @@ public class NotificationServiceImpl implements NotificationService {
                 .map(notificationMapper::toResponse)
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultNotifications.get(resultNotifications.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultNotifications.get(resultNotifications.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<NotificationResponse>builder()
                 .items(items)

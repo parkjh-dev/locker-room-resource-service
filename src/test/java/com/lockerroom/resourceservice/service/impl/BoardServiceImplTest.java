@@ -206,7 +206,7 @@ class BoardServiceImplTest {
                     1L, "Test", "testuser", 0, 0, 0, false, null);
 
             when(boardRepository.findById(1L)).thenReturn(Optional.of(commonBoard));
-            when(postRepository.searchByBoard(eq(1L), isNull(), isNull(), any(PageRequest.class)))
+            when(postRepository.searchByBoard(eq(1L), isNull(), isNull(), isNull(), any(PageRequest.class)))
                     .thenReturn(List.of(post));
             when(postMapper.toListResponse(post)).thenReturn(postResponse);
 
@@ -230,7 +230,7 @@ class BoardServiceImplTest {
                     1L, "Test1", "testuser", 0, 0, 0, false, null);
 
             when(boardRepository.findById(1L)).thenReturn(Optional.of(commonBoard));
-            when(postRepository.searchByBoard(eq(1L), isNull(), isNull(), any(PageRequest.class)))
+            when(postRepository.searchByBoard(eq(1L), isNull(), isNull(), isNull(), any(PageRequest.class)))
                     .thenReturn(List.of(post1, post2));
             when(postMapper.toListResponse(post1)).thenReturn(postResponse);
 
@@ -239,7 +239,7 @@ class BoardServiceImplTest {
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isTrue();
-            assertThat(result.getNextCursor()).isEqualTo("1");
+            assertThat(result.getNextCursor()).isEqualTo(CursorPageRequest.encodeCursor(1L));
         }
 
         @Test

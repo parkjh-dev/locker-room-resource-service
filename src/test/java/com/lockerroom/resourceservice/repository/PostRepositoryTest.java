@@ -79,7 +79,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository.searchByBoard(
-                    board.getId(), null, null, defaultPageable);
+                    board.getId(), null, null, null, defaultPageable);
 
             // then
             assertThat(results).hasSize(2);
@@ -103,7 +103,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository.searchByBoard(
-                    board.getId(), "TITLE", "Spring", defaultPageable);
+                    board.getId(), "TITLE", "Spring", null, defaultPageable);
 
             // then
             assertThat(results).hasSize(1);
@@ -128,7 +128,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository.searchByBoard(
-                    board.getId(), "CONTENT", "Spring", defaultPageable);
+                    board.getId(), "CONTENT", "Spring", null, defaultPageable);
 
             // then
             assertThat(results).hasSize(1);
@@ -158,7 +158,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository.searchByBoard(
-                    board.getId(), "TITLE_CONTENT", "Spring", defaultPageable);
+                    board.getId(), "TITLE_CONTENT", "Spring", null, defaultPageable);
 
             // then
             assertThat(results).hasSize(2);
@@ -190,7 +190,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository.searchByBoard(
-                    board.getId(), "NICKNAME", "springfan", defaultPageable);
+                    board.getId(), "NICKNAME", "springfan", null, defaultPageable);
 
             // then
             assertThat(results).hasSize(1);
@@ -218,7 +218,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository.searchByBoard(
-                    board.getId(), null, null, defaultPageable);
+                    board.getId(), null, null, null, defaultPageable);
 
             // then
             assertThat(results).hasSize(1);
@@ -249,7 +249,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository.searchByBoard(
-                    board.getId(), null, null, defaultPageable);
+                    board.getId(), null, null, null, defaultPageable);
 
             // then
             assertThat(results).hasSize(1);
@@ -273,7 +273,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository.searchByBoard(
-                    board.getId(), null, null, pageOf2);
+                    board.getId(), null, null, null, pageOf2);
 
             // then
             assertThat(results).hasSize(2);
@@ -281,7 +281,7 @@ class PostRepositoryTest {
     }
 
     @Nested
-    @DisplayName("findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc")
+    @DisplayName("findByUserIdAndDeletedAtIsNullOrderByIdDesc")
     class FindByUserIdAndDeletedAtIsNull {
 
         @Test
@@ -302,7 +302,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository
-                    .findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+                    .findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                             user.getId(), defaultPageable);
 
             // then
@@ -330,7 +330,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository
-                    .findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+                    .findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                             user.getId(), defaultPageable);
 
             // then
@@ -364,7 +364,7 @@ class PostRepositoryTest {
 
             // when
             List<Post> results = postRepository
-                    .findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+                    .findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                             user.getId(), defaultPageable);
 
             // then

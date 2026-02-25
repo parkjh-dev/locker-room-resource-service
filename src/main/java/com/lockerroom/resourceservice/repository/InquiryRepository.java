@@ -8,7 +8,11 @@ import java.util.List;
 
 public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
 
-    List<Inquiry> findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long userId, Pageable pageable);
+    List<Inquiry> findByUserIdAndDeletedAtIsNullOrderByIdDesc(Long userId, Pageable pageable);
 
-    List<Inquiry> findByDeletedAtIsNullOrderByCreatedAtDesc(Pageable pageable);
+    List<Inquiry> findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long userId, Long cursorId, Pageable pageable);
+
+    List<Inquiry> findByDeletedAtIsNullOrderByIdDesc(Pageable pageable);
+
+    List<Inquiry> findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long cursorId, Pageable pageable);
 }

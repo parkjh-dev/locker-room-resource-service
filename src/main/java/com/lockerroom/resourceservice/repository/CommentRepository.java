@@ -12,7 +12,9 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     List<Comment> findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(Long parentId);
 
-    List<Comment> findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long userId, Pageable pageable);
+    List<Comment> findByUserIdAndDeletedAtIsNullOrderByIdDesc(Long userId, Pageable pageable);
+
+    List<Comment> findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long userId, Long cursorId, Pageable pageable);
 
     int countByPostIdAndDeletedAtIsNull(Long postId);
 }

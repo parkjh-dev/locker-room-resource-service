@@ -266,9 +266,9 @@ com.lockerroom.resourceservice/
 ### 6.extra 계획 외 추가 구현
 - [x] `User.updateNickname()`, `User.updatePassword()` — 엔티티 도메인 메서드 추가
 - [x] `PostLikeRepository.findByUserIdWithPost()` — JOIN FETCH 좋아요 목록 조회
-- [x] `UserRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()` — 관리자 사용자 목록
-- [x] `InquiryRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()` — 관리자 문의 목록
-- [x] `RequestRepository.findByDeletedAtIsNullOrderByCreatedAtDesc()` — 관리자 요청 목록
+- [x] `UserRepository.findByDeletedAtIsNullOrderByIdDesc()` — 관리자 사용자 목록 (커서 지원)
+- [x] `InquiryRepository.findByDeletedAtIsNullOrderByIdDesc()` — 관리자 문의 목록 (커서 지원)
+- [x] `RequestRepository.findByDeletedAtIsNullOrderByIdDesc()` — 관리자 요청 목록 (커서 지원)
 - [x] `ErrorCode` 19개 추가 — BOARD, NOTICE, INQUIRY, REQUEST, NOTIFICATION, REPORT, SPORT, DUPLICATE 카테고리
 
 ---
@@ -441,17 +441,19 @@ com.lockerroom.resourceservice/
 - [ ] 비즈니스 로직 성공 후 `IdempotencyService.saveResponse()` 호출
 - [ ] 적용 대상: `PostController.create/toggleLike/report`, `CommentController.create/createReply`, `InquiryController.create`, `RequestController.create`
 
-### 11.2 [높음] Cursor 기반 페이지네이션 실제 구현
+### 11.2 [높음] Cursor 기반 페이지네이션 실제 구현 ✅
 
-> 현재 모든 페이지네이션이 `PageRequest.of(0, size+1)`로 **항상 첫 페이지만 조회**.
-> `CursorPageRequest.cursor` 값이 쿼리에 전달되지 않으며, `sort` 파라미터도 무시됨.
-> SRS `API-PAGE-001~005` / SDS 2.4 참조.
+> ~~현재 모든 페이지네이션이 `PageRequest.of(0, size+1)`로 **항상 첫 페이지만 조회**.~~
+> 완료: ID 기반 cursor 페이지네이션으로 전환. Base64 인코딩/디코딩 적용.
 
-- [ ] Repository 쿼리에 cursor 조건 추가 (`WHERE id < :cursor` 또는 `WHERE created_at < :cursorValue`)
-- [ ] `CursorPageRequest.cursor` 디코딩 로직 (Base64 → ID 추출)
-- [ ] `nextCursor` 생성 시 Base64 인코딩 적용 (`API-PAGE-005`)
-- [ ] `sort` 파라미터 반영 (created_at, like_count)
-- [ ] 영향 범위: `UserServiceImpl` (getMyPosts/getMyComments/getMyLikes), `BoardServiceImpl` (getPostsByBoard), `NoticeServiceImpl`, `NotificationServiceImpl`, `AdminServiceImpl` (getUsers/getReports/getInquiries/getRequests), `InquiryServiceImpl`, `RequestServiceImpl`
+- [x] Repository 쿼리에 cursor 조건 추가 (`WHERE id < :cursor ORDER BY id DESC`)
+- [x] `CursorPageRequest.decodeCursor()` — Base64 → Long ID 디코딩
+- [x] `CursorPageRequest.encodeCursor(Long id)` — Long ID → Base64 인코딩
+- [x] 8개 Repository 커서 지원 메서드 추가 (IdLessThan 파생 쿼리 + JPQL cursor 파라미터)
+- [x] 6개 Service 구현체 커서 로직 적용: `UserServiceImpl`, `BoardServiceImpl`, `AdminServiceImpl`, `NotificationServiceImpl`, `InquiryServiceImpl`, `RequestServiceImpl`
+- [x] 8개 테스트 파일 업데이트 (서비스 6개 + 레포지토리 2개)
+- [x] 전체 248개 테스트 통과 확인
+- ~~`sort` 파라미터 반영~~ — 현재 모든 목록이 `id DESC` 정렬로 통일 (추후 필요 시 확장)
 
 ### 11.3 [높음] 파일(File) 처리 로직 보완
 
@@ -553,7 +555,7 @@ com.lockerroom.resourceservice/
 ### Phase 11 보완 우선순위
 
 ```
-1. 11.2 Cursor 페이지네이션 — 전체 목록 조회 API가 2페이지 이상 동작하지 않음
+1. ✅ 11.2 Cursor 페이지네이션 — 완료 (Base64 인코딩 + ID 기반 커서)
 2. 11.1 멱등성 적용 — 중복 요청 방지의 핵심, POST 엔드포인트 전체 영향
 3. 11.3 파일 처리 — 게시글/문의의 파일 첨부가 실질적으로 미동작
 4. 11.4 관리자 기능 — 필터 없으면 운영 불가

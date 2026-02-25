@@ -86,7 +86,7 @@ class AdminServiceImplTest {
             AdminUserListResponse response = new AdminUserListResponse(
                     2L, "user@test.com", "testuser", Role.USER, null, false, null);
 
-            when(userRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(any(PageRequest.class)))
+            when(userRepository.findByDeletedAtIsNullOrderByIdDesc(any(PageRequest.class)))
                     .thenReturn(List.of(user));
             when(userSuspensionRepository.findActiveByUserId(eq(2L), any(LocalDateTime.class)))
                     .thenReturn(Optional.empty());
@@ -109,7 +109,7 @@ class AdminServiceImplTest {
             AdminUserListResponse response = new AdminUserListResponse(
                     2L, "user@test.com", "testuser", Role.USER, null, false, null);
 
-            when(userRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(any(PageRequest.class)))
+            when(userRepository.findByDeletedAtIsNullOrderByIdDesc(any(PageRequest.class)))
                     .thenReturn(List.of(user, user2));
             when(userSuspensionRepository.findActiveByUserId(eq(2L), any(LocalDateTime.class)))
                     .thenReturn(Optional.empty());
@@ -119,7 +119,7 @@ class AdminServiceImplTest {
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isTrue();
-            assertThat(result.getNextCursor()).isEqualTo("2");
+            assertThat(result.getNextCursor()).isEqualTo(CursorPageRequest.encodeCursor(2L));
         }
     }
 
@@ -183,7 +183,7 @@ class AdminServiceImplTest {
             ReportListResponse response = new ReportListResponse(
                     1L, 1L, "Test", "testuser", "spam", ReportStatus.PENDING, null);
 
-            when(postReportRepository.findByStatus(eq(ReportStatus.PENDING), any(PageRequest.class)))
+            when(postReportRepository.findByStatusOrderByIdDesc(eq(ReportStatus.PENDING), any(PageRequest.class)))
                     .thenReturn(List.of(report));
             when(postMapper.toReportListResponse(report)).thenReturn(response);
 
@@ -402,7 +402,7 @@ class AdminServiceImplTest {
             AdminInquiryListResponse response = new AdminInquiryListResponse(
                     1L, "testuser", InquiryType.BUG, "버그", InquiryStatus.PENDING, null);
 
-            when(inquiryRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(any(PageRequest.class)))
+            when(inquiryRepository.findByDeletedAtIsNullOrderByIdDesc(any(PageRequest.class)))
                     .thenReturn(List.of(inquiry));
             when(inquiryMapper.toAdminListResponse(inquiry)).thenReturn(response);
 
@@ -477,7 +477,7 @@ class AdminServiceImplTest {
             AdminRequestListResponse response = new AdminRequestListResponse(
                     1L, "testuser", RequestType.TEAM, "수원 삼성", "추가 요청", RequestStatus.PENDING, null);
 
-            when(requestRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(any(PageRequest.class)))
+            when(requestRepository.findByDeletedAtIsNullOrderByIdDesc(any(PageRequest.class)))
                     .thenReturn(List.of(requestEntity));
             when(requestMapper.toAdminListResponse(requestEntity)).thenReturn(response);
 

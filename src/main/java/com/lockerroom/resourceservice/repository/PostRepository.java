@@ -13,16 +13,20 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p " +
            "WHERE p.board.id = :boardId " +
            "AND p.deletedAt IS NULL " +
+           "AND (:cursor IS NULL OR p.id < :cursor) " +
            "AND (:keyword IS NULL " +
            "  OR (:searchType = 'TITLE' AND p.title LIKE CONCAT('%', :keyword, '%')) " +
            "  OR (:searchType = 'CONTENT' AND p.content LIKE CONCAT('%', :keyword, '%')) " +
            "  OR (:searchType = 'TITLE_CONTENT' AND (p.title LIKE CONCAT('%', :keyword, '%') OR p.content LIKE CONCAT('%', :keyword, '%'))) " +
            "  OR (:searchType = 'NICKNAME' AND p.user.nickname LIKE CONCAT('%', :keyword, '%'))) " +
-           "ORDER BY p.createdAt DESC")
+           "ORDER BY p.id DESC")
     List<Post> searchByBoard(@Param("boardId") Long boardId,
                              @Param("searchType") String searchType,
                              @Param("keyword") String keyword,
+                             @Param("cursor") Long cursor,
                              Pageable pageable);
 
-    List<Post> findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long userId, Pageable pageable);
+    List<Post> findByUserIdAndDeletedAtIsNullOrderByIdDesc(Long userId, Pageable pageable);
+
+    List<Post> findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long userId, Long cursorId, Pageable pageable);
 }

@@ -82,8 +82,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public CursorPageResponse<UserPostListResponse> getMyPosts(Long userId, CursorPageRequest pageRequest) {
-        List<Post> posts = postRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
-                userId, PageRequest.of(0, pageRequest.getSize() + 1));
+        Long cursorId = pageRequest.decodeCursor();
+
+        List<Post> posts;
+        if (cursorId == null) {
+            posts = postRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
+                    userId, PageRequest.of(0, pageRequest.getSize() + 1));
+        } else {
+            posts = postRepository.findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(
+                    userId, cursorId, PageRequest.of(0, pageRequest.getSize() + 1));
+        }
 
         boolean hasNext = posts.size() > pageRequest.getSize();
         List<Post> resultPosts = hasNext ? posts.subList(0, pageRequest.getSize()) : posts;
@@ -92,7 +100,9 @@ public class UserServiceImpl implements UserService {
                 .map(postMapper::toUserPostListResponse)
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultPosts.get(resultPosts.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultPosts.get(resultPosts.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<UserPostListResponse>builder()
                 .items(items)
@@ -103,8 +113,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public CursorPageResponse<UserCommentListResponse> getMyComments(Long userId, CursorPageRequest pageRequest) {
-        List<Comment> comments = commentRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
-                userId, PageRequest.of(0, pageRequest.getSize() + 1));
+        Long cursorId = pageRequest.decodeCursor();
+
+        List<Comment> comments;
+        if (cursorId == null) {
+            comments = commentRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
+                    userId, PageRequest.of(0, pageRequest.getSize() + 1));
+        } else {
+            comments = commentRepository.findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(
+                    userId, cursorId, PageRequest.of(0, pageRequest.getSize() + 1));
+        }
 
         boolean hasNext = comments.size() > pageRequest.getSize();
         List<Comment> resultComments = hasNext ? comments.subList(0, pageRequest.getSize()) : comments;
@@ -113,7 +131,9 @@ public class UserServiceImpl implements UserService {
                 .map(commentMapper::toUserCommentListResponse)
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultComments.get(resultComments.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultComments.get(resultComments.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<UserCommentListResponse>builder()
                 .items(items)
@@ -124,8 +144,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public CursorPageResponse<UserLikeListResponse> getMyLikes(Long userId, CursorPageRequest pageRequest) {
+        Long cursorId = pageRequest.decodeCursor();
+
         List<PostLike> likes = postLikeRepository.findByUserIdWithPost(
-                userId, PageRequest.of(0, pageRequest.getSize() + 1));
+                userId, cursorId, PageRequest.of(0, pageRequest.getSize() + 1));
 
         boolean hasNext = likes.size() > pageRequest.getSize();
         List<PostLike> resultLikes = hasNext ? likes.subList(0, pageRequest.getSize()) : likes;
@@ -134,7 +156,9 @@ public class UserServiceImpl implements UserService {
                 .map(pl -> postMapper.toUserLikeListResponse(pl.getPost()))
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultLikes.get(resultLikes.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultLikes.get(resultLikes.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<UserLikeListResponse>builder()
                 .items(items)

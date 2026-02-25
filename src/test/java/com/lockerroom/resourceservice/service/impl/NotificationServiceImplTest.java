@@ -97,7 +97,7 @@ class NotificationServiceImplTest {
                     "Someone commented on your post", false, null, null
             );
 
-            when(notificationRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(notificationRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class)))
                     .thenReturn(List.of(notification, readNotification));
             when(notificationMapper.toResponse(notification)).thenReturn(response1);
@@ -106,7 +106,7 @@ class NotificationServiceImplTest {
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isTrue();
-            assertThat(result.getNextCursor()).isEqualTo("1");
+            assertThat(result.getNextCursor()).isEqualTo(CursorPageRequest.encodeCursor(1L));
         }
 
         @Test
@@ -124,7 +124,7 @@ class NotificationServiceImplTest {
                     "Someone replied", true, LocalDateTime.now(), null
             );
 
-            when(notificationRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(notificationRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class)))
                     .thenReturn(List.of(notification, readNotification));
             when(notificationMapper.toResponse(notification)).thenReturn(response1);
@@ -143,7 +143,7 @@ class NotificationServiceImplTest {
             CursorPageRequest pageRequest = new CursorPageRequest();
             pageRequest.setSize(10);
 
-            when(notificationRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(notificationRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class)))
                     .thenReturn(Collections.emptyList());
 

@@ -274,7 +274,7 @@ class UserServiceImplTest {
             UserPostListResponse response1 = new UserPostListResponse(3L, 1L, "Free Board", "Post 3", 0, 0, 0, null);
             UserPostListResponse response2 = new UserPostListResponse(2L, 1L, "Free Board", "Post 2", 0, 0, 0, null);
 
-            when(postRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(postRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(List.of(post1, post2, post3));
             when(postMapper.toUserPostListResponse(post1)).thenReturn(response1);
             when(postMapper.toUserPostListResponse(post2)).thenReturn(response2);
@@ -283,7 +283,7 @@ class UserServiceImplTest {
 
             assertThat(result.getItems()).hasSize(2);
             assertThat(result.isHasNext()).isTrue();
-            assertThat(result.getNextCursor()).isEqualTo("2");
+            assertThat(result.getNextCursor()).isEqualTo(CursorPageRequest.encodeCursor(2L));
         }
 
         @Test
@@ -294,7 +294,7 @@ class UserServiceImplTest {
 
             UserPostListResponse response1 = new UserPostListResponse(1L, 1L, "Free Board", "Post 1", 0, 0, 0, null);
 
-            when(postRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(postRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(List.of(post));
             when(postMapper.toUserPostListResponse(post)).thenReturn(response1);
 
@@ -311,7 +311,7 @@ class UserServiceImplTest {
             CursorPageRequest pageRequest = new CursorPageRequest();
             pageRequest.setSize(10);
 
-            when(postRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(postRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(Collections.emptyList());
 
             CursorPageResponse<UserPostListResponse> result = userService.getMyPosts(1L, pageRequest);
@@ -337,7 +337,7 @@ class UserServiceImplTest {
 
             UserCommentListResponse response1 = new UserCommentListResponse(2L, 1L, "Test Post", "Comment 2", null);
 
-            when(commentRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(commentRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(List.of(comment1, comment2));
             when(commentMapper.toUserCommentListResponse(comment1)).thenReturn(response1);
 
@@ -345,7 +345,7 @@ class UserServiceImplTest {
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isTrue();
-            assertThat(result.getNextCursor()).isEqualTo("2");
+            assertThat(result.getNextCursor()).isEqualTo(CursorPageRequest.encodeCursor(2L));
         }
 
         @Test
@@ -354,7 +354,7 @@ class UserServiceImplTest {
             CursorPageRequest pageRequest = new CursorPageRequest();
             pageRequest.setSize(10);
 
-            when(commentRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            when(commentRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(
                     eq(1L), any(PageRequest.class))).thenReturn(Collections.emptyList());
 
             CursorPageResponse<UserCommentListResponse> result = userService.getMyComments(1L, pageRequest);
@@ -385,7 +385,7 @@ class UserServiceImplTest {
                     10L, 1L, "Free Board", "Liked 1", "testuser", 0, 0, 0, null
             );
 
-            when(postLikeRepository.findByUserIdWithPost(eq(1L), any(PageRequest.class)))
+            when(postLikeRepository.findByUserIdWithPost(eq(1L), isNull(), any(PageRequest.class)))
                     .thenReturn(List.of(like1, like2));
             when(postMapper.toUserLikeListResponse(likedPost1)).thenReturn(response1);
 
@@ -393,7 +393,7 @@ class UserServiceImplTest {
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isTrue();
-            assertThat(result.getNextCursor()).isEqualTo("1");
+            assertThat(result.getNextCursor()).isEqualTo(CursorPageRequest.encodeCursor(1L));
         }
 
         @Test
@@ -402,7 +402,7 @@ class UserServiceImplTest {
             CursorPageRequest pageRequest = new CursorPageRequest();
             pageRequest.setSize(10);
 
-            when(postLikeRepository.findByUserIdWithPost(eq(1L), any(PageRequest.class)))
+            when(postLikeRepository.findByUserIdWithPost(eq(1L), isNull(), any(PageRequest.class)))
                     .thenReturn(Collections.emptyList());
 
             CursorPageResponse<UserLikeListResponse> result = userService.getMyLikes(1L, pageRequest);

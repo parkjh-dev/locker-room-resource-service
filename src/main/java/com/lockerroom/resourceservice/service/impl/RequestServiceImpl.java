@@ -15,6 +15,7 @@ import com.lockerroom.resourceservice.repository.UserRepository;
 import com.lockerroom.resourceservice.service.RequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,8 +49,12 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public CursorPageResponse<RequestListResponse> getMyList(Long userId, CursorPageRequest pageRequest) {
-        List<Request> requests = requestRepository.findByUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
-                userId, PageRequest.of(0, pageRequest.getSize() + 1));
+        Long cursorId = pageRequest.decodeCursor();
+        Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
+
+        List<Request> requests = (cursorId != null)
+                ? requestRepository.findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(userId, cursorId, pageable)
+                : requestRepository.findByUserIdAndDeletedAtIsNullOrderByIdDesc(userId, pageable);
 
         boolean hasNext = requests.size() > pageRequest.getSize();
         List<Request> resultRequests = hasNext ? requests.subList(0, pageRequest.getSize()) : requests;
@@ -58,7 +63,9 @@ public class RequestServiceImpl implements RequestService {
                 .map(requestMapper::toListResponse)
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultRequests.get(resultRequests.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultRequests.get(resultRequests.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<RequestListResponse>builder()
                 .items(items)

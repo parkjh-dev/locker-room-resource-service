@@ -17,6 +17,7 @@ import com.lockerroom.resourceservice.service.AdminService;
 import com.lockerroom.resourceservice.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,8 +49,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public CursorPageResponse<AdminUserListResponse> getUsers(CursorPageRequest pageRequest) {
-        List<User> users = userRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(
-                PageRequest.of(0, pageRequest.getSize() + 1));
+        Long cursorId = pageRequest.decodeCursor();
+        Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
+
+        List<User> users = (cursorId != null)
+                ? userRepository.findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(cursorId, pageable)
+                : userRepository.findByDeletedAtIsNullOrderByIdDesc(pageable);
 
         boolean hasNext = users.size() > pageRequest.getSize();
         List<User> resultUsers = hasNext ? users.subList(0, pageRequest.getSize()) : users;
@@ -63,7 +68,9 @@ public class AdminServiceImpl implements AdminService {
                 })
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultUsers.get(resultUsers.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultUsers.get(resultUsers.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<AdminUserListResponse>builder()
                 .items(items)
@@ -91,8 +98,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public CursorPageResponse<ReportListResponse> getReports(CursorPageRequest pageRequest) {
-        List<PostReport> reports = postReportRepository.findByStatus(
-                ReportStatus.PENDING, PageRequest.of(0, pageRequest.getSize() + 1));
+        Long cursorId = pageRequest.decodeCursor();
+        Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
+
+        List<PostReport> reports = (cursorId != null)
+                ? postReportRepository.findByStatusAndIdLessThanOrderByIdDesc(ReportStatus.PENDING, cursorId, pageable)
+                : postReportRepository.findByStatusOrderByIdDesc(ReportStatus.PENDING, pageable);
 
         boolean hasNext = reports.size() > pageRequest.getSize();
         List<PostReport> resultReports = hasNext ? reports.subList(0, pageRequest.getSize()) : reports;
@@ -101,7 +112,9 @@ public class AdminServiceImpl implements AdminService {
                 .map(postMapper::toReportListResponse)
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultReports.get(resultReports.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultReports.get(resultReports.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<ReportListResponse>builder()
                 .items(items)
@@ -198,8 +211,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public CursorPageResponse<AdminInquiryListResponse> getInquiries(CursorPageRequest pageRequest) {
-        List<Inquiry> inquiries = inquiryRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(
-                PageRequest.of(0, pageRequest.getSize() + 1));
+        Long cursorId = pageRequest.decodeCursor();
+        Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
+
+        List<Inquiry> inquiries = (cursorId != null)
+                ? inquiryRepository.findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(cursorId, pageable)
+                : inquiryRepository.findByDeletedAtIsNullOrderByIdDesc(pageable);
 
         boolean hasNext = inquiries.size() > pageRequest.getSize();
         List<Inquiry> resultInquiries = hasNext ? inquiries.subList(0, pageRequest.getSize()) : inquiries;
@@ -208,7 +225,9 @@ public class AdminServiceImpl implements AdminService {
                 .map(inquiryMapper::toAdminListResponse)
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultInquiries.get(resultInquiries.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultInquiries.get(resultInquiries.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<AdminInquiryListResponse>builder()
                 .items(items)
@@ -261,8 +280,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public CursorPageResponse<AdminRequestListResponse> getRequests(CursorPageRequest pageRequest) {
-        List<Request> requests = requestRepository.findByDeletedAtIsNullOrderByCreatedAtDesc(
-                PageRequest.of(0, pageRequest.getSize() + 1));
+        Long cursorId = pageRequest.decodeCursor();
+        Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
+
+        List<Request> requests = (cursorId != null)
+                ? requestRepository.findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(cursorId, pageable)
+                : requestRepository.findByDeletedAtIsNullOrderByIdDesc(pageable);
 
         boolean hasNext = requests.size() > pageRequest.getSize();
         List<Request> resultRequests = hasNext ? requests.subList(0, pageRequest.getSize()) : requests;
@@ -271,7 +294,9 @@ public class AdminServiceImpl implements AdminService {
                 .map(requestMapper::toAdminListResponse)
                 .toList();
 
-        String nextCursor = hasNext ? String.valueOf(resultRequests.get(resultRequests.size() - 1).getId()) : null;
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultRequests.get(resultRequests.size() - 1).getId())
+                : null;
 
         return CursorPageResponse.<AdminRequestListResponse>builder()
                 .items(items)
