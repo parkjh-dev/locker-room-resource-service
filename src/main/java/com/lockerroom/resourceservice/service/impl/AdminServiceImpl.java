@@ -8,14 +8,12 @@ import com.lockerroom.resourceservice.kafka.KafkaProducerService;
 import com.lockerroom.resourceservice.kafka.event.NotificationEvent;
 import com.lockerroom.resourceservice.mapper.*;
 import com.lockerroom.resourceservice.model.entity.*;
-import com.lockerroom.resourceservice.model.enums.InquiryStatus;
-import com.lockerroom.resourceservice.model.enums.NotificationType;
-import com.lockerroom.resourceservice.model.enums.ReportStatus;
-import com.lockerroom.resourceservice.model.enums.TargetType;
+import com.lockerroom.resourceservice.model.enums.*;
 import com.lockerroom.resourceservice.repository.*;
 import com.lockerroom.resourceservice.service.AdminService;
 import com.lockerroom.resourceservice.utils.Constants;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,10 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
+
+    private static final int DEFAULT_SUSPENSION_DAYS = 30;
 
     private final UserRepository userRepository;
     private final UserSuspensionRepository userSuspensionRepository;
@@ -35,6 +36,8 @@ public class AdminServiceImpl implements AdminService {
     private final PostRepository postRepository;
     private final NoticeRepository noticeRepository;
     private final TeamRepository teamRepository;
+    private final SportRepository sportRepository;
+    private final BoardRepository boardRepository;
     private final InquiryRepository inquiryRepository;
     private final InquiryReplyRepository inquiryReplyRepository;
     private final RequestRepository requestRepository;
@@ -48,35 +51,18 @@ public class AdminServiceImpl implements AdminService {
     private final FileMapper fileMapper;
 
     @Override
-    public CursorPageResponse<AdminUserListResponse> getUsers(CursorPageRequest pageRequest) {
+    public CursorPageResponse<AdminUserListResponse> getUsers(CursorPageRequest pageRequest, String keyword, Role role) {
         Long cursorId = pageRequest.decodeCursor();
         Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
 
-        List<User> users = (cursorId != null)
-                ? userRepository.findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(cursorId, pageable)
-                : userRepository.findByDeletedAtIsNullOrderByIdDesc(pageable);
+        List<User> users = userRepository.findUsersFiltered(keyword, role, cursorId, pageable);
 
-        boolean hasNext = users.size() > pageRequest.getSize();
-        List<User> resultUsers = hasNext ? users.subList(0, pageRequest.getSize()) : users;
-
-        List<AdminUserListResponse> items = resultUsers.stream()
-                .map(u -> {
-                    boolean isSuspended = userSuspensionRepository
-                            .findActiveByUserId(u.getId(), LocalDateTime.now())
-                            .isPresent();
-                    return userMapper.toAdminListResponse(u, isSuspended);
-                })
-                .toList();
-
-        String nextCursor = hasNext
-                ? CursorPageRequest.encodeCursor(resultUsers.get(resultUsers.size() - 1).getId())
-                : null;
-
-        return CursorPageResponse.<AdminUserListResponse>builder()
-                .items(items)
-                .nextCursor(nextCursor)
-                .hasNext(hasNext)
-                .build();
+        return buildCursorPage(users, pageRequest.getSize(), u -> {
+            boolean isSuspended = userSuspensionRepository
+                    .findActiveByUserId(u.getId(), LocalDateTime.now())
+                    .isPresent();
+            return userMapper.toAdminListResponse(u, isSuspended);
+        }, User::getId);
     }
 
     @Override
@@ -97,30 +83,13 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public CursorPageResponse<ReportListResponse> getReports(CursorPageRequest pageRequest) {
+    public CursorPageResponse<ReportListResponse> getReports(CursorPageRequest pageRequest, ReportStatus status) {
         Long cursorId = pageRequest.decodeCursor();
         Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
 
-        List<PostReport> reports = (cursorId != null)
-                ? postReportRepository.findByStatusAndIdLessThanOrderByIdDesc(ReportStatus.PENDING, cursorId, pageable)
-                : postReportRepository.findByStatusOrderByIdDesc(ReportStatus.PENDING, pageable);
+        List<PostReport> reports = postReportRepository.findReportsFiltered(status, cursorId, pageable);
 
-        boolean hasNext = reports.size() > pageRequest.getSize();
-        List<PostReport> resultReports = hasNext ? reports.subList(0, pageRequest.getSize()) : reports;
-
-        List<ReportListResponse> items = resultReports.stream()
-                .map(postMapper::toReportListResponse)
-                .toList();
-
-        String nextCursor = hasNext
-                ? CursorPageRequest.encodeCursor(resultReports.get(resultReports.size() - 1).getId())
-                : null;
-
-        return CursorPageResponse.<ReportListResponse>builder()
-                .items(items)
-                .nextCursor(nextCursor)
-                .hasNext(hasNext)
-                .build();
+        return buildCursorPage(reports, pageRequest.getSize(), postMapper::toReportListResponse, PostReport::getId);
     }
 
     @Override
@@ -132,8 +101,8 @@ public class AdminServiceImpl implements AdminService {
         User admin = findUserById(adminId);
         report.process(request.status(), admin);
 
-        if ("DELETE".equalsIgnoreCase(request.action())) {
-            report.getPost().softDelete();
+        if (request.action() != null) {
+            handleReportAction(request.action(), report, admin, request.suspensionDays());
         }
 
         kafkaProducerService.send(
@@ -172,7 +141,6 @@ public class AdminServiceImpl implements AdminService {
                 .build();
 
         Notice saved = noticeRepository.save(notice);
-
         return noticeMapper.toDetailResponse(saved);
     }
 
@@ -210,30 +178,14 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public CursorPageResponse<AdminInquiryListResponse> getInquiries(CursorPageRequest pageRequest) {
+    public CursorPageResponse<AdminInquiryListResponse> getInquiries(
+            CursorPageRequest pageRequest, InquiryStatus status, InquiryType type) {
         Long cursorId = pageRequest.decodeCursor();
         Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
 
-        List<Inquiry> inquiries = (cursorId != null)
-                ? inquiryRepository.findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(cursorId, pageable)
-                : inquiryRepository.findByDeletedAtIsNullOrderByIdDesc(pageable);
+        List<Inquiry> inquiries = inquiryRepository.findInquiriesFiltered(status, type, cursorId, pageable);
 
-        boolean hasNext = inquiries.size() > pageRequest.getSize();
-        List<Inquiry> resultInquiries = hasNext ? inquiries.subList(0, pageRequest.getSize()) : inquiries;
-
-        List<AdminInquiryListResponse> items = resultInquiries.stream()
-                .map(inquiryMapper::toAdminListResponse)
-                .toList();
-
-        String nextCursor = hasNext
-                ? CursorPageRequest.encodeCursor(resultInquiries.get(resultInquiries.size() - 1).getId())
-                : null;
-
-        return CursorPageResponse.<AdminInquiryListResponse>builder()
-                .items(items)
-                .nextCursor(nextCursor)
-                .hasNext(hasNext)
-                .build();
+        return buildCursorPage(inquiries, pageRequest.getSize(), inquiryMapper::toAdminListResponse, Inquiry::getId);
     }
 
     @Override
@@ -279,30 +231,14 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public CursorPageResponse<AdminRequestListResponse> getRequests(CursorPageRequest pageRequest) {
+    public CursorPageResponse<AdminRequestListResponse> getRequests(
+            CursorPageRequest pageRequest, RequestStatus status, RequestType type) {
         Long cursorId = pageRequest.decodeCursor();
         Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
 
-        List<Request> requests = (cursorId != null)
-                ? requestRepository.findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(cursorId, pageable)
-                : requestRepository.findByDeletedAtIsNullOrderByIdDesc(pageable);
+        List<Request> requests = requestRepository.findRequestsFiltered(status, type, cursorId, pageable);
 
-        boolean hasNext = requests.size() > pageRequest.getSize();
-        List<Request> resultRequests = hasNext ? requests.subList(0, pageRequest.getSize()) : requests;
-
-        List<AdminRequestListResponse> items = resultRequests.stream()
-                .map(requestMapper::toAdminListResponse)
-                .toList();
-
-        String nextCursor = hasNext
-                ? CursorPageRequest.encodeCursor(resultRequests.get(resultRequests.size() - 1).getId())
-                : null;
-
-        return CursorPageResponse.<AdminRequestListResponse>builder()
-                .items(items)
-                .nextCursor(nextCursor)
-                .hasNext(hasNext)
-                .build();
+        return buildCursorPage(requests, pageRequest.getSize(), requestMapper::toAdminListResponse, Request::getId);
     }
 
     @Override
@@ -315,7 +251,91 @@ public class AdminServiceImpl implements AdminService {
         User admin = findUserById(adminId);
         entity.process(request.status(), admin, request.rejectReason());
 
+        if (request.status() == RequestStatus.APPROVED) {
+            autoCreateFromRequest(entity, request.sportId());
+        }
+
         return requestMapper.toDetailResponse(entity);
+    }
+
+    private void autoCreateFromRequest(Request entity, Long sportId) {
+        if (entity.getType() == RequestType.SPORT) {
+            Sport sport = Sport.builder()
+                    .name(entity.getName())
+                    .build();
+            sportRepository.save(sport);
+            log.info("Auto-created Sport '{}' from request #{}", entity.getName(), entity.getId());
+        } else if (entity.getType() == RequestType.TEAM) {
+            if (sportId == null) {
+                throw new CustomException(ErrorCode.BAD_REQUEST,
+                        "TEAM 요청 승인 시 sportId가 필요합니다.");
+            }
+
+            Sport sport = sportRepository.findById(sportId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.SPORT_NOT_FOUND));
+
+            Team team = Team.builder()
+                    .sport(sport)
+                    .name(entity.getName())
+                    .build();
+            Team savedTeam = teamRepository.save(team);
+
+            Board teamBoard = Board.builder()
+                    .name(entity.getName())
+                    .type(BoardType.TEAM)
+                    .team(savedTeam)
+                    .build();
+            boardRepository.save(teamBoard);
+
+            Board newsBoard = Board.builder()
+                    .name(entity.getName() + " 뉴스")
+                    .type(BoardType.NEWS)
+                    .team(savedTeam)
+                    .build();
+            boardRepository.save(newsBoard);
+
+            log.info("Auto-created Team '{}' with TEAM/NEWS boards from request #{}",
+                    entity.getName(), entity.getId());
+        }
+    }
+
+    private void handleReportAction(String action, PostReport report, User admin, Integer suspensionDays) {
+        switch (action.toUpperCase()) {
+            case "DELETE_POST" -> report.getPost().softDelete();
+            case "SUSPEND_USER" -> {
+                int days = (suspensionDays != null) ? suspensionDays : DEFAULT_SUSPENSION_DAYS;
+                UserSuspension suspension = UserSuspension.builder()
+                        .user(report.getPost().getUser())
+                        .admin(admin)
+                        .reason("신고 처리: " + report.getReason())
+                        .suspendedAt(LocalDateTime.now())
+                        .suspendedUntil(LocalDateTime.now().plusDays(days))
+                        .build();
+                userSuspensionRepository.save(suspension);
+                report.getPost().softDelete();
+            }
+            default -> log.warn("Unknown report action: {}", action);
+        }
+    }
+
+    private <E, R> CursorPageResponse<R> buildCursorPage(
+            List<E> items, int size,
+            java.util.function.Function<E, R> mapper,
+            java.util.function.Function<E, Long> idExtractor) {
+        boolean hasNext = items.size() > size;
+        List<E> resultItems = hasNext ? items.subList(0, size) : items;
+
+        List<R> mapped = resultItems.stream().map(mapper).toList();
+
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(idExtractor.apply(resultItems.get(resultItems.size() - 1)))
+                : null;
+
+        return CursorPageResponse.<R>builder()
+                .items(mapped)
+                .nextCursor(nextCursor)
+                .hasNext(hasNext)
+                .build();
     }
 
     private User findUserById(Long userId) {

@@ -476,25 +476,27 @@ com.lockerroom.resourceservice/
 - [x] 파일 개수 제한: `linkFilesToTarget()` 에서 건당 최대 5개 검증 (`Constants.MAX_FILE_COUNT`)
 - [x] 파일 삭제 방식: Soft Delete → Hard Delete(S3 + DB) 전환 (`RES-FILE-006`)
 
-### 11.4 [높음] 관리자 기능 보완
+### 11.4 [높음] 관리자 기능 보완 ✅
 
-> 관리자 API 기본 CRUD는 있으나, 필터링과 자동 생성 로직 누락.
-> SRS `RES-ADM-001~008` / API 명세 2.11 참조.
+> ~~관리자 API 기본 CRUD는 있으나, 필터링과 자동 생성 로직 누락.~~
+> 완료: 4개 목록 API 필터링, 요청 승인 자동 생성, 신고 action 세분화 구현.
 
 #### 11.4.1 필터 파라미터 구현
-- [ ] `GET /admin/users` — `keyword` (닉네임/이메일 검색), `role` (USER/ADMIN) 필터 추가
-- [ ] `GET /admin/reports` — `status` (PENDING/APPROVED/REJECTED) 필터 추가 (현재 PENDING 하드코딩)
-- [ ] `GET /admin/inquiries` — `status` (PENDING/ANSWERED), `type` (GENERAL/BUG/SUGGESTION) 필터 추가
-- [ ] `GET /admin/requests` — `status` (PENDING/APPROVED/REJECTED), `type` (SPORT/TEAM) 필터 추가
+- [x] `GET /admin/users` — `keyword` (닉네임/이메일 LIKE 검색), `role` (USER/ADMIN) 필터 (JPQL NULL 체크 패턴)
+- [x] `GET /admin/reports` — `status` (PENDING/APPROVED/REJECTED) 옵셔널 필터 (PENDING 하드코딩 제거)
+- [x] `GET /admin/inquiries` — `status` (PENDING/ANSWERED), `type` (GENERAL/BUG/SUGGESTION) 필터
+- [x] `GET /admin/requests` — `status` (PENDING/APPROVED/REJECTED), `type` (SPORT/TEAM) 필터
+- [x] 공통: `buildCursorPage()` 헬퍼로 페이지네이션 중복 코드 제거
 
 #### 11.4.2 요청 승인 시 자동 생성
-- [ ] `AdminServiceImpl.processRequest()` — APPROVED 시 종목 또는 팀 엔티티 자동 생성 (`RES-ADM-008`)
-- [ ] APPROVED + TEAM 요청: `Team` + `Board`(TEAM) + `Board`(NEWS) 자동 생성
-- [ ] APPROVED + SPORT 요청: `Sport` 자동 생성
+- [x] `AdminServiceImpl.processRequest()` — APPROVED 시 `autoCreateFromRequest()` 호출
+- [x] APPROVED + SPORT 요청: `Sport` 자동 생성 (request.name 사용)
+- [x] APPROVED + TEAM 요청: `Team` + `Board`(TEAM) + `Board`(NEWS) 자동 생성 (RequestProcessRequest에 `sportId` 필드 추가)
 
 #### 11.4.3 신고 처리 action 보완
-- [ ] `action` 값을 `"DELETE_POST"`, `"SUSPEND_USER"`로 수정 (현재 `"DELETE"`만 체크)
-- [ ] `"SUSPEND_USER"` action 시 게시글 작성자 정지 처리 연동
+- [x] `action` 값을 `"DELETE_POST"`, `"SUSPEND_USER"`로 분리 (`handleReportAction()`)
+- [x] `"SUSPEND_USER"` action: 게시글 작성자 UserSuspension 생성 + 게시글 soft delete
+- [x] `ReportProcessRequest`에 `suspensionDays` 필드 추가 (미지정 시 기본 30일)
 
 ---
 
@@ -561,7 +563,7 @@ com.lockerroom.resourceservice/
 1. ✅ 11.2 Cursor 페이지네이션 — 완료 (Base64 인코딩 + ID 기반 커서)
 2. ✅ 11.1 멱등성 적용 — 완료 (@Idempotent AOP + 7개 POST 엔드포인트)
 3. ✅ 11.3 파일 처리 — 완료 (MIME 검증 + 매직넘버 + 크기 분리 + 연결/해제 + 물리 삭제)
-4. 11.4 관리자 기능 — 필터 없으면 운영 불가
+4. ✅ 11.4 관리자 기능 — 완료 (필터 4개 + 자동 생성 + action 세분화)
 5. 11.5 비즈니스 로직 — 권한, 비밀번호 검증 등 보안 관련
 6. 11.6 코드 품질 — ErrorCode 형식, DTO 검증, 상태코드 등
 ```

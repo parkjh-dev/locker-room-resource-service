@@ -2,14 +2,15 @@ package com.lockerroom.resourceservice.service;
 
 import com.lockerroom.resourceservice.dto.request.*;
 import com.lockerroom.resourceservice.dto.response.*;
+import com.lockerroom.resourceservice.model.enums.*;
 
 public interface AdminService {
 
-    CursorPageResponse<AdminUserListResponse> getUsers(CursorPageRequest pageRequest);
+    CursorPageResponse<AdminUserListResponse> getUsers(CursorPageRequest pageRequest, String keyword, Role role);
 
     void suspendUser(Long userId, Long adminId, SuspendRequest request);
 
-    CursorPageResponse<ReportListResponse> getReports(CursorPageRequest pageRequest);
+    CursorPageResponse<ReportListResponse> getReports(CursorPageRequest pageRequest, ReportStatus status);
 
     void processReport(Long reportId, Long adminId, ReportProcessRequest request);
 
@@ -19,11 +20,11 @@ public interface AdminService {
 
     void deleteNotice(Long noticeId);
 
-    CursorPageResponse<AdminInquiryListResponse> getInquiries(CursorPageRequest pageRequest);
+    CursorPageResponse<AdminInquiryListResponse> getInquiries(CursorPageRequest pageRequest, InquiryStatus status, InquiryType type);
 
     InquiryDetailResponse replyInquiry(Long inquiryId, Long adminId, InquiryReplyRequest request);
 
-    CursorPageResponse<AdminRequestListResponse> getRequests(CursorPageRequest pageRequest);
+    CursorPageResponse<AdminRequestListResponse> getRequests(CursorPageRequest pageRequest, RequestStatus status, RequestType type);
 
     RequestDetailResponse processRequest(Long requestId, Long adminId, RequestProcessRequest request);
 }

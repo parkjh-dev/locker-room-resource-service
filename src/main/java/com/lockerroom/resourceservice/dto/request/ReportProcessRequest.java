@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record ReportProcessRequest(
         @NotNull ReportStatus status,
-        String action
+        String action,
+        Integer suspensionDays
 ) {
 }

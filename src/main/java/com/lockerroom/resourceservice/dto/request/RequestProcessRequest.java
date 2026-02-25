@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record RequestProcessRequest(
         @NotNull RequestStatus status,
-        String rejectReason
+        String rejectReason,
+        Long sportId
 ) {
 }
