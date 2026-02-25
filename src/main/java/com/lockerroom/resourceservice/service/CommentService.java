@@ -2,9 +2,9 @@ package com.lockerroom.resourceservice.service;
 
 import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
 import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
+import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
 import com.lockerroom.resourceservice.dto.response.CommentResponse;
-
-import java.util.List;
+import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
 
 public interface CommentService {
 
@@ -16,5 +16,5 @@ public interface CommentService {
 
     void delete(Long commentId, Long userId);
 
-    List<CommentResponse> getByPost(Long postId);
+    CursorPageResponse<CommentResponse> getByPost(Long postId, CursorPageRequest pageRequest);
 }

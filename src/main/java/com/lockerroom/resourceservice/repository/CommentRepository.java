@@ -8,7 +8,10 @@ import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    List<Comment> findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(Long postId);
+    List<Comment> findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByIdAsc(Long postId, Pageable pageable);
+
+    List<Comment> findByPostIdAndParentIsNullAndDeletedAtIsNullAndIdGreaterThanOrderByIdAsc(
+            Long postId, Long cursorId, Pageable pageable);
 
     List<Comment> findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(Long parentId);
 

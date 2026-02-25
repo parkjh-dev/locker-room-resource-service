@@ -229,8 +229,9 @@ class NotificationServiceImplTest {
             when(notificationRepository.markAllAsReadByUserId(eq(1L), any(LocalDateTime.class)))
                     .thenReturn(3);
 
-            notificationService.markAllAsRead(1L);
+            int result = notificationService.markAllAsRead(1L);
 
+            assertThat(result).isEqualTo(3);
             verify(notificationRepository).markAllAsReadByUserId(eq(1L), any(LocalDateTime.class));
         }
 
@@ -240,8 +241,9 @@ class NotificationServiceImplTest {
             when(notificationRepository.markAllAsReadByUserId(eq(1L), any(LocalDateTime.class)))
                     .thenReturn(0);
 
-            notificationService.markAllAsRead(1L);
+            int result = notificationService.markAllAsRead(1L);
 
+            assertThat(result).isEqualTo(0);
             verify(notificationRepository).markAllAsReadByUserId(eq(1L), any(LocalDateTime.class));
         }
     }

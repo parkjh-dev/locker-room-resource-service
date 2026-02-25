@@ -12,6 +12,7 @@ import com.lockerroom.resourceservice.mapper.FileMapper;
 import com.lockerroom.resourceservice.mapper.PostMapper;
 import com.lockerroom.resourceservice.model.entity.*;
 import com.lockerroom.resourceservice.model.enums.BoardType;
+import com.lockerroom.resourceservice.model.enums.Role;
 import com.lockerroom.resourceservice.model.enums.TargetType;
 import com.lockerroom.resourceservice.repository.*;
 import com.lockerroom.resourceservice.service.BoardService;
@@ -199,8 +200,11 @@ public class PostServiceImpl implements PostService {
     }
 
     private void validatePostOwner(Post post, Long userId) {
-        if (!post.getUser().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.POST_ACCESS_DENIED);
-        }
+        if (post.getUser().getId().equals(userId)) return;
+
+        User actor = findUserById(userId);
+        if (actor.getRole() == Role.ADMIN) return;
+
+        throw new CustomException(ErrorCode.POST_ACCESS_DENIED);
     }
 }

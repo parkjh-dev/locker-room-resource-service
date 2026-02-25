@@ -7,6 +7,7 @@ import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
 import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
 import com.lockerroom.resourceservice.dto.response.AuthorInfo;
 import com.lockerroom.resourceservice.dto.response.CommentResponse;
+import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
 import com.lockerroom.resourceservice.model.entity.User;
 import com.lockerroom.resourceservice.model.enums.Role;
 import com.lockerroom.resourceservice.repository.UserRepository;
@@ -94,32 +95,42 @@ class CommentControllerTest {
                     201L, new AuthorInfo(2L, "user2"), "Another comment",
                     false, LocalDateTime.now(), List.of()
             );
-            when(commentService.getByPost(POST_ID)).thenReturn(List.of(comment1, comment2));
+            CursorPageResponse<CommentResponse> pageResponse = CursorPageResponse.<CommentResponse>builder()
+                    .items(List.of(comment1, comment2))
+                    .nextCursor(null)
+                    .hasNext(false)
+                    .build();
+            when(commentService.getByPost(eq(POST_ID), any())).thenReturn(pageResponse);
 
             // when & then
             mockMvc.perform(get("/api/v1/posts/{postId}/comments", POST_ID))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
-                    .andExpect(jsonPath("$.data").isArray())
-                    .andExpect(jsonPath("$.data.length()").value(2))
-                    .andExpect(jsonPath("$.data[0].id").value(COMMENT_ID))
-                    .andExpect(jsonPath("$.data[0].content").value("Test comment content"));
+                    .andExpect(jsonPath("$.data.items").isArray())
+                    .andExpect(jsonPath("$.data.items.length()").value(2))
+                    .andExpect(jsonPath("$.data.items[0].id").value(COMMENT_ID))
+                    .andExpect(jsonPath("$.data.items[0].content").value("Test comment content"));
 
-            verify(commentService).getByPost(POST_ID);
+            verify(commentService).getByPost(eq(POST_ID), any());
         }
 
         @Test
         @DisplayName("should return empty list when no comments exist")
         void getByPost_emptyList() throws Exception {
             // given
-            when(commentService.getByPost(POST_ID)).thenReturn(List.of());
+            CursorPageResponse<CommentResponse> emptyPage = CursorPageResponse.<CommentResponse>builder()
+                    .items(List.of())
+                    .nextCursor(null)
+                    .hasNext(false)
+                    .build();
+            when(commentService.getByPost(eq(POST_ID), any())).thenReturn(emptyPage);
 
             // when & then
             mockMvc.perform(get("/api/v1/posts/{postId}/comments", POST_ID))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
-                    .andExpect(jsonPath("$.data").isArray())
-                    .andExpect(jsonPath("$.data.length()").value(0));
+                    .andExpect(jsonPath("$.data.items").isArray())
+                    .andExpect(jsonPath("$.data.items.length()").value(0));
         }
     }
 

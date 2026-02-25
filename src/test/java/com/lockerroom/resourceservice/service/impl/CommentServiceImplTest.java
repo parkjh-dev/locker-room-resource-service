@@ -2,8 +2,10 @@ package com.lockerroom.resourceservice.service.impl;
 
 import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
 import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
+import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
 import com.lockerroom.resourceservice.dto.response.AuthorInfo;
 import com.lockerroom.resourceservice.dto.response.CommentResponse;
+import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
 import com.lockerroom.resourceservice.exceptions.CustomException;
 import com.lockerroom.resourceservice.exceptions.ErrorCode;
 import com.lockerroom.resourceservice.kafka.KafkaProducerService;
@@ -421,39 +423,48 @@ class CommentServiceImplTest {
                     "Root comment", false, null, List.of(replyResponse)
             );
 
+            CursorPageRequest pageRequest = new CursorPageRequest();
+            pageRequest.setSize(20);
+
             when(postRepository.findById(1L)).thenReturn(Optional.of(post));
-            when(commentRepository.findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(1L))
+            when(commentRepository.findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByIdAsc(eq(1L), any()))
                     .thenReturn(List.of(rootComment));
             when(commentRepository.findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(1L))
                     .thenReturn(List.of(replyComment));
             when(commentMapper.toResponse(replyComment)).thenReturn(replyResponse);
             when(commentMapper.toResponseWithReplies(eq(rootComment), anyList())).thenReturn(rootResponse);
 
-            List<CommentResponse> result = commentService.getByPost(1L);
+            CursorPageResponse<CommentResponse> result = commentService.getByPost(1L, pageRequest);
 
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).replies()).hasSize(1);
+            assertThat(result.getItems()).hasSize(1);
+            assertThat(result.getItems().get(0).replies()).hasSize(1);
         }
 
         @Test
         @DisplayName("should return empty list when no comments")
         void getByPost_noComments_returnsEmptyList() {
+            CursorPageRequest pageRequest = new CursorPageRequest();
+            pageRequest.setSize(20);
+
             when(postRepository.findById(1L)).thenReturn(Optional.of(post));
-            when(commentRepository.findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(1L))
+            when(commentRepository.findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByIdAsc(eq(1L), any()))
                     .thenReturn(Collections.emptyList());
 
-            List<CommentResponse> result = commentService.getByPost(1L);
+            CursorPageResponse<CommentResponse> result = commentService.getByPost(1L, pageRequest);
 
-            assertThat(result).isEmpty();
+            assertThat(result.getItems()).isEmpty();
         }
 
         @Test
         @DisplayName("should throw exception when post not found")
         void getByPost_postNotFound_throwsException() {
+            CursorPageRequest pageRequest = new CursorPageRequest();
+            pageRequest.setSize(20);
+
             when(postRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
-                    () -> commentService.getByPost(999L));
+                    () -> commentService.getByPost(999L, pageRequest));
 
             assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.POST_NOT_FOUND);
         }

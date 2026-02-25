@@ -35,7 +35,7 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public List<BoardResponse> getBoards(Long userId) {
         List<Board> publicBoards = boardRepository.findByTypeIn(
-                List.of(BoardType.COMMON, BoardType.QNA));
+                List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE, BoardType.NEWS));
 
         List<Board> teamBoards = new ArrayList<>();
         if (userId != null) {

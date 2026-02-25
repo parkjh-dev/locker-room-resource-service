@@ -84,11 +84,11 @@ class NoticeServiceImplTest {
                     2L, "Pinned Notice", true, NoticeScope.ALL, null, null
             );
 
-            when(noticeRepository.findByDeletedAtIsNullOrderByIsPinnedDescCreatedAtDesc(
-                    any(PageRequest.class))).thenReturn(List.of(pinnedNotice, notice));
+            when(noticeRepository.findFilteredNotices(any(), any(PageRequest.class)))
+                    .thenReturn(List.of(pinnedNotice, notice));
             when(noticeMapper.toListResponse(pinnedNotice)).thenReturn(response1);
 
-            CursorPageResponse<NoticeListResponse> result = noticeService.getList(pageRequest);
+            CursorPageResponse<NoticeListResponse> result = noticeService.getList(null, pageRequest);
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isTrue();
@@ -108,12 +108,12 @@ class NoticeServiceImplTest {
                     1L, "Notice Title", false, NoticeScope.ALL, null, null
             );
 
-            when(noticeRepository.findByDeletedAtIsNullOrderByIsPinnedDescCreatedAtDesc(
-                    any(PageRequest.class))).thenReturn(List.of(pinnedNotice, notice));
+            when(noticeRepository.findFilteredNotices(any(), any(PageRequest.class)))
+                    .thenReturn(List.of(pinnedNotice, notice));
             when(noticeMapper.toListResponse(pinnedNotice)).thenReturn(response1);
             when(noticeMapper.toListResponse(notice)).thenReturn(response2);
 
-            CursorPageResponse<NoticeListResponse> result = noticeService.getList(pageRequest);
+            CursorPageResponse<NoticeListResponse> result = noticeService.getList(null, pageRequest);
 
             assertThat(result.getItems()).hasSize(2);
             assertThat(result.isHasNext()).isFalse();
@@ -126,10 +126,10 @@ class NoticeServiceImplTest {
             CursorPageRequest pageRequest = new CursorPageRequest();
             pageRequest.setSize(10);
 
-            when(noticeRepository.findByDeletedAtIsNullOrderByIsPinnedDescCreatedAtDesc(
-                    any(PageRequest.class))).thenReturn(Collections.emptyList());
+            when(noticeRepository.findFilteredNotices(any(), any(PageRequest.class)))
+                    .thenReturn(Collections.emptyList());
 
-            CursorPageResponse<NoticeListResponse> result = noticeService.getList(pageRequest);
+            CursorPageResponse<NoticeListResponse> result = noticeService.getList(null, pageRequest);
 
             assertThat(result.getItems()).isEmpty();
             assertThat(result.isHasNext()).isFalse();

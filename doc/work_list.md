@@ -500,30 +500,43 @@ com.lockerroom.resourceservice/
 
 ---
 
-### 11.5 [중간] 비즈니스 로직 불일치 수정
+### 11.5 [중간] 비즈니스 로직 불일치 수정 ✅ (완료)
 
 #### 11.5.1 게시글/댓글 삭제 시 관리자 권한 허용
-- [ ] `PostServiceImpl.validatePostOwner()` — ADMIN 역할도 삭제 가능하도록 수정 (`RES-POST-007`)
-- [ ] `CommentServiceImpl.validateCommentOwner()` — ADMIN 역할도 삭제 가능하도록 수정
+- [x] `PostServiceImpl.validatePostOwner()` — ADMIN 역할도 삭제 가능하도록 수정 (`RES-POST-007`)
+  - 본인이 아닌 경우 User를 조회하여 `Role.ADMIN`이면 허용
+- [x] `CommentServiceImpl.validateCommentOwner()` — ADMIN 역할도 삭제 가능하도록 수정
+  - 동일한 패턴 적용
 
 #### 11.5.2 비밀번호 검증 추가
-- [ ] `UserServiceImpl.updateMyInfo()` — `currentPassword` 검증 후 비밀번호 변경 허용 (`RES-USER-002`)
-- [ ] `UserServiceImpl.withdraw()` — `password` 본인 확인 검증 추가
+- [x] `UserServiceImpl.updateMyInfo()` — `currentPassword` 검증 후 비밀번호 변경 허용 (`RES-USER-002`)
+  - `newPassword` 전달 시 `currentPassword`가 기존 비밀번호와 일치하지 않으면 `INVALID_PASSWORD` 예외
+- [x] `UserServiceImpl.withdraw()` — `password` 본인 확인 검증 추가
+  - `password`가 기존 비밀번호와 일치하지 않으면 `INVALID_PASSWORD` 예외
 
 #### 11.5.3 공지사항 teamId 필터
-- [ ] `GET /notices` — `teamId` 쿼리 파라미터 수신 추가 (`NoticeController`)
-- [ ] `NoticeServiceImpl.getList()` — teamId 기반 필터링 로직 구현
+- [x] `GET /notices` — `teamId` 쿼리 파라미터 수신 추가 (`NoticeController`)
+- [x] `NoticeServiceImpl.getList()` — teamId 기반 필터링 로직 구현
+  - `NoticeRepository.findFilteredNotices()` JPQL 메서드 추가 (`teamId IS NULL` 시 전체 반환)
 
 #### 11.5.4 전체 알림 읽음 응답
-- [ ] `NotificationController.markAllAsRead()` — 갱신 건수 반환 (`{ "updatedCount": N }`)
-- [ ] `NotificationRepository.markAllAsReadByUserId()` 반환값을 `int` (affected rows)로 변경
+- [x] `NotificationController.markAllAsRead()` — 갱신 건수 반환 (`{ "updatedCount": N }`)
+  - `MarkAllReadResponse` record 생성, `ApiResponse.success(new MarkAllReadResponse(updatedCount))` 반환
+- [x] `NotificationRepository.markAllAsReadByUserId()` — 이미 `int` 반환 (변경 불필요)
+- [x] `NotificationService.markAllAsRead()` 반환 타입 `void` → `int` 변경
 
 #### 11.5.5 게시판 목록 NOTICE/NEWS 포함
-- [ ] `BoardServiceImpl.getBoards()` — NOTICE, NEWS 타입 게시판도 공개 목록에 포함
+- [x] `BoardServiceImpl.getBoards()` — NOTICE, NEWS 타입 게시판도 공개 목록에 포함
+  - `findByTypeIn(List.of(COMMON, QNA, NOTICE, NEWS))`
 
 #### 11.5.6 댓글 목록 Cursor 페이지네이션
-- [ ] `CommentController.getByPost()` — `CursorPageResponse<CommentResponse>` 반환으로 변경
-- [ ] `CommentServiceImpl.getByPost()` — Cursor 기반 페이지네이션 적용
+- [x] `CommentController.getByPost()` — `CursorPageResponse<CommentResponse>` 반환으로 변경
+  - `@ModelAttribute CursorPageRequest` 파라미터 추가
+- [x] `CommentServiceImpl.getByPost()` — Cursor 기반 페이지네이션 적용
+  - 루트 댓글만 커서 페이지네이션, 각 루트 댓글의 대댓글은 전체 조회
+  - 댓글은 오래된 순(ASC) 정렬, `idGreaterThan` 커서 방식
+  - `CommentRepository` 기존 `OrderByCreatedAtAsc` → `OrderByIdAsc` + `Pageable` 메서드로 변경
+- [x] 관련 테스트(`CommentControllerTest`, `CommentServiceImplTest`, `NoticeServiceImplTest`, `NotificationServiceImplTest`) 동기화 완료
 
 ---
 
@@ -564,7 +577,7 @@ com.lockerroom.resourceservice/
 2. ✅ 11.1 멱등성 적용 — 완료 (@Idempotent AOP + 7개 POST 엔드포인트)
 3. ✅ 11.3 파일 처리 — 완료 (MIME 검증 + 매직넘버 + 크기 분리 + 연결/해제 + 물리 삭제)
 4. ✅ 11.4 관리자 기능 — 완료 (필터 4개 + 자동 생성 + action 세분화)
-5. 11.5 비즈니스 로직 — 권한, 비밀번호 검증 등 보안 관련
+5. ✅ 11.5 비즈니스 로직 — 완료 (ADMIN 삭제 허용, 비밀번호 검증, teamId 필터, 알림 건수, 댓글 커서 페이지네이션)
 6. 11.6 코드 품질 — ErrorCode 형식, DTO 검증, 상태코드 등
 ```
 

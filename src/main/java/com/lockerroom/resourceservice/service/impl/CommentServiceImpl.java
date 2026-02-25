@@ -2,7 +2,9 @@ package com.lockerroom.resourceservice.service.impl;
 
 import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
 import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
+import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
 import com.lockerroom.resourceservice.dto.response.CommentResponse;
+import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
 import com.lockerroom.resourceservice.exceptions.CustomException;
 import com.lockerroom.resourceservice.exceptions.ErrorCode;
 import com.lockerroom.resourceservice.kafka.KafkaProducerService;
@@ -12,12 +14,14 @@ import com.lockerroom.resourceservice.model.entity.Comment;
 import com.lockerroom.resourceservice.model.entity.Post;
 import com.lockerroom.resourceservice.model.entity.User;
 import com.lockerroom.resourceservice.model.enums.NotificationType;
+import com.lockerroom.resourceservice.model.enums.Role;
 import com.lockerroom.resourceservice.repository.CommentRepository;
 import com.lockerroom.resourceservice.repository.PostRepository;
 import com.lockerroom.resourceservice.repository.UserRepository;
 import com.lockerroom.resourceservice.service.CommentService;
 import com.lockerroom.resourceservice.utils.Constants;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -130,15 +134,35 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public List<CommentResponse> getByPost(Long postId) {
+    public CursorPageResponse<CommentResponse> getByPost(Long postId, CursorPageRequest pageRequest) {
         findPostById(postId);
 
-        List<Comment> rootComments = commentRepository
-                .findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(postId);
+        Long cursorId = pageRequest.decodeCursor();
+        PageRequest pageable = PageRequest.of(0, pageRequest.getSize() + 1);
 
-        return rootComments.stream()
+        List<Comment> rootComments = (cursorId != null)
+                ? commentRepository.findByPostIdAndParentIsNullAndDeletedAtIsNullAndIdGreaterThanOrderByIdAsc(
+                        postId, cursorId, pageable)
+                : commentRepository.findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByIdAsc(
+                        postId, pageable);
+
+        boolean hasNext = rootComments.size() > pageRequest.getSize();
+        List<Comment> resultComments = hasNext
+                ? rootComments.subList(0, pageRequest.getSize()) : rootComments;
+
+        List<CommentResponse> items = resultComments.stream()
                 .map(this::toResponseWithReplies)
                 .toList();
+
+        String nextCursor = hasNext
+                ? CursorPageRequest.encodeCursor(resultComments.get(resultComments.size() - 1).getId())
+                : null;
+
+        return CursorPageResponse.<CommentResponse>builder()
+                .items(items)
+                .nextCursor(nextCursor)
+                .hasNext(hasNext)
+                .build();
     }
 
     private CommentResponse toResponseWithReplies(Comment comment) {
@@ -176,8 +200,11 @@ public class CommentServiceImpl implements CommentService {
     }
 
     private void validateCommentOwner(Comment comment, Long userId) {
-        if (!comment.getUser().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.COMMENT_ACCESS_DENIED);
-        }
+        if (comment.getUser().getId().equals(userId)) return;
+
+        User actor = findUserById(userId);
+        if (actor.getRole() == Role.ADMIN) return;
+
+        throw new CustomException(ErrorCode.COMMENT_ACCESS_DENIED);
     }
 }

@@ -7,7 +7,7 @@ import com.lockerroom.resourceservice.dto.response.NoticeListResponse;
 
 public interface NoticeService {
 
-    CursorPageResponse<NoticeListResponse> getList(CursorPageRequest pageRequest);
+    CursorPageResponse<NoticeListResponse> getList(Long teamId, CursorPageRequest pageRequest);
 
     NoticeDetailResponse getDetail(Long noticeId);
 }

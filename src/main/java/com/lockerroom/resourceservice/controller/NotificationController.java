@@ -3,6 +3,7 @@ package com.lockerroom.resourceservice.controller;
 import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
 import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
+import com.lockerroom.resourceservice.dto.response.MarkAllReadResponse;
 import com.lockerroom.resourceservice.dto.response.NotificationResponse;
 import com.lockerroom.resourceservice.dto.response.UnreadCountResponse;
 import com.lockerroom.resourceservice.security.CurrentUserId;
@@ -40,9 +41,9 @@ public class NotificationController {
     }
 
     @PutMapping("/read-all")
-    public ResponseEntity<ApiResponse<Void>> markAllAsRead(
+    public ResponseEntity<ApiResponse<MarkAllReadResponse>> markAllAsRead(
             @CurrentUserId Long userId) {
-        notificationService.markAllAsRead(userId);
-        return ResponseEntity.ok(ApiResponse.success());
+        int updatedCount = notificationService.markAllAsRead(userId);
+        return ResponseEntity.ok(ApiResponse.success(new MarkAllReadResponse(updatedCount)));
     }
 }

@@ -3,8 +3,10 @@ package com.lockerroom.resourceservice.controller;
 import com.lockerroom.resourceservice.aop.Idempotent;
 import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
 import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
+import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
 import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.CommentResponse;
+import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
 import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.CommentService;
 import jakarta.validation.Valid;
@@ -13,8 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequiredArgsConstructor
 public class CommentController {
@@ -22,9 +22,10 @@ public class CommentController {
     private final CommentService commentService;
 
     @GetMapping("/api/v1/posts/{postId}/comments")
-    public ResponseEntity<ApiResponse<List<CommentResponse>>> getByPost(
-            @PathVariable Long postId) {
-        return ResponseEntity.ok(ApiResponse.success(commentService.getByPost(postId)));
+    public ResponseEntity<ApiResponse<CursorPageResponse<CommentResponse>>> getByPost(
+            @PathVariable Long postId,
+            @ModelAttribute CursorPageRequest pageRequest) {
+        return ResponseEntity.ok(ApiResponse.success(commentService.getByPost(postId, pageRequest)));
     }
 
     @Idempotent

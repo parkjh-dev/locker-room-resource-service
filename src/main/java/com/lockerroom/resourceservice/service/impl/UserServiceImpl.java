@@ -58,6 +58,10 @@ public class UserServiceImpl implements UserService {
         }
 
         if (request.newPassword() != null) {
+            if (request.currentPassword() == null ||
+                    !request.currentPassword().equals(user.getPassword())) {
+                throw new CustomException(ErrorCode.INVALID_PASSWORD);
+            }
             user.updatePassword(request.newPassword());
         }
 
@@ -68,6 +72,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void withdraw(Long userId, WithdrawRequest request) {
         User user = findUserById(userId);
+
+        if (request.password() == null ||
+                !request.password().equals(user.getPassword())) {
+            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+        }
 
         UserWithdrawal withdrawal = UserWithdrawal.builder()
                 .userId(user.getId())
