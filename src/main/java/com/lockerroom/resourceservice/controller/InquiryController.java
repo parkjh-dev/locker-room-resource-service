@@ -1,5 +1,6 @@
 package com.lockerroom.resourceservice.controller;
 
+import com.lockerroom.resourceservice.aop.Idempotent;
 import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
 import com.lockerroom.resourceservice.dto.request.InquiryCreateRequest;
 import com.lockerroom.resourceservice.dto.response.ApiResponse;
@@ -21,6 +22,7 @@ public class InquiryController {
 
     private final InquiryService inquiryService;
 
+    @Idempotent
     @PostMapping
     public ResponseEntity<ApiResponse<InquiryDetailResponse>> create(
             @CurrentUserId Long userId,

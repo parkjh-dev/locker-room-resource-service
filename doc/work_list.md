@@ -431,15 +431,17 @@ com.lockerroom.resourceservice/
 > 문서(SRS, SDS, API 명세, DB 스키마)와 실제 구현 코드를 대조 분석한 결과.
 > 리뷰 일시: 2026-02-25
 
-### 11.1 [높음] 멱등성(Idempotency) Controller 적용
+### 11.1 [높음] 멱등성(Idempotency) Controller 적용 ✅
 
-> `IdempotencyServiceImpl` 구현 완료됐으나, **어떤 Controller에서도 호출되지 않음.**
-> SRS `RES-IDEM-001~005` / SDS 5.3 참조.
+> ~~`IdempotencyServiceImpl` 구현 완료됐으나, **어떤 Controller에서도 호출되지 않음.**~~
+> 완료: `@Idempotent` 커스텀 어노테이션 + AOP Aspect 방식으로 구현.
+> 사용자별 복합 키(`sub:idempotencyKey`) 로 교차 충돌 방지.
 
-- [ ] 모든 POST 엔드포인트에 `Idempotency-Key` 헤더 수신 로직 추가
-- [ ] Controller/AOP/Interceptor에서 `IdempotencyService.isDuplicate()` → 중복 시 기존 응답 반환
-- [ ] 비즈니스 로직 성공 후 `IdempotencyService.saveResponse()` 호출
-- [ ] 적용 대상: `PostController.create/toggleLike/report`, `CommentController.create/createReply`, `InquiryController.create`, `RequestController.create`
+- [x] `@Idempotent` 커스텀 어노테이션 생성 (`aop/Idempotent.java`)
+- [x] `IdempotencyAspect` AOP 구현 — `Idempotency-Key` 헤더 검증, 중복 시 캐시 응답 반환, 성공 시 응답 저장 (`aop/IdempotencyAspect.java`)
+- [x] `ErrorCode.IDEMPOTENCY_KEY_MISSING` 추가 (400 Bad Request)
+- [x] 7개 POST 엔드포인트에 `@Idempotent` 적용: `PostController.create/toggleLike/report`, `CommentController.create/createReply`, `InquiryController.create`, `RequestController.create`
+- [x] `spring-boot-starter-aop` 의존성 추가
 
 ### 11.2 [높음] Cursor 기반 페이지네이션 실제 구현 ✅
 
@@ -556,7 +558,7 @@ com.lockerroom.resourceservice/
 
 ```
 1. ✅ 11.2 Cursor 페이지네이션 — 완료 (Base64 인코딩 + ID 기반 커서)
-2. 11.1 멱등성 적용 — 중복 요청 방지의 핵심, POST 엔드포인트 전체 영향
+2. ✅ 11.1 멱등성 적용 — 완료 (@Idempotent AOP + 7개 POST 엔드포인트)
 3. 11.3 파일 처리 — 게시글/문의의 파일 첨부가 실질적으로 미동작
 4. 11.4 관리자 기능 — 필터 없으면 운영 불가
 5. 11.5 비즈니스 로직 — 권한, 비밀번호 검증 등 보안 관련

@@ -1,5 +1,6 @@
 package com.lockerroom.resourceservice.controller;
 
+import com.lockerroom.resourceservice.aop.Idempotent;
 import com.lockerroom.resourceservice.dto.request.PostCreateRequest;
 import com.lockerroom.resourceservice.dto.request.PostUpdateRequest;
 import com.lockerroom.resourceservice.dto.request.ReportRequest;
@@ -19,6 +20,7 @@ public class PostController {
 
     private final PostService postService;
 
+    @Idempotent
     @PostMapping
     public ResponseEntity<ApiResponse<PostDetailResponse>> create(
             @CurrentUserId Long userId,
@@ -50,6 +52,7 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success());
     }
 
+    @Idempotent
     @PostMapping("/{postId}/like")
     public ResponseEntity<ApiResponse<LikeResponse>> toggleLike(
             @PathVariable Long postId,
@@ -57,6 +60,7 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success(postService.toggleLike(postId, userId)));
     }
 
+    @Idempotent
     @PostMapping("/{postId}/report")
     public ResponseEntity<ApiResponse<ReportResponse>> report(
             @PathVariable Long postId,

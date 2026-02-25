@@ -1,5 +1,6 @@
 package com.lockerroom.resourceservice.controller;
 
+import com.lockerroom.resourceservice.aop.Idempotent;
 import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
 import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
 import com.lockerroom.resourceservice.dto.response.ApiResponse;
@@ -26,6 +27,7 @@ public class CommentController {
         return ResponseEntity.ok(ApiResponse.success(commentService.getByPost(postId)));
     }
 
+    @Idempotent
     @PostMapping("/api/v1/posts/{postId}/comments")
     public ResponseEntity<ApiResponse<CommentResponse>> create(
             @PathVariable Long postId,
@@ -51,6 +53,7 @@ public class CommentController {
         return ResponseEntity.ok(ApiResponse.success());
     }
 
+    @Idempotent
     @PostMapping("/api/v1/comments/{commentId}/replies")
     public ResponseEntity<ApiResponse<CommentResponse>> createReply(
             @PathVariable Long commentId,
