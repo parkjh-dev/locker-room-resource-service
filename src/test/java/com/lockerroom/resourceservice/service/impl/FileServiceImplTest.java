@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import java.io.ByteArrayInputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -69,7 +70,7 @@ class FileServiceImplTest {
 
         @Test
         @DisplayName("should upload file successfully without S3")
-        void upload_success_noS3() {
+        void upload_success_noS3() throws Exception {
             FileEntity savedFile = FileEntity.builder()
                     .id(1L)
                     .user(user)
@@ -83,14 +84,18 @@ class FileServiceImplTest {
                     .build();
             FileResponse response = new FileResponse(1L, "test.png", "uploads/uuid_test.png", 1024L, "image/png");
 
+            // PNG magic bytes: 89 50 4E 47
+            byte[] pngMagic = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0};
+
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(multipartFile.getSize()).thenReturn(1024L);
             when(multipartFile.getOriginalFilename()).thenReturn("test.png");
             when(multipartFile.getContentType()).thenReturn("image/png");
+            when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(pngMagic));
             when(fileRepository.save(any(FileEntity.class))).thenReturn(savedFile);
             when(fileMapper.toResponse(savedFile)).thenReturn(response);
 
-            FileResponse result = fileService.upload(1L, multipartFile);
+            FileResponse result = fileService.upload(1L, multipartFile, TargetType.POST);
 
             assertThat(result).isNotNull();
             assertThat(result.originalName()).isEqualTo("test.png");
@@ -102,10 +107,11 @@ class FileServiceImplTest {
         @DisplayName("should throw exception when file size exceeds limit")
         void upload_fileSizeExceeded() {
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(multipartFile.getSize()).thenReturn(Constants.MAX_FILE_SIZE + 1);
+            when(multipartFile.getContentType()).thenReturn("image/png");
+            when(multipartFile.getSize()).thenReturn(Constants.MAX_IMAGE_FILE_SIZE + 1);
 
             CustomException exception = assertThrows(CustomException.class,
-                    () -> fileService.upload(1L, multipartFile));
+                    () -> fileService.upload(1L, multipartFile, TargetType.POST));
 
             assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FILE_SIZE_EXCEEDED);
             verify(fileRepository, never()).save(any());
@@ -117,7 +123,7 @@ class FileServiceImplTest {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
-                    () -> fileService.upload(999L, multipartFile));
+                    () -> fileService.upload(999L, multipartFile, TargetType.POST));
 
             assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
         }
@@ -142,15 +148,20 @@ class FileServiceImplTest {
                     .build();
             FileResponse response = new FileResponse(1L, "doc.pdf", "uploads/uuid_doc.pdf", 2048L, "application/pdf");
 
+            // PDF magic bytes: 25 50 44 46 (%PDF)
+            byte[] pdfMagic = {0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0, 0, 0, 0};
+
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(multipartFile.getSize()).thenReturn(2048L);
             when(multipartFile.getOriginalFilename()).thenReturn("doc.pdf");
             when(multipartFile.getContentType()).thenReturn("application/pdf");
-            when(multipartFile.getInputStream()).thenReturn(java.io.InputStream.nullInputStream());
+            when(multipartFile.getInputStream())
+                    .thenReturn(new ByteArrayInputStream(pdfMagic))   // for magic number validation
+                    .thenReturn(new ByteArrayInputStream(pdfMagic));  // for S3 upload
             when(fileRepository.save(any(FileEntity.class))).thenReturn(savedFile);
             when(fileMapper.toResponse(savedFile)).thenReturn(response);
 
-            FileResponse result = s3FileService.upload(1L, multipartFile);
+            FileResponse result = s3FileService.upload(1L, multipartFile, TargetType.POST);
 
             assertThat(result.originalName()).isEqualTo("doc.pdf");
             verify(s3Client).putObject(any(software.amazon.awssdk.services.s3.model.PutObjectRequest.class),
@@ -163,7 +174,7 @@ class FileServiceImplTest {
     class Delete {
 
         @Test
-        @DisplayName("should soft delete file successfully without S3")
+        @DisplayName("should delete file successfully without S3")
         void delete_success_noS3() {
             FileEntity file = FileEntity.builder()
                     .id(1L).user(user).targetType(TargetType.POST).targetId(1L)
@@ -175,7 +186,7 @@ class FileServiceImplTest {
 
             fileService.delete(1L, 1L);
 
-            assertThat(file.isDeleted()).isTrue();
+            verify(fileRepository).delete(file);
         }
 
         @Test

@@ -74,7 +74,7 @@ class CommentControllerTest {
     private CommentResponse createCommentResponse() {
         return new CommentResponse(
                 COMMENT_ID,
-                new AuthorInfo(USER_ID, "testUser"),
+                new AuthorInfo(USER_ID, "testUser", null),
                 "Test comment content",
                 false,
                 LocalDateTime.now(),
@@ -92,7 +92,7 @@ class CommentControllerTest {
             // given
             CommentResponse comment1 = createCommentResponse();
             CommentResponse comment2 = new CommentResponse(
-                    201L, new AuthorInfo(2L, "user2"), "Another comment",
+                    201L, new AuthorInfo(2L, "user2", null), "Another comment",
                     false, LocalDateTime.now(), List.of()
             );
             CursorPageResponse<CommentResponse> pageResponse = CursorPageResponse.<CommentResponse>builder()
@@ -187,7 +187,7 @@ class CommentControllerTest {
             // given
             CommentUpdateRequest request = new CommentUpdateRequest("Updated comment");
             CommentResponse response = new CommentResponse(
-                    COMMENT_ID, new AuthorInfo(USER_ID, "testUser"),
+                    COMMENT_ID, new AuthorInfo(USER_ID, "testUser", null),
                     "Updated comment", false, LocalDateTime.now(), List.of()
             );
             when(commentService.update(eq(COMMENT_ID), eq(USER_ID), any(CommentUpdateRequest.class)))
@@ -252,7 +252,7 @@ class CommentControllerTest {
             // given
             CommentCreateRequest request = new CommentCreateRequest("Reply content");
             CommentResponse response = new CommentResponse(
-                    300L, new AuthorInfo(USER_ID, "testUser"),
+                    300L, new AuthorInfo(USER_ID, "testUser", null),
                     "Reply content", false, LocalDateTime.now(), List.of()
             );
             when(commentService.createReply(isNull(), eq(COMMENT_ID), eq(USER_ID), any(CommentCreateRequest.class)))

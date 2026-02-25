@@ -76,7 +76,7 @@ class PostControllerTest {
                 POST_ID,
                 1L,
                 "Free Board",
-                new AuthorInfo(USER_ID, "testUser"),
+                new AuthorInfo(USER_ID, "testUser", null),
                 "Test Title",
                 "Test Content",
                 10,
@@ -197,7 +197,7 @@ class PostControllerTest {
             PostUpdateRequest request = new PostUpdateRequest("Updated Title", "Updated Content", List.of());
             PostDetailResponse response = new PostDetailResponse(
                     POST_ID, 1L, "Free Board",
-                    new AuthorInfo(USER_ID, "testUser"),
+                    new AuthorInfo(USER_ID, "testUser", null),
                     "Updated Title", "Updated Content",
                     10, 5, 3, false, false, List.of(),
                     LocalDateTime.now(), LocalDateTime.now()

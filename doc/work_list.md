@@ -605,25 +605,25 @@ com.lockerroom.resourceservice/
 > 웹 서비스에서 호출하지만 리소스 서비스에 존재하지 않는 엔드포인트 4건.
 > 호출 시 404 에러 발생.
 
-- [ ] `GET /api/v1/posts/popular` — 인기 게시글 목록 (좋아요순 상위 N건)
+- [x] `GET /api/v1/posts/popular` — 인기 게시글 목록 (좋아요순 상위 N건)
   - `PostController` 또는 `BoardController`에 추가
   - 요청 파라미터: `size` (optional, 기본값 설정)
   - 응답: `ApiResponse<List<PostListResponse>>`
-- [ ] `GET /api/v1/admin/dashboard` — 관리자 대시보드 요약
+- [x] `GET /api/v1/admin/dashboard` — 관리자 대시보드 요약
   - `AdminController`에 추가
   - 응답 DTO 신규: `AdminDashboardResponse(int pendingReportCount, int pendingInquiryCount, int pendingRequestCount)`
   - 각 Repository에서 `countByStatus(PENDING)` 조회
-- [ ] `PUT /api/v1/admin/users/{userId}/unsuspend` — 사용자 정지 해제
+- [x] `PUT /api/v1/admin/users/{userId}/unsuspend` — 사용자 정지 해제
   - `AdminController`에 추가
   - `AdminService.unsuspendUser(userId, adminId)` — 활성 `UserSuspension` soft delete 처리
-- [ ] `GET /api/v1/admin/notices` — 관리자 공지사항 목록 조회
+- [x] `GET /api/v1/admin/notices` — 관리자 공지사항 목록 조회
   - `AdminController`에 추가
   - 기존 `NoticeService.getList()` 재사용 또는 관리자 전용 목록 메서드 추가
   - 응답: `ApiResponse<CursorPageResponse<NoticeListResponse>>`
 
 ### 12.2 [Major] DTO 필드 불일치 수정
 
-- [ ] `AuthorInfo`에 `teamName` 필드 추가
+- [x] `AuthorInfo`에 `teamName` 필드 추가
   - 현재: `AuthorInfo(Long id, String nickname)` — 2개 필드
   - 수정: `AuthorInfo(Long id, String nickname, String teamName)` — 3개 필드
   - 웹 서비스에서 게시글 상세, 댓글 작성자 팀 표시에 사용
@@ -631,7 +631,7 @@ com.lockerroom.resourceservice/
 
 ### 12.3 [Minor] 직렬화 호환성 확인
 
-- [ ] `SuspendRequest.suspendedUntil` ISO 8601 파싱 호환
+- [x] `SuspendRequest.suspendedUntil` ISO 8601 파싱 호환
   - 웹에서 `new Date().toISOString()` → `"2026-03-04T15:30:00.000Z"` (UTC, `Z` suffix 포함)
   - `LocalDateTime`은 타임존 정보를 포함하지 않아 `Z` suffix 파싱 실패 가능
   - 해결 방안: Jackson `JavaTimeModule` 설정 확인, 또는 `@JsonFormat` 명시, 또는 `OffsetDateTime`으로 타입 변경 검토

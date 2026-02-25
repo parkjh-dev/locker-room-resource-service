@@ -5,6 +5,7 @@ import com.lockerroom.resourceservice.dto.response.*;
 import com.lockerroom.resourceservice.model.enums.*;
 import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.AdminService;
+import com.lockerroom.resourceservice.service.NoticeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,12 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final NoticeService noticeService;
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<ApiResponse<AdminDashboardResponse>> getDashboard() {
+        return ResponseEntity.ok(ApiResponse.success(adminService.getDashboard()));
+    }
 
     @GetMapping("/users")
     public ResponseEntity<ApiResponse<CursorPageResponse<AdminUserListResponse>>> getUsers(
@@ -35,6 +42,14 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("사용자가 정지되었습니다."));
     }
 
+    @PutMapping("/users/{userId}/unsuspend")
+    public ResponseEntity<ApiResponse<Void>> unsuspendUser(
+            @PathVariable Long userId,
+            @CurrentUserId Long adminId) {
+        adminService.unsuspendUser(userId, adminId);
+        return ResponseEntity.ok(ApiResponse.success("사용자 정지가 해제되었습니다."));
+    }
+
     @GetMapping("/reports")
     public ResponseEntity<ApiResponse<CursorPageResponse<ReportListResponse>>> getReports(
             @ModelAttribute CursorPageRequest pageRequest,
@@ -49,6 +64,13 @@ public class AdminController {
             @Valid @RequestBody ReportProcessRequest request) {
         adminService.processReport(reportId, adminId, request);
         return ResponseEntity.ok(ApiResponse.success("신고가 처리되었습니다."));
+    }
+
+    @GetMapping("/notices")
+    public ResponseEntity<ApiResponse<CursorPageResponse<NoticeListResponse>>> getNotices(
+            @ModelAttribute CursorPageRequest pageRequest,
+            @RequestParam(required = false) Long teamId) {
+        return ResponseEntity.ok(ApiResponse.success(noticeService.getList(teamId, pageRequest)));
     }
 
     @PostMapping("/notices")

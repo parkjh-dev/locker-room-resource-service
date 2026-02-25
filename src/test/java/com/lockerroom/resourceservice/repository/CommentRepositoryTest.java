@@ -17,6 +17,9 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,7 +65,7 @@ class CommentRepositoryTest {
     }
 
     @Nested
-    @DisplayName("findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByCreatedAtAsc")
+    @DisplayName("findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByIdAsc")
     class FindRootComments {
 
         @Test
@@ -92,7 +95,7 @@ class CommentRepositoryTest {
 
             // when
             List<Comment> results = commentRepository
-                    .findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(post.getId());
+                    .findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByIdAsc(post.getId(), Pageable.unpaged());
 
             // then
             assertThat(results).hasSize(2);
@@ -122,7 +125,7 @@ class CommentRepositoryTest {
 
             // when
             List<Comment> results = commentRepository
-                    .findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(post.getId());
+                    .findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByIdAsc(post.getId(), Pageable.unpaged());
 
             // then
             assertThat(results).hasSize(1);
@@ -136,7 +139,7 @@ class CommentRepositoryTest {
 
             // when
             List<Comment> results = commentRepository
-                    .findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByCreatedAtAsc(post.getId());
+                    .findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByIdAsc(post.getId(), Pageable.unpaged());
 
             // then
             assertThat(results).isEmpty();

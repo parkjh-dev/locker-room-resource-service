@@ -19,6 +19,7 @@ import com.lockerroom.resourceservice.model.enums.Role;
 import com.lockerroom.resourceservice.repository.CommentRepository;
 import com.lockerroom.resourceservice.repository.PostRepository;
 import com.lockerroom.resourceservice.repository.UserRepository;
+import com.lockerroom.resourceservice.repository.UserTeamRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -43,6 +44,7 @@ class CommentServiceImplTest {
     @Mock private CommentRepository commentRepository;
     @Mock private PostRepository postRepository;
     @Mock private UserRepository userRepository;
+    @Mock private UserTeamRepository userTeamRepository;
     @Mock private KafkaProducerService kafkaProducerService;
     @Mock private CommentMapper commentMapper;
 
@@ -109,7 +111,7 @@ class CommentServiceImplTest {
         void create_success() {
             CommentCreateRequest request = new CommentCreateRequest("New comment");
             CommentResponse expectedResponse = new CommentResponse(
-                    1L, new AuthorInfo(2L, "commenter"),
+                    1L, new AuthorInfo(2L, "commenter", null),
                     "New comment", false, null, List.of()
             );
 
@@ -117,7 +119,7 @@ class CommentServiceImplTest {
             when(userRepository.findById(2L)).thenReturn(Optional.of(commenter));
             when(commentRepository.save(any(Comment.class))).thenReturn(comment);
             when(commentRepository.countByPostIdAndDeletedAtIsNull(1L)).thenReturn(1);
-            when(commentMapper.toResponse(any(Comment.class))).thenReturn(expectedResponse);
+            when(commentMapper.toResponse(any(Comment.class), any())).thenReturn(expectedResponse);
 
             CommentResponse result = commentService.create(1L, 2L, request);
 
@@ -138,7 +140,7 @@ class CommentServiceImplTest {
                     .content("Self comment")
                     .build();
             CommentResponse expectedResponse = new CommentResponse(
-                    2L, new AuthorInfo(1L, "author"),
+                    2L, new AuthorInfo(1L, "author", null),
                     "Self comment", false, null, List.of()
             );
 
@@ -146,7 +148,7 @@ class CommentServiceImplTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(postAuthor));
             when(commentRepository.save(any(Comment.class))).thenReturn(selfComment);
             when(commentRepository.countByPostIdAndDeletedAtIsNull(1L)).thenReturn(1);
-            when(commentMapper.toResponse(any(Comment.class))).thenReturn(expectedResponse);
+            when(commentMapper.toResponse(any(Comment.class), any())).thenReturn(expectedResponse);
 
             commentService.create(1L, 1L, request);
 
@@ -195,7 +197,7 @@ class CommentServiceImplTest {
                     .content("Reply content")
                     .build();
             CommentResponse expectedResponse = new CommentResponse(
-                    2L, new AuthorInfo(2L, "commenter"),
+                    2L, new AuthorInfo(2L, "commenter", null),
                     "Reply content", false, null, List.of()
             );
 
@@ -204,7 +206,7 @@ class CommentServiceImplTest {
             when(userRepository.findById(2L)).thenReturn(Optional.of(commenter));
             when(commentRepository.save(any(Comment.class))).thenReturn(reply);
             when(commentRepository.countByPostIdAndDeletedAtIsNull(1L)).thenReturn(2);
-            when(commentMapper.toResponse(any(Comment.class))).thenReturn(expectedResponse);
+            when(commentMapper.toResponse(any(Comment.class), any())).thenReturn(expectedResponse);
 
             CommentResponse result = commentService.createReply(1L, 10L, 2L, request);
 
@@ -249,7 +251,7 @@ class CommentServiceImplTest {
                     .content("Self reply")
                     .build();
             CommentResponse expectedResponse = new CommentResponse(
-                    2L, new AuthorInfo(1L, "author"),
+                    2L, new AuthorInfo(1L, "author", null),
                     "Self reply", false, null, List.of()
             );
 
@@ -258,7 +260,7 @@ class CommentServiceImplTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(postAuthor));
             when(commentRepository.save(any(Comment.class))).thenReturn(reply);
             when(commentRepository.countByPostIdAndDeletedAtIsNull(1L)).thenReturn(2);
-            when(commentMapper.toResponse(any(Comment.class))).thenReturn(expectedResponse);
+            when(commentMapper.toResponse(any(Comment.class), any())).thenReturn(expectedResponse);
 
             commentService.createReply(1L, 10L, 1L, request);
 
@@ -277,7 +279,7 @@ class CommentServiceImplTest {
                     .content("Reply")
                     .build();
             CommentResponse expectedResponse = new CommentResponse(
-                    3L, new AuthorInfo(2L, "commenter"),
+                    3L, new AuthorInfo(2L, "commenter", null),
                     "Reply", false, null, List.of()
             );
 
@@ -285,7 +287,7 @@ class CommentServiceImplTest {
             when(userRepository.findById(2L)).thenReturn(Optional.of(commenter));
             when(commentRepository.save(any(Comment.class))).thenReturn(reply);
             when(commentRepository.countByPostIdAndDeletedAtIsNull(1L)).thenReturn(2);
-            when(commentMapper.toResponse(any(Comment.class))).thenReturn(expectedResponse);
+            when(commentMapper.toResponse(any(Comment.class), any())).thenReturn(expectedResponse);
 
             CommentResponse result = commentService.createReply(null, 10L, 2L, request);
 
@@ -315,12 +317,12 @@ class CommentServiceImplTest {
         void update_success() {
             CommentUpdateRequest request = new CommentUpdateRequest("Updated comment");
             CommentResponse expectedResponse = new CommentResponse(
-                    1L, new AuthorInfo(2L, "commenter"),
+                    1L, new AuthorInfo(2L, "commenter", null),
                     "Updated comment", false, null, List.of()
             );
 
             when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
-            when(commentMapper.toResponse(any(Comment.class))).thenReturn(expectedResponse);
+            when(commentMapper.toResponse(any(Comment.class), any())).thenReturn(expectedResponse);
 
             CommentResponse result = commentService.update(1L, 2L, request);
 
@@ -333,6 +335,8 @@ class CommentServiceImplTest {
         void update_notOwner_throwsException() {
             CommentUpdateRequest request = new CommentUpdateRequest("Updated");
             when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
+            User nonOwner = User.builder().id(999L).nickname("other").role(Role.USER).build();
+            when(userRepository.findById(999L)).thenReturn(Optional.of(nonOwner));
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> commentService.update(1L, 999L, request));
@@ -373,6 +377,8 @@ class CommentServiceImplTest {
         @DisplayName("should throw exception when user is not the owner")
         void delete_notOwner_throwsException() {
             when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
+            User nonOwner = User.builder().id(999L).nickname("other").role(Role.USER).build();
+            when(userRepository.findById(999L)).thenReturn(Optional.of(nonOwner));
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> commentService.delete(1L, 999L));
@@ -415,11 +421,11 @@ class CommentServiceImplTest {
                     .build();
 
             CommentResponse replyResponse = new CommentResponse(
-                    2L, new AuthorInfo(2L, "commenter"),
+                    2L, new AuthorInfo(2L, "commenter", null),
                     "Reply", false, null, List.of()
             );
             CommentResponse rootResponse = new CommentResponse(
-                    1L, new AuthorInfo(1L, "author"),
+                    1L, new AuthorInfo(1L, "author", null),
                     "Root comment", false, null, List.of(replyResponse)
             );
 
@@ -431,8 +437,8 @@ class CommentServiceImplTest {
                     .thenReturn(List.of(rootComment));
             when(commentRepository.findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(1L))
                     .thenReturn(List.of(replyComment));
-            when(commentMapper.toResponse(replyComment)).thenReturn(replyResponse);
-            when(commentMapper.toResponseWithReplies(eq(rootComment), anyList())).thenReturn(rootResponse);
+            when(commentMapper.toResponse(eq(replyComment), any())).thenReturn(replyResponse);
+            when(commentMapper.toResponseWithReplies(eq(rootComment), anyList(), any())).thenReturn(rootResponse);
 
             CursorPageResponse<CommentResponse> result = commentService.getByPost(1L, pageRequest);
 

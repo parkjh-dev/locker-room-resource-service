@@ -58,6 +58,7 @@ class UserServiceImplTest {
                 .id(1L)
                 .email("user@test.com")
                 .nickname("testuser")
+                .password("oldpass")
                 .role(Role.USER)
                 .provider(OAuthProvider.GOOGLE)
                 .build();
@@ -231,7 +232,7 @@ class UserServiceImplTest {
         @Test
         @DisplayName("should withdraw user successfully")
         void withdraw_success() {
-            WithdrawRequest request = new WithdrawRequest("No longer needed", "password");
+            WithdrawRequest request = new WithdrawRequest("No longer needed", "oldpass");
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(userWithdrawalRepository.save(any(UserWithdrawal.class)))

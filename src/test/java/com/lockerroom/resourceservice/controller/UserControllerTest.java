@@ -166,8 +166,7 @@ class UserControllerTest {
                             .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value("SUCCESS"));
+                    .andExpect(status().isNoContent());
 
             verify(userService).withdraw(eq(USER_ID), any(WithdrawRequest.class));
         }

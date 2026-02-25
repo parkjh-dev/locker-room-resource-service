@@ -20,7 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +43,8 @@ class AdminServiceImplTest {
     @Mock private InquiryReplyRepository inquiryReplyRepository;
     @Mock private RequestRepository requestRepository;
     @Mock private FileRepository fileRepository;
+    @Mock private SportRepository sportRepository;
+    @Mock private BoardRepository boardRepository;
     @Mock private KafkaProducerService kafkaProducerService;
     @Mock private UserMapper userMapper;
     @Mock private PostMapper postMapper;
@@ -86,13 +88,13 @@ class AdminServiceImplTest {
             AdminUserListResponse response = new AdminUserListResponse(
                     2L, "user@test.com", "testuser", Role.USER, null, false, null);
 
-            when(userRepository.findByDeletedAtIsNullOrderByIdDesc(any(PageRequest.class)))
+            when(userRepository.findUsersFiltered(isNull(), isNull(), isNull(), any(PageRequest.class)))
                     .thenReturn(List.of(user));
-            when(userSuspensionRepository.findActiveByUserId(eq(2L), any(LocalDateTime.class)))
+            when(userSuspensionRepository.findActiveByUserId(eq(2L), any(OffsetDateTime.class)))
                     .thenReturn(Optional.empty());
             when(userMapper.toAdminListResponse(user, false)).thenReturn(response);
 
-            CursorPageResponse<AdminUserListResponse> result = adminService.getUsers(pageRequest);
+            CursorPageResponse<AdminUserListResponse> result = adminService.getUsers(pageRequest, null, null);
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isFalse();
@@ -109,13 +111,13 @@ class AdminServiceImplTest {
             AdminUserListResponse response = new AdminUserListResponse(
                     2L, "user@test.com", "testuser", Role.USER, null, false, null);
 
-            when(userRepository.findByDeletedAtIsNullOrderByIdDesc(any(PageRequest.class)))
+            when(userRepository.findUsersFiltered(isNull(), isNull(), isNull(), any(PageRequest.class)))
                     .thenReturn(List.of(user, user2));
-            when(userSuspensionRepository.findActiveByUserId(eq(2L), any(LocalDateTime.class)))
+            when(userSuspensionRepository.findActiveByUserId(eq(2L), any(OffsetDateTime.class)))
                     .thenReturn(Optional.empty());
             when(userMapper.toAdminListResponse(user, false)).thenReturn(response);
 
-            CursorPageResponse<AdminUserListResponse> result = adminService.getUsers(pageRequest);
+            CursorPageResponse<AdminUserListResponse> result = adminService.getUsers(pageRequest, null, null);
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isTrue();
@@ -130,7 +132,7 @@ class AdminServiceImplTest {
         @Test
         @DisplayName("should suspend user successfully")
         void suspendUser_success() {
-            SuspendRequest request = new SuspendRequest("규정 위반", LocalDateTime.now().plusDays(7));
+            SuspendRequest request = new SuspendRequest("규정 위반", OffsetDateTime.now().plusDays(7));
 
             when(userRepository.findById(2L)).thenReturn(Optional.of(user));
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
@@ -145,7 +147,7 @@ class AdminServiceImplTest {
         @Test
         @DisplayName("should throw exception when target user not found")
         void suspendUser_userNotFound() {
-            SuspendRequest request = new SuspendRequest("규정 위반", LocalDateTime.now().plusDays(7));
+            SuspendRequest request = new SuspendRequest("규정 위반", OffsetDateTime.now().plusDays(7));
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
@@ -157,7 +159,7 @@ class AdminServiceImplTest {
         @Test
         @DisplayName("should throw exception when admin not found")
         void suspendUser_adminNotFound() {
-            SuspendRequest request = new SuspendRequest("규정 위반", LocalDateTime.now().plusDays(7));
+            SuspendRequest request = new SuspendRequest("규정 위반", OffsetDateTime.now().plusDays(7));
             when(userRepository.findById(2L)).thenReturn(Optional.of(user));
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
@@ -183,11 +185,11 @@ class AdminServiceImplTest {
             ReportListResponse response = new ReportListResponse(
                     1L, 1L, "Test", "testuser", "spam", ReportStatus.PENDING, null);
 
-            when(postReportRepository.findByStatusOrderByIdDesc(eq(ReportStatus.PENDING), any(PageRequest.class)))
+            when(postReportRepository.findReportsFiltered(isNull(), isNull(), any(PageRequest.class)))
                     .thenReturn(List.of(report));
             when(postMapper.toReportListResponse(report)).thenReturn(response);
 
-            CursorPageResponse<ReportListResponse> result = adminService.getReports(pageRequest);
+            CursorPageResponse<ReportListResponse> result = adminService.getReports(pageRequest, null);
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.getItems().get(0).reason()).isEqualTo("spam");
@@ -203,7 +205,7 @@ class AdminServiceImplTest {
         void processReport_success() {
             Post post = Post.builder().id(1L).title("Test").build();
             PostReport report = PostReport.builder().id(1L).post(post).user(user).reason("spam").build();
-            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, null);
+            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, null, null);
 
             when(postReportRepository.findById(1L)).thenReturn(Optional.of(report));
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
@@ -220,7 +222,7 @@ class AdminServiceImplTest {
         void processReport_deleteAction() {
             Post post = Post.builder().id(1L).title("Test").build();
             PostReport report = PostReport.builder().id(1L).post(post).user(user).reason("spam").build();
-            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, "DELETE");
+            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, "DELETE_POST", null);
 
             when(postReportRepository.findById(1L)).thenReturn(Optional.of(report));
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
@@ -233,7 +235,7 @@ class AdminServiceImplTest {
         @Test
         @DisplayName("should throw exception when report not found")
         void processReport_reportNotFound() {
-            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, null);
+            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, null, null);
             when(postReportRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
@@ -400,11 +402,11 @@ class AdminServiceImplTest {
             AdminInquiryListResponse response = new AdminInquiryListResponse(
                     1L, "testuser", InquiryType.BUG, "버그", InquiryStatus.PENDING, null);
 
-            when(inquiryRepository.findByDeletedAtIsNullOrderByIdDesc(any(PageRequest.class)))
+            when(inquiryRepository.findInquiriesFiltered(isNull(), isNull(), isNull(), any(PageRequest.class)))
                     .thenReturn(List.of(inquiry));
             when(inquiryMapper.toAdminListResponse(inquiry)).thenReturn(response);
 
-            CursorPageResponse<AdminInquiryListResponse> result = adminService.getInquiries(pageRequest);
+            CursorPageResponse<AdminInquiryListResponse> result = adminService.getInquiries(pageRequest, null, null);
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.getItems().get(0).type()).isEqualTo(InquiryType.BUG);
@@ -475,11 +477,11 @@ class AdminServiceImplTest {
             AdminRequestListResponse response = new AdminRequestListResponse(
                     1L, "testuser", RequestType.TEAM, "수원 삼성", "추가 요청", RequestStatus.PENDING, null);
 
-            when(requestRepository.findByDeletedAtIsNullOrderByIdDesc(any(PageRequest.class)))
+            when(requestRepository.findRequestsFiltered(isNull(), isNull(), isNull(), any(PageRequest.class)))
                     .thenReturn(List.of(requestEntity));
             when(requestMapper.toAdminListResponse(requestEntity)).thenReturn(response);
 
-            CursorPageResponse<AdminRequestListResponse> result = adminService.getRequests(pageRequest);
+            CursorPageResponse<AdminRequestListResponse> result = adminService.getRequests(pageRequest, null, null);
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.getItems().get(0).type()).isEqualTo(RequestType.TEAM);
@@ -495,12 +497,15 @@ class AdminServiceImplTest {
         void processRequest_approve() {
             Request requestEntity = Request.builder()
                     .id(1L).user(user).type(RequestType.TEAM).name("수원 삼성").reason("추가 요청").build();
-            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.APPROVED, null);
+            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.APPROVED, null, 1L);
             RequestDetailResponse response = new RequestDetailResponse(
                     1L, RequestType.TEAM, "수원 삼성", "추가 요청", RequestStatus.APPROVED, null, null, null);
 
+            Sport sport = Sport.builder().id(1L).name("축구").build();
             when(requestRepository.findById(1L)).thenReturn(Optional.of(requestEntity));
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
+            when(sportRepository.findById(1L)).thenReturn(Optional.of(sport));
+            when(teamRepository.save(any(Team.class))).thenReturn(Team.builder().id(1L).name("수원 삼성").sport(sport).build());
             when(requestMapper.toDetailResponse(requestEntity)).thenReturn(response);
 
             RequestDetailResponse result = adminService.processRequest(1L, 1L, request);
@@ -514,7 +519,7 @@ class AdminServiceImplTest {
         void processRequest_reject() {
             Request requestEntity = Request.builder()
                     .id(1L).user(user).type(RequestType.TEAM).name("수원 삼성").reason("추가 요청").build();
-            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.REJECTED, "K리그1만 지원");
+            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.REJECTED, "K리그1만 지원", null);
             RequestDetailResponse response = new RequestDetailResponse(
                     1L, RequestType.TEAM, "수원 삼성", "추가 요청", RequestStatus.REJECTED, "K리그1만 지원", null, null);
 
@@ -531,7 +536,7 @@ class AdminServiceImplTest {
         @Test
         @DisplayName("should throw exception when request not found")
         void processRequest_notFound() {
-            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.APPROVED, null);
+            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.APPROVED, null, null);
             when(requestRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,

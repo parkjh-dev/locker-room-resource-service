@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
@@ -29,4 +30,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> findByUserIdAndDeletedAtIsNullOrderByIdDesc(Long userId, Pageable pageable);
 
     List<Post> findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long userId, Long cursorId, Pageable pageable);
+
+    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL " +
+           "AND (:since IS NULL OR p.createdAt >= :since) " +
+           "ORDER BY p.likeCount DESC, p.id DESC")
+    List<Post> findPopularPosts(@Param("since") LocalDateTime since, Pageable pageable);
 }

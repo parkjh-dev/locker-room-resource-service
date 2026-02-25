@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 public interface UserSuspensionRepository extends JpaRepository<UserSuspension, Long> {
@@ -15,5 +15,5 @@ public interface UserSuspensionRepository extends JpaRepository<UserSuspension, 
            "AND us.suspendedUntil > :now " +
            "AND us.deletedAt IS NULL")
     Optional<UserSuspension> findActiveByUserId(@Param("userId") Long userId,
-                                                @Param("now") LocalDateTime now);
+                                                @Param("now") OffsetDateTime now);
 }

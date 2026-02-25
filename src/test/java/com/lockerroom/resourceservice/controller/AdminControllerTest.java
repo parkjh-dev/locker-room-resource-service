@@ -14,6 +14,7 @@ import com.lockerroom.resourceservice.model.enums.ReportStatus;
 import com.lockerroom.resourceservice.model.enums.Role;
 import com.lockerroom.resourceservice.repository.UserRepository;
 import com.lockerroom.resourceservice.service.AdminService;
+import com.lockerroom.resourceservice.service.NoticeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +51,9 @@ class AdminControllerTest {
 
     @MockitoBean
     private AdminService adminService;
+
+    @MockitoBean
+    private NoticeService noticeService;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
@@ -89,7 +94,7 @@ class AdminControllerTest {
                     .nextCursor("10")
                     .hasNext(false)
                     .build();
-            when(adminService.getUsers(any())).thenReturn(response);
+            when(adminService.getUsers(any(), any(), any())).thenReturn(response);
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/users")
@@ -102,7 +107,7 @@ class AdminControllerTest {
                     .andExpect(jsonPath("$.data.items[0].email").value("user@example.com"))
                     .andExpect(jsonPath("$.data.hasNext").value(false));
 
-            verify(adminService).getUsers(any());
+            verify(adminService).getUsers(any(), any(), any());
         }
 
         @Test
@@ -113,7 +118,7 @@ class AdminControllerTest {
                             .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
                     .andExpect(status().isForbidden());
 
-            verify(adminService, never()).getUsers(any());
+            verify(adminService, never()).getUsers(any(), any(), any());
         }
 
         @Test
@@ -123,7 +128,7 @@ class AdminControllerTest {
             mockMvc.perform(get(BASE_URL + "/users"))
                     .andExpect(status().isUnauthorized());
 
-            verify(adminService, never()).getUsers(any());
+            verify(adminService, never()).getUsers(any(), any(), any());
         }
     }
 
@@ -137,7 +142,7 @@ class AdminControllerTest {
             // given
             SuspendRequest request = new SuspendRequest(
                     "Violation of rules",
-                    LocalDateTime.now().plusDays(7)
+                    OffsetDateTime.now().plusDays(7)
             );
             doNothing().when(adminService).suspendUser(eq(10L), eq(ADMIN_ID), any(SuspendRequest.class));
 
@@ -157,7 +162,7 @@ class AdminControllerTest {
         void suspendUser_asUser_returns403() throws Exception {
             // given
             SuspendRequest request = new SuspendRequest(
-                    "Violation", LocalDateTime.now().plusDays(7)
+                    "Violation", OffsetDateTime.now().plusDays(7)
             );
 
             // when & then
@@ -257,7 +262,7 @@ class AdminControllerTest {
                     .nextCursor("1")
                     .hasNext(false)
                     .build();
-            when(adminService.getReports(any())).thenReturn(response);
+            when(adminService.getReports(any(), any())).thenReturn(response);
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/reports")
@@ -270,7 +275,7 @@ class AdminControllerTest {
                     .andExpect(jsonPath("$.data.items[0].reason").value("Spam content"))
                     .andExpect(jsonPath("$.data.items[0].status").value("PENDING"));
 
-            verify(adminService).getReports(any());
+            verify(adminService).getReports(any(), any());
         }
 
         @Test
@@ -281,7 +286,7 @@ class AdminControllerTest {
                             .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
                     .andExpect(status().isForbidden());
 
-            verify(adminService, never()).getReports(any());
+            verify(adminService, never()).getReports(any(), any());
         }
     }
 
@@ -293,7 +298,7 @@ class AdminControllerTest {
         @DisplayName("should process report and return 200")
         void processReport_asAdmin_success() throws Exception {
             // given
-            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, "Post deleted");
+            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, "Post deleted", null);
             doNothing().when(adminService).processReport(eq(1L), eq(ADMIN_ID), any(ReportProcessRequest.class));
 
             // when & then
@@ -311,7 +316,7 @@ class AdminControllerTest {
         @DisplayName("should return 403 when user role is USER")
         void processReport_asUser_returns403() throws Exception {
             // given
-            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, "action");
+            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, "action", null);
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/reports/{reportId}", 1L)

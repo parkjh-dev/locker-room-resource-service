@@ -12,21 +12,21 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface CommentMapper {
 
-    @Mapping(target = "author", expression = "java(toAuthorInfo(comment))")
+    @Mapping(target = "author", expression = "java(toAuthorInfo(comment, teamName))")
     @Mapping(target = "replies", expression = "java(java.util.List.of())")
-    @Mapping(source = "aiGenerated", target = "isAiGenerated")
-    CommentResponse toResponse(Comment comment);
+    @Mapping(source = "comment.aiGenerated", target = "isAiGenerated")
+    CommentResponse toResponse(Comment comment, @org.mapstruct.Context String teamName);
 
-    @Mapping(target = "author", expression = "java(toAuthorInfo(comment))")
+    @Mapping(target = "author", expression = "java(toAuthorInfo(comment, teamName))")
     @Mapping(target = "replies", source = "replies")
     @Mapping(source = "comment.aiGenerated", target = "isAiGenerated")
-    CommentResponse toResponseWithReplies(Comment comment, List<CommentResponse> replies);
+    CommentResponse toResponseWithReplies(Comment comment, List<CommentResponse> replies, @org.mapstruct.Context String teamName);
 
     @Mapping(source = "post.id", target = "postId")
     @Mapping(source = "post.title", target = "postTitle")
     UserCommentListResponse toUserCommentListResponse(Comment comment);
 
-    default AuthorInfo toAuthorInfo(Comment comment) {
-        return new AuthorInfo(comment.getUser().getId(), comment.getUser().getNickname());
+    default AuthorInfo toAuthorInfo(Comment comment, String teamName) {
+        return new AuthorInfo(comment.getUser().getId(), comment.getUser().getNickname(), teamName);
     }
 }

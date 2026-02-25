@@ -29,4 +29,6 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
                                         @Param("type") RequestType type,
                                         @Param("cursorId") Long cursorId,
                                         Pageable pageable);
+
+    long countByStatusAndDeletedAtIsNull(RequestStatus status);
 }

@@ -29,4 +29,6 @@ public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
                                         @Param("type") InquiryType type,
                                         @Param("cursorId") Long cursorId,
                                         Pageable pageable);
+
+    long countByStatusAndDeletedAtIsNull(InquiryStatus status);
 }

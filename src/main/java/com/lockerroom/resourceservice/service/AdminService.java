@@ -6,9 +6,13 @@ import com.lockerroom.resourceservice.model.enums.*;
 
 public interface AdminService {
 
+    AdminDashboardResponse getDashboard();
+
     CursorPageResponse<AdminUserListResponse> getUsers(CursorPageRequest pageRequest, String keyword, Role role);
 
     void suspendUser(Long userId, Long adminId, SuspendRequest request);
+
+    void unsuspendUser(Long userId, Long adminId);
 
     CursorPageResponse<ReportListResponse> getReports(CursorPageRequest pageRequest, ReportStatus status);
 

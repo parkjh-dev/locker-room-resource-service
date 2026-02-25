@@ -4,10 +4,10 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record SuspendRequest(
         @NotBlank String reason,
-        @NotNull @Future LocalDateTime suspendedUntil
+        @NotNull @Future OffsetDateTime suspendedUntil
 ) {
 }

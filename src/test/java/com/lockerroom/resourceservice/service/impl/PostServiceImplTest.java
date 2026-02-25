@@ -16,6 +16,7 @@ import com.lockerroom.resourceservice.model.enums.Role;
 import com.lockerroom.resourceservice.model.enums.TargetType;
 import com.lockerroom.resourceservice.repository.*;
 import com.lockerroom.resourceservice.service.BoardService;
+import com.lockerroom.resourceservice.service.FileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -43,7 +44,9 @@ class PostServiceImplTest {
     @Mock private PostReportRepository postReportRepository;
     @Mock private UserRepository userRepository;
     @Mock private FileRepository fileRepository;
+    @Mock private UserTeamRepository userTeamRepository;
     @Mock private BoardService boardService;
+    @Mock private FileService fileService;
     @Mock private KafkaProducerService kafkaProducerService;
     @Mock private PostMapper postMapper;
     @Mock private FileMapper fileMapper;
@@ -103,7 +106,7 @@ class PostServiceImplTest {
             PostCreateRequest request = new PostCreateRequest(1L, "Test Title", "Test Content", null);
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     1L, 1L, "Free Board",
-                    new AuthorInfo(1L, "testuser"),
+                    new AuthorInfo(1L, "testuser", null),
                     "Test Title", "Test Content",
                     0, 0, 0, false, false,
                     Collections.emptyList(), null, null
@@ -116,7 +119,8 @@ class PostServiceImplTest {
             when(fileRepository.findByTargetTypeAndTargetIdAndDeletedAtIsNull(TargetType.POST, 1L))
                     .thenReturn(Collections.emptyList());
             when(fileMapper.toResponseList(anyList())).thenReturn(Collections.emptyList());
-            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList())).thenReturn(expectedResponse);
+            when(userTeamRepository.findFirstByUserIdOrderByIdAsc(anyLong())).thenReturn(Optional.empty());
+            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any())).thenReturn(expectedResponse);
 
             PostDetailResponse result = postService.create(1L, request);
 
@@ -141,7 +145,7 @@ class PostServiceImplTest {
             PostCreateRequest request = new PostCreateRequest(2L, "QnA Title", "QnA Content", null);
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     2L, 2L, "QnA Board",
-                    new AuthorInfo(1L, "testuser"),
+                    new AuthorInfo(1L, "testuser", null),
                     "QnA Title", "QnA Content",
                     0, 0, 0, false, false,
                     Collections.emptyList(), null, null
@@ -154,7 +158,8 @@ class PostServiceImplTest {
             when(fileRepository.findByTargetTypeAndTargetIdAndDeletedAtIsNull(TargetType.POST, 2L))
                     .thenReturn(Collections.emptyList());
             when(fileMapper.toResponseList(anyList())).thenReturn(Collections.emptyList());
-            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList())).thenReturn(expectedResponse);
+            when(userTeamRepository.findFirstByUserIdOrderByIdAsc(anyLong())).thenReturn(Optional.empty());
+            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any())).thenReturn(expectedResponse);
 
             PostDetailResponse result = postService.create(1L, request);
 
@@ -184,7 +189,7 @@ class PostServiceImplTest {
         void getDetail_success() {
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     1L, 1L, "Free Board",
-                    new AuthorInfo(1L, "testuser"),
+                    new AuthorInfo(1L, "testuser", null),
                     "Test Title", "Test Content",
                     1, 0, 0, false, false,
                     Collections.emptyList(), null, null
@@ -195,7 +200,8 @@ class PostServiceImplTest {
             when(fileRepository.findByTargetTypeAndTargetIdAndDeletedAtIsNull(TargetType.POST, 1L))
                     .thenReturn(Collections.emptyList());
             when(fileMapper.toResponseList(anyList())).thenReturn(Collections.emptyList());
-            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList())).thenReturn(expectedResponse);
+            when(userTeamRepository.findFirstByUserIdOrderByIdAsc(anyLong())).thenReturn(Optional.empty());
+            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any())).thenReturn(expectedResponse);
 
             PostDetailResponse result = postService.getDetail(1L, 1L);
 
@@ -236,7 +242,7 @@ class PostServiceImplTest {
             PostUpdateRequest request = new PostUpdateRequest("Updated Title", "Updated Content", null);
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     1L, 1L, "Free Board",
-                    new AuthorInfo(1L, "testuser"),
+                    new AuthorInfo(1L, "testuser", null),
                     "Updated Title", "Updated Content",
                     0, 0, 0, false, false,
                     Collections.emptyList(), null, null
@@ -247,7 +253,8 @@ class PostServiceImplTest {
             when(fileRepository.findByTargetTypeAndTargetIdAndDeletedAtIsNull(TargetType.POST, 1L))
                     .thenReturn(Collections.emptyList());
             when(fileMapper.toResponseList(anyList())).thenReturn(Collections.emptyList());
-            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList())).thenReturn(expectedResponse);
+            when(userTeamRepository.findFirstByUserIdOrderByIdAsc(anyLong())).thenReturn(Optional.empty());
+            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any())).thenReturn(expectedResponse);
 
             PostDetailResponse result = postService.update(1L, 1L, request);
 
@@ -261,6 +268,7 @@ class PostServiceImplTest {
         void update_notOwner_throwsException() {
             PostUpdateRequest request = new PostUpdateRequest("Updated", "Updated", null);
             when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(userRepository.findById(2L)).thenReturn(Optional.of(otherUser));
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> postService.update(1L, 2L, request));
@@ -299,6 +307,7 @@ class PostServiceImplTest {
         @DisplayName("should throw exception when user is not the owner")
         void delete_notOwner_throwsException() {
             when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+            when(userRepository.findById(2L)).thenReturn(Optional.of(otherUser));
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> postService.delete(1L, 2L));

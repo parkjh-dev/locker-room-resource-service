@@ -20,6 +20,7 @@ import com.lockerroom.resourceservice.service.FileService;
 import com.lockerroom.resourceservice.service.PostService;
 import com.lockerroom.resourceservice.utils.Constants;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,12 +36,20 @@ public class PostServiceImpl implements PostService {
     private final PostLikeRepository postLikeRepository;
     private final PostReportRepository postReportRepository;
     private final UserRepository userRepository;
+    private final UserTeamRepository userTeamRepository;
     private final FileRepository fileRepository;
     private final BoardService boardService;
     private final FileService fileService;
     private final KafkaProducerService kafkaProducerService;
     private final PostMapper postMapper;
     private final FileMapper fileMapper;
+
+    @Override
+    public List<PostListResponse> getPopularPosts(int size, Integer days) {
+        LocalDateTime since = (days != null) ? LocalDateTime.now().minusDays(days) : null;
+        List<Post> posts = postRepository.findPopularPosts(since, PageRequest.of(0, size));
+        return posts.stream().map(postMapper::toListResponse).toList();
+    }
 
     @Override
     @Transactional
@@ -164,7 +173,11 @@ public class PostServiceImpl implements PostService {
                 TargetType.POST, post.getId());
         List<FileResponse> fileResponses = fileMapper.toResponseList(files);
 
-        return postMapper.toDetailResponse(post, isLiked, fileResponses);
+        String teamName = userTeamRepository.findFirstByUserIdOrderByIdAsc(post.getUser().getId())
+                .map(ut -> ut.getTeam().getName())
+                .orElse(null);
+
+        return postMapper.toDetailResponse(post, isLiked, fileResponses, teamName);
     }
 
     private Post findPostById(Long postId) {

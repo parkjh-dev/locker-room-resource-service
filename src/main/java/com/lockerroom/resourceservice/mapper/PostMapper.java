@@ -18,12 +18,12 @@ public interface PostMapper {
     @Mapping(source = "aiGenerated", target = "isAiGenerated")
     PostListResponse toListResponse(Post post);
 
-    default PostDetailResponse toDetailResponse(Post post, boolean isLiked, List<FileResponse> files) {
+    default PostDetailResponse toDetailResponse(Post post, boolean isLiked, List<FileResponse> files, String teamName) {
         return new PostDetailResponse(
                 post.getId(),
                 post.getBoard().getId(),
                 post.getBoard().getName(),
-                new AuthorInfo(post.getUser().getId(), post.getUser().getNickname()),
+                new AuthorInfo(post.getUser().getId(), post.getUser().getNickname(), teamName),
                 post.getTitle(),
                 post.getContent(),
                 post.getViewCount(),

@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Slf4j
@@ -51,6 +52,14 @@ public class AdminServiceImpl implements AdminService {
     private final FileMapper fileMapper;
 
     @Override
+    public AdminDashboardResponse getDashboard() {
+        long pendingReportCount = postReportRepository.countByStatusAndDeletedAtIsNull(ReportStatus.PENDING);
+        long pendingInquiryCount = inquiryRepository.countByStatusAndDeletedAtIsNull(InquiryStatus.PENDING);
+        long pendingRequestCount = requestRepository.countByStatusAndDeletedAtIsNull(RequestStatus.PENDING);
+        return new AdminDashboardResponse(pendingReportCount, pendingInquiryCount, pendingRequestCount);
+    }
+
+    @Override
     public CursorPageResponse<AdminUserListResponse> getUsers(CursorPageRequest pageRequest, String keyword, Role role) {
         Long cursorId = pageRequest.decodeCursor();
         Pageable pageable = PageRequest.of(0, pageRequest.getSize() + 1);
@@ -59,7 +68,7 @@ public class AdminServiceImpl implements AdminService {
 
         return buildCursorPage(users, pageRequest.getSize(), u -> {
             boolean isSuspended = userSuspensionRepository
-                    .findActiveByUserId(u.getId(), LocalDateTime.now())
+                    .findActiveByUserId(u.getId(), OffsetDateTime.now())
                     .isPresent();
             return userMapper.toAdminListResponse(u, isSuspended);
         }, User::getId);
@@ -74,12 +83,24 @@ public class AdminServiceImpl implements AdminService {
         UserSuspension suspension = UserSuspension.builder()
                 .user(user)
                 .reason(request.reason())
-                .suspendedAt(LocalDateTime.now())
+                .suspendedAt(OffsetDateTime.now())
                 .suspendedUntil(request.suspendedUntil())
                 .admin(admin)
                 .build();
 
         userSuspensionRepository.save(suspension);
+    }
+
+    @Override
+    @Transactional
+    public void unsuspendUser(Long userId, Long adminId) {
+        findUserById(userId);
+
+        UserSuspension suspension = userSuspensionRepository
+                .findActiveByUserId(userId, OffsetDateTime.now())
+                .orElseThrow(() -> new CustomException(ErrorCode.SUSPENSION_NOT_FOUND));
+
+        suspension.softDelete();
     }
 
     @Override
@@ -304,8 +325,8 @@ public class AdminServiceImpl implements AdminService {
                         .user(report.getPost().getUser())
                         .admin(admin)
                         .reason("신고 처리: " + report.getReason())
-                        .suspendedAt(LocalDateTime.now())
-                        .suspendedUntil(LocalDateTime.now().plusDays(days))
+                        .suspendedAt(OffsetDateTime.now())
+                        .suspendedUntil(OffsetDateTime.now().plusDays(days))
                         .build();
                 userSuspensionRepository.save(suspension);
                 report.getPost().softDelete();

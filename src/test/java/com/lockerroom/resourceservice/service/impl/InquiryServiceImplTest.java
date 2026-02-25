@@ -16,6 +16,7 @@ import com.lockerroom.resourceservice.repository.FileRepository;
 import com.lockerroom.resourceservice.repository.InquiryReplyRepository;
 import com.lockerroom.resourceservice.repository.InquiryRepository;
 import com.lockerroom.resourceservice.repository.UserRepository;
+import com.lockerroom.resourceservice.service.FileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -42,6 +43,7 @@ class InquiryServiceImplTest {
     @Mock private InquiryReplyRepository inquiryReplyRepository;
     @Mock private UserRepository userRepository;
     @Mock private FileRepository fileRepository;
+    @Mock private FileService fileService;
     @Mock private InquiryMapper inquiryMapper;
     @Mock private FileMapper fileMapper;
 

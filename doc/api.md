@@ -562,6 +562,40 @@ Idempotency-Key: {UUID}
 
 ### 2.4 게시글 (Posts)
 
+#### 2.4.0 GET `/posts/popular` - 인기 게시글 목록
+
+**인증**: 불필요
+
+**Query Parameter**
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|----------|------|------|--------|------|
+| size | int | X | 10 | 조회 개수 |
+| days | int | X | null | 최근 N일 이내 (null이면 전체 기간) |
+
+**Response 200**
+```json
+{
+  "code": "SUCCESS",
+  "message": "인기 게시글을 조회했습니다.",
+  "data": [
+    {
+      "id": 101,
+      "title": "오늘 경기 어땠나요?",
+      "authorNickname": "축구팬",
+      "viewCount": 150,
+      "likeCount": 45,
+      "commentCount": 22,
+      "isAiGenerated": false,
+      "createdAt": "2026-02-14T15:30:00Z"
+    }
+  ]
+}
+```
+
+> likeCount 내림차순 정렬. 페이지네이션 없이 상위 N개 반환.
+
+---
+
 #### 2.4.1 POST `/posts` - 게시글 작성
 
 **인증**: 필수
@@ -1357,6 +1391,27 @@ Idempotency-Key: {UUID}
 
 > 모든 관리자 API는 `role=ADMIN` 권한이 필요합니다.
 
+#### 2.11.0 GET `/admin/dashboard` - 관리자 대시보드
+
+**인증**: 필수 (ADMIN)
+
+**Response 200**
+```json
+{
+  "code": "SUCCESS",
+  "message": "요청이 성공적으로 처리되었습니다.",
+  "data": {
+    "pendingReportCount": 5,
+    "pendingInquiryCount": 3,
+    "pendingRequestCount": 2
+  }
+}
+```
+
+> PENDING 상태의 신고/문의/요청 건수를 한 번에 조회.
+
+---
+
 #### 2.11.1 GET `/admin/users` - 회원 목록 조회
 
 **인증**: 필수 (ADMIN)
@@ -1409,7 +1464,7 @@ Idempotency-Key: {UUID}
 | 필드 | 타입 | 필수 | 유효성 검증 |
 |------|------|------|-------------|
 | reason | string | O | 1~1000자 |
-| suspendedUntil | datetime | O | 현재 시각 이후 |
+| suspendedUntil | OffsetDateTime | O | 현재 시각 이후 (ISO 8601, 예: `2026-03-14T23:59:59+09:00`) |
 
 **Response 200**
 ```json
@@ -1423,6 +1478,49 @@ Idempotency-Key: {UUID}
   }
 }
 ```
+
+---
+
+#### 2.11.2.1 PUT `/admin/users/{userId}/unsuspend` - 회원 정지 해제
+
+**인증**: 필수 (ADMIN)
+
+**Path Parameter**
+| 파라미터 | 타입 | 설명 |
+|----------|------|------|
+| userId | long | 사용자 ID |
+
+**Response 200**
+```json
+{
+  "code": "SUCCESS",
+  "message": "사용자 정지가 해제되었습니다.",
+  "data": null
+}
+```
+
+**에러 코드**
+| 코드 | 상태 | 설명 |
+|------|------|------|
+| USER_NOT_FOUND | 404 | 사용자 없음 |
+| SUSPENSION_NOT_FOUND | 404 | 활성 정지 없음 |
+
+---
+
+#### 2.11.2.2 GET `/admin/notices` - 관리자 공지 목록 조회
+
+**인증**: 필수 (ADMIN)
+
+**Query Parameter**
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|----------|------|------|--------|------|
+| cursor | string | X | null | 커서 |
+| size | int | X | 20 | 조회 개수 |
+| teamId | long | X | null | 팀 공지 필터 |
+
+**Response 200**: `GET /notices` 응답과 동일 (CursorPageResponse<NoticeListResponse>)
+
+> 기존 공개 공지사항 목록과 동일한 응답 형식. 관리자 전용 경로로 분리.
 
 ---
 
@@ -1785,6 +1883,7 @@ Idempotency-Key: {UUID}
 | POST | POST_NOT_FOUND | 404 | 게시글 없음 |
 | POST | POST_ACCESS_DENIED | 403 | 게시글 접근 권한 없음 |
 | POST | POST_ALREADY_REPORTED | 409 | 이미 신고한 게시글 |
+| SUSPENSION | SUSPENSION_NOT_FOUND | 404 | 활성 정지 없음 |
 | COMMENT | COMMENT_NOT_FOUND | 404 | 댓글 없음 |
 | COMMENT | COMMENT_REPLY_DEPTH_EXCEEDED | 400 | 대댓글 depth 초과 |
 | FILE | FILE_SIZE_EXCEEDED | 400 | 파일 크기 초과 |
@@ -1804,3 +1903,4 @@ Idempotency-Key: {UUID}
 | 1.0 | 2026-02-15 | - | 초안 작성 |
 | 1.1 | 2026-02-16 | - | 인증 서버 Keycloak 확정. auth-service API 재구성 (login/logout/token/SSO/password → Keycloak 직접 처리) |
 | 1.2 | 2026-02-25 | - | Phase 20 반영: sort 파라미터 camelCase 통일 (created_at→createdAt, like_count→likeCount), 에러코드 시맨틱 코드 확정 |
+| 1.3 | 2026-02-25 | - | Phase 12 반영: 인기 게시글(GET /posts/popular), 대시보드(GET /admin/dashboard), 정지 해제(PUT /admin/users/{userId}/unsuspend), 관리자 공지 목록(GET /admin/notices) 추가. AuthorInfo.teamName 추가. SuspendRequest.suspendedUntil OffsetDateTime 변경. SUSPENSION_NOT_FOUND 에러 코드 추가 |

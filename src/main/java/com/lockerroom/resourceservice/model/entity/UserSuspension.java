@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Getter
@@ -31,10 +31,10 @@ public class UserSuspension extends BaseEntity {
     private String reason;
 
     @Column(nullable = false)
-    private LocalDateTime suspendedAt;
+    private OffsetDateTime suspendedAt;
 
     @Column(nullable = false)
-    private LocalDateTime suspendedUntil;
+    private OffsetDateTime suspendedUntil;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id", nullable = false)

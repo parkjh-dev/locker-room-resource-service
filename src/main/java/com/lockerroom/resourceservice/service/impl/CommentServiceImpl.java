@@ -15,9 +15,11 @@ import com.lockerroom.resourceservice.model.entity.Post;
 import com.lockerroom.resourceservice.model.entity.User;
 import com.lockerroom.resourceservice.model.enums.NotificationType;
 import com.lockerroom.resourceservice.model.enums.Role;
+import com.lockerroom.resourceservice.model.entity.UserTeam;
 import com.lockerroom.resourceservice.repository.CommentRepository;
 import com.lockerroom.resourceservice.repository.PostRepository;
 import com.lockerroom.resourceservice.repository.UserRepository;
+import com.lockerroom.resourceservice.repository.UserTeamRepository;
 import com.lockerroom.resourceservice.service.CommentService;
 import com.lockerroom.resourceservice.utils.Constants;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -36,6 +40,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final UserTeamRepository userTeamRepository;
     private final KafkaProducerService kafkaProducerService;
     private final CommentMapper commentMapper;
 
@@ -70,7 +75,7 @@ public class CommentServiceImpl implements CommentService {
             );
         }
 
-        return commentMapper.toResponse(saved);
+        return commentMapper.toResponse(saved, resolveTeamName(userId));
     }
 
     @Override
@@ -110,7 +115,7 @@ public class CommentServiceImpl implements CommentService {
             );
         }
 
-        return commentMapper.toResponse(saved);
+        return commentMapper.toResponse(saved, resolveTeamName(userId));
     }
 
     @Override
@@ -121,7 +126,7 @@ public class CommentServiceImpl implements CommentService {
 
         comment.updateContent(request.content());
 
-        return commentMapper.toResponse(comment);
+        return commentMapper.toResponse(comment, resolveTeamName(userId));
     }
 
     @Override
@@ -150,8 +155,19 @@ public class CommentServiceImpl implements CommentService {
         List<Comment> resultComments = hasNext
                 ? rootComments.subList(0, pageRequest.getSize()) : rootComments;
 
+        // Batch-load teamNames for N+1 prevention
+        List<Long> allUserIds = resultComments.stream()
+                .map(c -> c.getUser().getId())
+                .collect(Collectors.toList());
+        resultComments.forEach(c -> {
+            List<Comment> replies = commentRepository
+                    .findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(c.getId());
+            replies.forEach(r -> allUserIds.add(r.getUser().getId()));
+        });
+        Map<Long, String> teamNameMap = buildTeamNameMap(allUserIds);
+
         List<CommentResponse> items = resultComments.stream()
-                .map(this::toResponseWithReplies)
+                .map(c -> toResponseWithReplies(c, teamNameMap))
                 .toList();
 
         String nextCursor = hasNext
@@ -165,15 +181,15 @@ public class CommentServiceImpl implements CommentService {
                 .build();
     }
 
-    private CommentResponse toResponseWithReplies(Comment comment) {
+    private CommentResponse toResponseWithReplies(Comment comment, Map<Long, String> teamNameMap) {
         List<Comment> replies = commentRepository
                 .findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(comment.getId());
 
         List<CommentResponse> replyResponses = replies.stream()
-                .map(commentMapper::toResponse)
+                .map(r -> commentMapper.toResponse(r, teamNameMap.get(r.getUser().getId())))
                 .toList();
 
-        return commentMapper.toResponseWithReplies(comment, replyResponses);
+        return commentMapper.toResponseWithReplies(comment, replyResponses, teamNameMap.get(comment.getUser().getId()));
     }
 
     private void updateCommentCount(Post post) {
@@ -194,6 +210,21 @@ public class CommentServiceImpl implements CommentService {
     private Comment findCommentById(Long commentId) {
         return commentRepository.findById(commentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+    }
+
+    private String resolveTeamName(Long userId) {
+        return userTeamRepository.findFirstByUserIdOrderByIdAsc(userId)
+                .map(ut -> ut.getTeam().getName())
+                .orElse(null);
+    }
+
+    private Map<Long, String> buildTeamNameMap(List<Long> userIds) {
+        return userTeamRepository.findByUserIdIn(userIds).stream()
+                .collect(Collectors.toMap(
+                        ut -> ut.getUser().getId(),
+                        ut -> ut.getTeam().getName(),
+                        (first, second) -> first
+                ));
     }
 
     private void validateCommentOwner(Comment comment, Long userId) {

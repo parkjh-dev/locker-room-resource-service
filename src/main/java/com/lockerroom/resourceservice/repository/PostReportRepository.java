@@ -24,4 +24,6 @@ public interface PostReportRepository extends JpaRepository<PostReport, Long> {
     List<PostReport> findReportsFiltered(@Param("status") ReportStatus status,
                                          @Param("cursorId") Long cursorId,
                                          Pageable pageable);
+
+    long countByStatusAndDeletedAtIsNull(ReportStatus status);
 }

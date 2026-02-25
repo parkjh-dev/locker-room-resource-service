@@ -83,7 +83,7 @@ class BoardServiceImplTest {
             BoardResponse commonResponse = new BoardResponse(1L, "공통 게시판", BoardType.COMMON, null, null);
             BoardResponse qnaResponse = new BoardResponse(2L, "Q&A 게시판", BoardType.QNA, null, null);
 
-            when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA)))
+            when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE, BoardType.NEWS)))
                     .thenReturn(List.of(commonBoard, qnaBoard));
             when(postMapper.toBoardResponse(commonBoard)).thenReturn(commonResponse);
             when(postMapper.toBoardResponse(qnaBoard)).thenReturn(qnaResponse);
@@ -101,7 +101,7 @@ class BoardServiceImplTest {
             BoardResponse commonResponse = new BoardResponse(1L, "공통 게시판", BoardType.COMMON, null, null);
             BoardResponse teamResponse = new BoardResponse(3L, "울산 HD FC 게시판", BoardType.TEAM, 1L, "울산 HD FC");
 
-            when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA)))
+            when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE, BoardType.NEWS)))
                     .thenReturn(List.of(commonBoard));
             when(userTeamRepository.findByUserId(1L)).thenReturn(List.of(userTeam));
             when(boardRepository.findByTeamId(1L)).thenReturn(List.of(teamBoard));
@@ -118,7 +118,7 @@ class BoardServiceImplTest {
         @Test
         @DisplayName("should return empty team boards when user has no teams")
         void getBoards_noTeams() {
-            when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA)))
+            when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE, BoardType.NEWS)))
                     .thenReturn(List.of(commonBoard));
             when(userTeamRepository.findByUserId(1L)).thenReturn(Collections.emptyList());
             when(postMapper.toBoardResponse(commonBoard))

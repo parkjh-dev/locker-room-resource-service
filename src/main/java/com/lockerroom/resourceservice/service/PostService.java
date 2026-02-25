@@ -5,9 +5,14 @@ import com.lockerroom.resourceservice.dto.request.PostUpdateRequest;
 import com.lockerroom.resourceservice.dto.request.ReportRequest;
 import com.lockerroom.resourceservice.dto.response.LikeResponse;
 import com.lockerroom.resourceservice.dto.response.PostDetailResponse;
+import com.lockerroom.resourceservice.dto.response.PostListResponse;
 import com.lockerroom.resourceservice.dto.response.ReportResponse;
 
+import java.util.List;
+
 public interface PostService {
+
+    List<PostListResponse> getPopularPosts(int size, Integer days);
 
     PostDetailResponse create(Long userId, PostCreateRequest request);
 

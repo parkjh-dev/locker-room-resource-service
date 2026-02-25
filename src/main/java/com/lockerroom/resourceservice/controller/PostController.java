@@ -7,6 +7,7 @@ import com.lockerroom.resourceservice.dto.request.ReportRequest;
 import com.lockerroom.resourceservice.dto.response.*;
 import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.PostService;
+import java.util.List;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,13 @@ import org.springframework.web.bind.annotation.*;
 public class PostController {
 
     private final PostService postService;
+
+    @GetMapping("/popular")
+    public ResponseEntity<ApiResponse<List<PostListResponse>>> getPopularPosts(
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Integer days) {
+        return ResponseEntity.ok(ApiResponse.success("인기 게시글을 조회했습니다.", postService.getPopularPosts(size, days)));
+    }
 
     @Idempotent
     @PostMapping

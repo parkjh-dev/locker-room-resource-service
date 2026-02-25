@@ -27,6 +27,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/notices/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/sports/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts/popular").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/{postId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/{postId}/comments").permitAll()
                         // Swagger, Actuator & tools
