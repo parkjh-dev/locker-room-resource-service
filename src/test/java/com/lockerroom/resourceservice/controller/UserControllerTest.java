@@ -76,6 +76,7 @@ class UserControllerTest {
                 "testUser",
                 Role.USER,
                 OAuthProvider.GOOGLE,
+                null,
                 List.of(),
                 LocalDateTime.now()
         );
@@ -114,10 +115,10 @@ class UserControllerTest {
         @DisplayName("should update user info and return 200")
         void updateMyInfo_success() throws Exception {
             // given
-            UserUpdateRequest request = new UserUpdateRequest("newNickname", null, null);
+            UserUpdateRequest request = new UserUpdateRequest("newNickname", null, null, null);
             UserResponse response = new UserResponse(
                     USER_ID, "test@example.com", "newNickname",
-                    Role.USER, OAuthProvider.GOOGLE, List.of(), LocalDateTime.now()
+                    Role.USER, OAuthProvider.GOOGLE, null, List.of(), LocalDateTime.now()
             );
             when(userService.updateMyInfo(eq(USER_ID), any(UserUpdateRequest.class))).thenReturn(response);
 
@@ -137,7 +138,7 @@ class UserControllerTest {
         @DisplayName("should return 400 when nickname is too short")
         void updateMyInfo_shortNickname_returns400() throws Exception {
             // given
-            UserUpdateRequest request = new UserUpdateRequest("a", null, null);
+            UserUpdateRequest request = new UserUpdateRequest("a", null, null, null);
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/me")

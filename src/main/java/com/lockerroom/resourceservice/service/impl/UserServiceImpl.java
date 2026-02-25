@@ -57,6 +57,10 @@ public class UserServiceImpl implements UserService {
             user.updateNickname(request.nickname());
         }
 
+        if (request.profileImageUrl() != null) {
+            user.updateProfileImageUrl(request.profileImageUrl());
+        }
+
         if (request.newPassword() != null) {
             if (request.currentPassword() == null ||
                     !request.currentPassword().equals(user.getPassword())) {

@@ -638,6 +638,40 @@ com.lockerroom.resourceservice/
 
 ---
 
+## Phase 13: 프로필 이미지 기능 추가 ✅
+
+> 구현 일시: 2026-02-26
+> 대상: 프론트엔드(`locker-room-web-service`)에서 사용하는 `profileImageUrl` 필드 백엔드 지원
+
+### 13.1 Entity & Enum 수정
+- [x] `User.java` — `profileImageUrl` 필드(VARCHAR 500) + `updateProfileImageUrl()` 메서드 추가
+- [x] `TargetType.java` — `PROFILE` 값 추가 (파일 업로드 시 targetType 구분용)
+
+### 13.2 DTO 수정
+- [x] `UserResponse` — `profileImageUrl` 필드 추가 (provider와 teams 사이)
+- [x] `AuthorInfo` — `profileImageUrl` 필드 추가 (teamName 뒤)
+- [x] `UserUpdateRequest` — `profileImageUrl` 필드 추가 (@Size(max=500))
+
+### 13.3 Mapper 수정
+- [x] `UserMapper.toResponse()` — `user.getProfileImageUrl()` 전달
+- [x] `PostMapper.toDetailResponse()` — AuthorInfo 생성 시 `post.getUser().getProfileImageUrl()` 포함
+- [x] `CommentMapper.toAuthorInfo()` — `comment.getUser().getProfileImageUrl()` 포함
+
+### 13.4 Service 수정
+- [x] `UserServiceImpl.updateMyInfo()` — `profileImageUrl` 저장 로직 추가
+
+### 13.5 테스트 수정
+- [x] 6개 테스트 파일 AuthorInfo/UserResponse/UserUpdateRequest 생성자 호출 업데이트
+- [x] 전체 248개 테스트 통과 확인
+
+### 13.6 문서 업데이트
+- [x] `db_sds.md` — users 테이블에 `profile_image_url` 컬럼 추가, files 테이블 target_type에 PROFILE 추가
+- [x] `api.md` — GET/PUT /users/me, 게시글 상세, 댓글 AuthorInfo에 profileImageUrl 필드 추가
+- [x] `sds.md` — 개정 이력 업데이트
+- [x] `work_list.md` — Phase 13 항목 기록
+
+---
+
 ## 구현 우선순위 (권장 순서)
 
 ```

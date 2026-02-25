@@ -240,6 +240,7 @@ Idempotency-Key: {UUID}
     "nickname": "축구팬",
     "role": "USER",
     "provider": null,
+    "profileImageUrl": null,
     "teams": [
       {
         "sportId": 1,
@@ -265,7 +266,8 @@ Idempotency-Key: {UUID}
 {
   "nickname": "새닉네임",
   "currentPassword": "Password1!",
-  "newPassword": "NewPassword1!"
+  "newPassword": "NewPassword1!",
+  "profileImageUrl": "uploads/uuid_image.png"
 }
 ```
 
@@ -274,6 +276,7 @@ Idempotency-Key: {UUID}
 | nickname | string | X | 2~20자, 특수문자 불가 |
 | currentPassword | string | X | 비밀번호 변경 시 필수 |
 | newPassword | string | X | 8~20자, 영문+숫자+특수문자 |
+| profileImageUrl | string | X | 최대 500자, 파일 업로드 후 URL |
 
 > 닉네임만 변경할 경우 비밀번호 필드 생략 가능. 비밀번호 변경 시 currentPassword 필수.
 
@@ -664,7 +667,8 @@ Idempotency-Key: {UUID}
     "author": {
       "id": 42,
       "nickname": "축구팬",
-      "teamName": "전북 현대 모터스"
+      "teamName": "전북 현대 모터스",
+      "profileImageUrl": null
     },
     "title": "오늘 경기 어땠나요?",
     "content": "오늘 경기 정말 재미있었는데 다들 어떻게 생각하세요?",
@@ -835,7 +839,8 @@ Idempotency-Key: {UUID}
         "author": {
           "id": 43,
           "nickname": "야구팬",
-          "teamName": "삼성 라이온즈"
+          "teamName": "삼성 라이온즈",
+          "profileImageUrl": null
         },
         "content": "정말 좋은 글이네요!",
         "isAiGenerated": false,
@@ -846,7 +851,8 @@ Idempotency-Key: {UUID}
             "author": {
               "id": 42,
               "nickname": "축구팬",
-              "teamName": "전북 현대 모터스"
+              "teamName": "전북 현대 모터스",
+              "profileImageUrl": null
             },
             "content": "감사합니다!",
             "isAiGenerated": false,
@@ -1344,7 +1350,7 @@ Idempotency-Key: {UUID}
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|
 | file | file | O | 업로드할 파일 |
-| targetType | string | O | POST, INQUIRY, COMMENT |
+| targetType | string | O | POST, INQUIRY, COMMENT, PROFILE |
 
 **파일 제한**
 | 항목 | 제한 |
@@ -1904,3 +1910,4 @@ Idempotency-Key: {UUID}
 | 1.1 | 2026-02-16 | - | 인증 서버 Keycloak 확정. auth-service API 재구성 (login/logout/token/SSO/password → Keycloak 직접 처리) |
 | 1.2 | 2026-02-25 | - | Phase 20 반영: sort 파라미터 camelCase 통일 (created_at→createdAt, like_count→likeCount), 에러코드 시맨틱 코드 확정 |
 | 1.3 | 2026-02-25 | - | Phase 12 반영: 인기 게시글(GET /posts/popular), 대시보드(GET /admin/dashboard), 정지 해제(PUT /admin/users/{userId}/unsuspend), 관리자 공지 목록(GET /admin/notices) 추가. AuthorInfo.teamName 추가. SuspendRequest.suspendedUntil OffsetDateTime 변경. SUSPENSION_NOT_FOUND 에러 코드 추가 |
+| 1.4 | 2026-02-26 | - | Phase 13 반영: profileImageUrl 필드 추가 (UserResponse, AuthorInfo, UserUpdateRequest). 파일 업로드 targetType에 PROFILE 추가 |

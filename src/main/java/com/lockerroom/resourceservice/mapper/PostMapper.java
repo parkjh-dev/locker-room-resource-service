@@ -23,7 +23,7 @@ public interface PostMapper {
                 post.getId(),
                 post.getBoard().getId(),
                 post.getBoard().getName(),
-                new AuthorInfo(post.getUser().getId(), post.getUser().getNickname(), teamName),
+                new AuthorInfo(post.getUser().getId(), post.getUser().getNickname(), teamName, post.getUser().getProfileImageUrl()),
                 post.getTitle(),
                 post.getContent(),
                 post.getViewCount(),

@@ -20,6 +20,7 @@ public interface UserMapper {
                 user.getNickname(),
                 user.getRole(),
                 user.getProvider(),
+                user.getProfileImageUrl(),
                 teams,
                 user.getCreatedAt()
         );

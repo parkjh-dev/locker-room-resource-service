@@ -12,6 +12,7 @@ public record UserResponse(
         String nickname,
         Role role,
         OAuthProvider provider,
+        String profileImageUrl,
         List<UserTeamInfo> teams,
         LocalDateTime createdAt
 ) {

@@ -27,6 +27,6 @@ public interface CommentMapper {
     UserCommentListResponse toUserCommentListResponse(Comment comment);
 
     default AuthorInfo toAuthorInfo(Comment comment, String teamName) {
-        return new AuthorInfo(comment.getUser().getId(), comment.getUser().getNickname(), teamName);
+        return new AuthorInfo(comment.getUser().getId(), comment.getUser().getNickname(), teamName, comment.getUser().getProfileImageUrl());
     }
 }

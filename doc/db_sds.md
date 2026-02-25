@@ -29,6 +29,7 @@ CREATE TABLE users (
     role            ENUM('USER', 'ADMIN') NOT NULL DEFAULT 'USER',
     provider        ENUM('GOOGLE', 'KAKAO', 'NAVER') NULL,
     provider_id     VARCHAR(255)    NULL        COMMENT 'SSO 고유 ID',
+    profile_image_url VARCHAR(500) NULL        COMMENT '프로필 이미지 URL',
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at      DATETIME        NULL,
@@ -317,7 +318,7 @@ CREATE TABLE requests (
 CREATE TABLE files (
     id              BIGINT          NOT NULL AUTO_INCREMENT,
     user_id         BIGINT          NOT NULL    COMMENT '업로더',
-    target_type     ENUM('POST', 'INQUIRY', 'COMMENT') NOT NULL,
+    target_type     ENUM('POST', 'INQUIRY', 'COMMENT', 'NOTICE', 'PROFILE') NOT NULL,
     target_id       BIGINT          NOT NULL,
     original_name   VARCHAR(255)    NOT NULL,
     stored_name     VARCHAR(255)    NOT NULL,

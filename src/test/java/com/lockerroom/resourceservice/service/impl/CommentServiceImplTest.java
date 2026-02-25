@@ -111,7 +111,7 @@ class CommentServiceImplTest {
         void create_success() {
             CommentCreateRequest request = new CommentCreateRequest("New comment");
             CommentResponse expectedResponse = new CommentResponse(
-                    1L, new AuthorInfo(2L, "commenter", null),
+                    1L, new AuthorInfo(2L, "commenter", null, null),
                     "New comment", false, null, List.of()
             );
 
@@ -140,7 +140,7 @@ class CommentServiceImplTest {
                     .content("Self comment")
                     .build();
             CommentResponse expectedResponse = new CommentResponse(
-                    2L, new AuthorInfo(1L, "author", null),
+                    2L, new AuthorInfo(1L, "author", null, null),
                     "Self comment", false, null, List.of()
             );
 
@@ -197,7 +197,7 @@ class CommentServiceImplTest {
                     .content("Reply content")
                     .build();
             CommentResponse expectedResponse = new CommentResponse(
-                    2L, new AuthorInfo(2L, "commenter", null),
+                    2L, new AuthorInfo(2L, "commenter", null, null),
                     "Reply content", false, null, List.of()
             );
 
@@ -251,7 +251,7 @@ class CommentServiceImplTest {
                     .content("Self reply")
                     .build();
             CommentResponse expectedResponse = new CommentResponse(
-                    2L, new AuthorInfo(1L, "author", null),
+                    2L, new AuthorInfo(1L, "author", null, null),
                     "Self reply", false, null, List.of()
             );
 
@@ -279,7 +279,7 @@ class CommentServiceImplTest {
                     .content("Reply")
                     .build();
             CommentResponse expectedResponse = new CommentResponse(
-                    3L, new AuthorInfo(2L, "commenter", null),
+                    3L, new AuthorInfo(2L, "commenter", null, null),
                     "Reply", false, null, List.of()
             );
 
@@ -317,7 +317,7 @@ class CommentServiceImplTest {
         void update_success() {
             CommentUpdateRequest request = new CommentUpdateRequest("Updated comment");
             CommentResponse expectedResponse = new CommentResponse(
-                    1L, new AuthorInfo(2L, "commenter", null),
+                    1L, new AuthorInfo(2L, "commenter", null, null),
                     "Updated comment", false, null, List.of()
             );
 
@@ -421,11 +421,11 @@ class CommentServiceImplTest {
                     .build();
 
             CommentResponse replyResponse = new CommentResponse(
-                    2L, new AuthorInfo(2L, "commenter", null),
+                    2L, new AuthorInfo(2L, "commenter", null, null),
                     "Reply", false, null, List.of()
             );
             CommentResponse rootResponse = new CommentResponse(
-                    1L, new AuthorInfo(1L, "author", null),
+                    1L, new AuthorInfo(1L, "author", null, null),
                     "Root comment", false, null, List.of(replyResponse)
             );
 

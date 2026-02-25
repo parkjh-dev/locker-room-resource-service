@@ -106,7 +106,7 @@ class PostServiceImplTest {
             PostCreateRequest request = new PostCreateRequest(1L, "Test Title", "Test Content", null);
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     1L, 1L, "Free Board",
-                    new AuthorInfo(1L, "testuser", null),
+                    new AuthorInfo(1L, "testuser", null, null),
                     "Test Title", "Test Content",
                     0, 0, 0, false, false,
                     Collections.emptyList(), null, null
@@ -145,7 +145,7 @@ class PostServiceImplTest {
             PostCreateRequest request = new PostCreateRequest(2L, "QnA Title", "QnA Content", null);
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     2L, 2L, "QnA Board",
-                    new AuthorInfo(1L, "testuser", null),
+                    new AuthorInfo(1L, "testuser", null, null),
                     "QnA Title", "QnA Content",
                     0, 0, 0, false, false,
                     Collections.emptyList(), null, null
@@ -189,7 +189,7 @@ class PostServiceImplTest {
         void getDetail_success() {
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     1L, 1L, "Free Board",
-                    new AuthorInfo(1L, "testuser", null),
+                    new AuthorInfo(1L, "testuser", null, null),
                     "Test Title", "Test Content",
                     1, 0, 0, false, false,
                     Collections.emptyList(), null, null
@@ -242,7 +242,7 @@ class PostServiceImplTest {
             PostUpdateRequest request = new PostUpdateRequest("Updated Title", "Updated Content", null);
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     1L, 1L, "Free Board",
-                    new AuthorInfo(1L, "testuser", null),
+                    new AuthorInfo(1L, "testuser", null, null),
                     "Updated Title", "Updated Content",
                     0, 0, 0, false, false,
                     Collections.emptyList(), null, null

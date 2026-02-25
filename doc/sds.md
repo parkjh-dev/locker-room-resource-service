@@ -1314,3 +1314,4 @@ public class SwaggerConfig {
 | 1.2 | 2026-02-16 | - | 인증 서버 Keycloak 확정. Auth Service JWT 자체 구현 → Keycloak 연동으로 변경, application.yml Keycloak 설정 추가 |
 | 1.3 | 2026-02-25 | - | Spring Boot Actuator 추가. 기술 스택 테이블 및 모니터링 섹션(10.5) 신규 작성 |
 | 1.4 | 2026-02-25 | - | Phase 20 반영: CursorPageRequest sort 기본값 camelCase 통일, ErrorCode에 USER_PROFILE_ALREADY_COMPLETE 추가 |
+| 1.5 | 2026-02-26 | - | Phase 13 반영: User.profileImageUrl 추가, UserResponse/AuthorInfo/UserUpdateRequest에 profileImageUrl 필드 추가, TargetType.PROFILE 추가 |

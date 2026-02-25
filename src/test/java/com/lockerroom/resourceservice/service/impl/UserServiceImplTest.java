@@ -90,7 +90,7 @@ class UserServiceImplTest {
             );
             UserResponse expectedResponse = new UserResponse(
                     1L, "user@test.com", "testuser",
-                    Role.USER, OAuthProvider.GOOGLE, teamInfos, null
+                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -137,11 +137,11 @@ class UserServiceImplTest {
         @Test
         @DisplayName("should update nickname successfully")
         void updateMyInfo_nicknameUpdate_success() {
-            UserUpdateRequest request = new UserUpdateRequest("newnickname", null, null);
+            UserUpdateRequest request = new UserUpdateRequest("newnickname", null, null, null);
             List<UserTeamInfo> teamInfos = Collections.emptyList();
             UserResponse expectedResponse = new UserResponse(
                     1L, "user@test.com", "newnickname",
-                    Role.USER, OAuthProvider.GOOGLE, teamInfos, null
+                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -159,11 +159,11 @@ class UserServiceImplTest {
         @Test
         @DisplayName("should update password successfully")
         void updateMyInfo_passwordUpdate_success() {
-            UserUpdateRequest request = new UserUpdateRequest(null, "oldpass", "newpassword");
+            UserUpdateRequest request = new UserUpdateRequest(null, "oldpass", "newpassword", null);
             List<UserTeamInfo> teamInfos = Collections.emptyList();
             UserResponse expectedResponse = new UserResponse(
                     1L, "user@test.com", "testuser",
-                    Role.USER, OAuthProvider.GOOGLE, teamInfos, null
+                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -180,7 +180,7 @@ class UserServiceImplTest {
         @Test
         @DisplayName("should throw exception when nickname is already taken")
         void updateMyInfo_duplicateNickname_throwsException() {
-            UserUpdateRequest request = new UserUpdateRequest("taken", null, null);
+            UserUpdateRequest request = new UserUpdateRequest("taken", null, null, null);
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(userRepository.existsByNickname("taken")).thenReturn(true);
@@ -194,11 +194,11 @@ class UserServiceImplTest {
         @Test
         @DisplayName("should allow same nickname when it belongs to current user")
         void updateMyInfo_sameNickname_success() {
-            UserUpdateRequest request = new UserUpdateRequest("testuser", null, null);
+            UserUpdateRequest request = new UserUpdateRequest("testuser", null, null, null);
             List<UserTeamInfo> teamInfos = Collections.emptyList();
             UserResponse expectedResponse = new UserResponse(
                     1L, "user@test.com", "testuser",
-                    Role.USER, OAuthProvider.GOOGLE, teamInfos, null
+                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -215,7 +215,7 @@ class UserServiceImplTest {
         @Test
         @DisplayName("should throw exception when user not found")
         void updateMyInfo_userNotFound_throwsException() {
-            UserUpdateRequest request = new UserUpdateRequest("nick", null, null);
+            UserUpdateRequest request = new UserUpdateRequest("nick", null, null, null);
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
