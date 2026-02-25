@@ -425,6 +425,143 @@ com.lockerroom.resourceservice/
 
 ---
 
+## Phase 11: 코드 리뷰 기반 보완
+
+> 문서(SRS, SDS, API 명세, DB 스키마)와 실제 구현 코드를 대조 분석한 결과.
+> 리뷰 일시: 2026-02-25
+
+### 11.1 [높음] 멱등성(Idempotency) Controller 적용
+
+> `IdempotencyServiceImpl` 구현 완료됐으나, **어떤 Controller에서도 호출되지 않음.**
+> SRS `RES-IDEM-001~005` / SDS 5.3 참조.
+
+- [ ] 모든 POST 엔드포인트에 `Idempotency-Key` 헤더 수신 로직 추가
+- [ ] Controller/AOP/Interceptor에서 `IdempotencyService.isDuplicate()` → 중복 시 기존 응답 반환
+- [ ] 비즈니스 로직 성공 후 `IdempotencyService.saveResponse()` 호출
+- [ ] 적용 대상: `PostController.create/toggleLike/report`, `CommentController.create/createReply`, `InquiryController.create`, `RequestController.create`
+
+### 11.2 [높음] Cursor 기반 페이지네이션 실제 구현
+
+> 현재 모든 페이지네이션이 `PageRequest.of(0, size+1)`로 **항상 첫 페이지만 조회**.
+> `CursorPageRequest.cursor` 값이 쿼리에 전달되지 않으며, `sort` 파라미터도 무시됨.
+> SRS `API-PAGE-001~005` / SDS 2.4 참조.
+
+- [ ] Repository 쿼리에 cursor 조건 추가 (`WHERE id < :cursor` 또는 `WHERE created_at < :cursorValue`)
+- [ ] `CursorPageRequest.cursor` 디코딩 로직 (Base64 → ID 추출)
+- [ ] `nextCursor` 생성 시 Base64 인코딩 적용 (`API-PAGE-005`)
+- [ ] `sort` 파라미터 반영 (created_at, like_count)
+- [ ] 영향 범위: `UserServiceImpl` (getMyPosts/getMyComments/getMyLikes), `BoardServiceImpl` (getPostsByBoard), `NoticeServiceImpl`, `NotificationServiceImpl`, `AdminServiceImpl` (getUsers/getReports/getInquiries/getRequests), `InquiryServiceImpl`, `RequestServiceImpl`
+
+### 11.3 [높음] 파일(File) 처리 로직 보완
+
+> 파일 업로드/삭제 기본 기능은 있으나, 게시글과의 연결/해제 및 검증 대부분 누락.
+> SRS `RES-FILE-001~007` / SDS 5.5 / API 명세 2.10 참조.
+
+#### 11.3.1 파일 ↔ 게시글 연결
+- [ ] `PostServiceImpl.create()` — `request.fileIds()`로 `FileEntity.targetId` 업데이트 (SDS 5.2.1)
+- [ ] `PostServiceImpl.update()` — 기존 fileIds와 비교하여 제거된 파일 S3+DB 삭제 (`RES-POST-006`)
+- [ ] `PostServiceImpl.delete()` — 해당 게시글의 첨부파일도 S3+DB 삭제 (`RES-POST-007`)
+- [ ] `InquiryServiceImpl.create()` — 문의 작성 시 fileIds 연결
+
+#### 11.3.2 파일 검증 강화
+- [ ] `FileController.upload()` — `targetType` 요청 파라미터 추가 (현재 POST 하드코딩)
+- [ ] MIME 타입 허용 목록 검증: 이미지(jpeg/png/gif/webp), 일반(pdf/txt) (`RES-FILE-002/003`)
+- [ ] MIME 타입 이중 검증: Content-Type 헤더 + 파일 매직넘버 (`RES-FILE-005`)
+- [ ] 파일 크기 분리: 이미지 10MB / 일반 20MB (현재 단일 10MB)
+- [ ] 파일 개수 제한: 건당 최대 5개 (`RES-FILE-004`, `Constants.MAX_FILE_COUNT` 상수 활용)
+
+### 11.4 [높음] 관리자 기능 보완
+
+> 관리자 API 기본 CRUD는 있으나, 필터링과 자동 생성 로직 누락.
+> SRS `RES-ADM-001~008` / API 명세 2.11 참조.
+
+#### 11.4.1 필터 파라미터 구현
+- [ ] `GET /admin/users` — `keyword` (닉네임/이메일 검색), `role` (USER/ADMIN) 필터 추가
+- [ ] `GET /admin/reports` — `status` (PENDING/APPROVED/REJECTED) 필터 추가 (현재 PENDING 하드코딩)
+- [ ] `GET /admin/inquiries` — `status` (PENDING/ANSWERED), `type` (GENERAL/BUG/SUGGESTION) 필터 추가
+- [ ] `GET /admin/requests` — `status` (PENDING/APPROVED/REJECTED), `type` (SPORT/TEAM) 필터 추가
+
+#### 11.4.2 요청 승인 시 자동 생성
+- [ ] `AdminServiceImpl.processRequest()` — APPROVED 시 종목 또는 팀 엔티티 자동 생성 (`RES-ADM-008`)
+- [ ] APPROVED + TEAM 요청: `Team` + `Board`(TEAM) + `Board`(NEWS) 자동 생성
+- [ ] APPROVED + SPORT 요청: `Sport` 자동 생성
+
+#### 11.4.3 신고 처리 action 보완
+- [ ] `action` 값을 `"DELETE_POST"`, `"SUSPEND_USER"`로 수정 (현재 `"DELETE"`만 체크)
+- [ ] `"SUSPEND_USER"` action 시 게시글 작성자 정지 처리 연동
+
+---
+
+### 11.5 [중간] 비즈니스 로직 불일치 수정
+
+#### 11.5.1 게시글/댓글 삭제 시 관리자 권한 허용
+- [ ] `PostServiceImpl.validatePostOwner()` — ADMIN 역할도 삭제 가능하도록 수정 (`RES-POST-007`)
+- [ ] `CommentServiceImpl.validateCommentOwner()` — ADMIN 역할도 삭제 가능하도록 수정
+
+#### 11.5.2 비밀번호 검증 추가
+- [ ] `UserServiceImpl.updateMyInfo()` — `currentPassword` 검증 후 비밀번호 변경 허용 (`RES-USER-002`)
+- [ ] `UserServiceImpl.withdraw()` — `password` 본인 확인 검증 추가
+
+#### 11.5.3 공지사항 teamId 필터
+- [ ] `GET /notices` — `teamId` 쿼리 파라미터 수신 추가 (`NoticeController`)
+- [ ] `NoticeServiceImpl.getList()` — teamId 기반 필터링 로직 구현
+
+#### 11.5.4 전체 알림 읽음 응답
+- [ ] `NotificationController.markAllAsRead()` — 갱신 건수 반환 (`{ "updatedCount": N }`)
+- [ ] `NotificationRepository.markAllAsReadByUserId()` 반환값을 `int` (affected rows)로 변경
+
+#### 11.5.5 게시판 목록 NOTICE/NEWS 포함
+- [ ] `BoardServiceImpl.getBoards()` — NOTICE, NEWS 타입 게시판도 공개 목록에 포함
+
+#### 11.5.6 댓글 목록 Cursor 페이지네이션
+- [ ] `CommentController.getByPost()` — `CursorPageResponse<CommentResponse>` 반환으로 변경
+- [ ] `CommentServiceImpl.getByPost()` — Cursor 기반 페이지네이션 적용
+
+---
+
+### 11.6 [낮음] 코드 품질 및 명세 정합성
+
+#### 11.6.1 ErrorCode 형식 통일
+- [ ] ErrorCode `code` 값을 SDS 명세 형식으로 변경 (`USER_001` → `USER_NOT_FOUND` 등)
+- [ ] `exceptions_ko.properties` 키도 함께 변경
+- [ ] 누락 에러코드 추가: `FILE_TYPE_NOT_ALLOWED`, `FILE_COUNT_EXCEEDED`, `COMMON_RATE_LIMIT_EXCEEDED`, `COMMON_DUPLICATE_REQUEST`
+
+#### 11.6.2 DTO 유효성 검증 보강
+- [ ] `CommentCreateRequest.content` — `@Size(max = 1000)` 추가
+- [ ] `ReportRequest.reason` — `@Size(max = 500)` 추가
+- [ ] `PostCreateRequest.content` — `@Size(max = 10000)` 추가
+- [ ] `PostCreateRequest.fileIds` — `@Size(max = 5)` 추가
+- [ ] `InquiryCreateRequest.content` — `@Size(max = 5000)` 추가
+
+#### 11.6.3 Soft Delete `@SQLRestriction` 적용
+- [ ] `@SQLRestriction("deleted_at IS NULL")` 또는 Hibernate `@SoftDelete` 적용 검토 (SDS 2.7)
+- [ ] 적용 시 기존 수동 필터 (`.filter(p -> !p.isDeleted())`) 제거
+- [ ] 삭제된 데이터 조회 필요 시 Native Query 전환
+
+#### 11.6.4 HTTP 상태코드 정합
+- [ ] `PostController.delete()` — `204 No Content` 반환으로 변경
+- [ ] `CommentController.delete()` — `204 No Content` 반환으로 변경
+- [ ] `AdminController.deleteNotice()` — `204 No Content` 반환으로 변경
+
+#### 11.6.5 ApiResponse 성공 메시지 세분화
+- [ ] `ApiResponse.success(T data)` 사용처에서 API별 맞춤 메시지 전달
+- [ ] 예: `ApiResponse.success("게시글이 작성되었습니다.", data)` (SDS 2.3 참조)
+
+---
+
+### Phase 11 보완 우선순위
+
+```
+1. 11.2 Cursor 페이지네이션 — 전체 목록 조회 API가 2페이지 이상 동작하지 않음
+2. 11.1 멱등성 적용 — 중복 요청 방지의 핵심, POST 엔드포인트 전체 영향
+3. 11.3 파일 처리 — 게시글/문의의 파일 첨부가 실질적으로 미동작
+4. 11.4 관리자 기능 — 필터 없으면 운영 불가
+5. 11.5 비즈니스 로직 — 권한, 비밀번호 검증 등 보안 관련
+6. 11.6 코드 품질 — ErrorCode 형식, DTO 검증, 상태코드 등
+```
+
+---
+
 ## 구현 우선순위 (권장 순서)
 
 ```
@@ -438,6 +575,7 @@ com.lockerroom.resourceservice/
 8. Phase 4 (MapStruct Mapper) — DTO ↔ Entity 변환
 9. Phase 9 (Postman) — API 테스트
 10. Phase 10 (테스트 코드)
+11. Phase 11 (코드 리뷰 보완) — 문서 대비 미흡 사항 수정
 ```
 
 ---
