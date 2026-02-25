@@ -1,0 +1,32 @@
+# Build output
+target/
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+# Git
+.git/
+.gitignore
+
+# OS
+.DS_Store
+
+# Planning / Claude
+task_plan.md
+findings.md
+progress.md
+.claude/
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Docs
+doc/
+
+# CI
+jenkins-pipelines.groovy
