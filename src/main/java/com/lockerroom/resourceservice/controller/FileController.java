@@ -2,6 +2,7 @@ package com.lockerroom.resourceservice.controller;
 
 import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.FileResponse;
+import com.lockerroom.resourceservice.model.enums.TargetType;
 import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.FileService;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +21,10 @@ public class FileController {
     @PostMapping
     public ResponseEntity<ApiResponse<FileResponse>> upload(
             @CurrentUserId Long userId,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("targetType") TargetType targetType) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(fileService.upload(userId, file)));
+                .body(ApiResponse.success(fileService.upload(userId, file, targetType)));
     }
 
     @DeleteMapping("/{fileId}")

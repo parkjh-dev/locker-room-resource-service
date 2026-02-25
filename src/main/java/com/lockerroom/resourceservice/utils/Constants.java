@@ -13,8 +13,25 @@ public final class Constants {
     public static final String DEFAULT_SORT = "createdAt";
 
     // File
-    public static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    public static final long MAX_IMAGE_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    public static final long MAX_DOCUMENT_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+    public static final long MAX_FILE_SIZE = MAX_DOCUMENT_FILE_SIZE;
     public static final int MAX_FILE_COUNT = 5;
+
+    // Allowed MIME types
+    public static final java.util.Set<String> ALLOWED_IMAGE_TYPES = java.util.Set.of(
+            "image/jpeg", "image/png", "image/gif", "image/webp"
+    );
+    public static final java.util.Set<String> ALLOWED_DOCUMENT_TYPES = java.util.Set.of(
+            "application/pdf", "text/plain"
+    );
+    public static final java.util.Set<String> ALLOWED_MIME_TYPES;
+
+    static {
+        var all = new java.util.HashSet<>(ALLOWED_IMAGE_TYPES);
+        all.addAll(ALLOWED_DOCUMENT_TYPES);
+        ALLOWED_MIME_TYPES = java.util.Set.copyOf(all);
+    }
 
     // Redis key prefix
     public static final String REDIS_KEY_PREFIX = "resource-service:";

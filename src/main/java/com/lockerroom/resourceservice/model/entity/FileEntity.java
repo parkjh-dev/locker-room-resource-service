@@ -48,4 +48,8 @@ public class FileEntity extends BaseEntity {
 
     @Column(nullable = false, length = 100)
     private String mimeType;
+
+    public void updateTargetId(Long targetId) {
+        this.targetId = targetId;
+    }
 }

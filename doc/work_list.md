@@ -457,23 +457,24 @@ com.lockerroom.resourceservice/
 - [x] 전체 248개 테스트 통과 확인
 - ~~`sort` 파라미터 반영~~ — 현재 모든 목록이 `id DESC` 정렬로 통일 (추후 필요 시 확장)
 
-### 11.3 [높음] 파일(File) 처리 로직 보완
+### 11.3 [높음] 파일(File) 처리 로직 보완 ✅
 
-> 파일 업로드/삭제 기본 기능은 있으나, 게시글과의 연결/해제 및 검증 대부분 누락.
-> SRS `RES-FILE-001~007` / SDS 5.5 / API 명세 2.10 참조.
+> ~~파일 업로드/삭제 기본 기능은 있으나, 게시글과의 연결/해제 및 검증 대부분 누락.~~
+> 완료: 파일 연결/검증/삭제 전면 보강. 물리 삭제(S3+DB hard delete) 적용.
 
 #### 11.3.1 파일 ↔ 게시글 연결
-- [ ] `PostServiceImpl.create()` — `request.fileIds()`로 `FileEntity.targetId` 업데이트 (SDS 5.2.1)
-- [ ] `PostServiceImpl.update()` — 기존 fileIds와 비교하여 제거된 파일 S3+DB 삭제 (`RES-POST-006`)
-- [ ] `PostServiceImpl.delete()` — 해당 게시글의 첨부파일도 S3+DB 삭제 (`RES-POST-007`)
-- [ ] `InquiryServiceImpl.create()` — 문의 작성 시 fileIds 연결
+- [x] `PostServiceImpl.create()` — `fileService.linkFilesToTarget()` 호출로 `FileEntity.targetId` 업데이트
+- [x] `PostServiceImpl.update()` — `syncFiles()` 헬퍼로 기존 vs 새 fileIds 비교, 제거분 S3+DB 삭제, 신규분 연결
+- [x] `PostServiceImpl.delete()` — `fileService.deleteFilesByTarget()` 호출로 첨부파일 물리 삭제
+- [x] `InquiryServiceImpl.create()` — `fileService.linkFilesToTarget()` 호출로 문의 파일 연결
 
 #### 11.3.2 파일 검증 강화
-- [ ] `FileController.upload()` — `targetType` 요청 파라미터 추가 (현재 POST 하드코딩)
-- [ ] MIME 타입 허용 목록 검증: 이미지(jpeg/png/gif/webp), 일반(pdf/txt) (`RES-FILE-002/003`)
-- [ ] MIME 타입 이중 검증: Content-Type 헤더 + 파일 매직넘버 (`RES-FILE-005`)
-- [ ] 파일 크기 분리: 이미지 10MB / 일반 20MB (현재 단일 10MB)
-- [ ] 파일 개수 제한: 건당 최대 5개 (`RES-FILE-004`, `Constants.MAX_FILE_COUNT` 상수 활용)
+- [x] `FileController.upload()` — `targetType` 요청 파라미터 추가 (POST, INQUIRY, COMMENT 선택)
+- [x] MIME 타입 허용 목록 검증: 이미지(jpeg/png/gif/webp), 일반(pdf/txt) — `Constants.ALLOWED_MIME_TYPES`
+- [x] MIME 타입 이중 검증: Content-Type 헤더 + 파일 매직넘버 (JPEG/PNG/GIF/WEBP/PDF 시그니처)
+- [x] 파일 크기 분리: 이미지 10MB (`MAX_IMAGE_FILE_SIZE`) / 일반 20MB (`MAX_DOCUMENT_FILE_SIZE`)
+- [x] 파일 개수 제한: `linkFilesToTarget()` 에서 건당 최대 5개 검증 (`Constants.MAX_FILE_COUNT`)
+- [x] 파일 삭제 방식: Soft Delete → Hard Delete(S3 + DB) 전환 (`RES-FILE-006`)
 
 ### 11.4 [높음] 관리자 기능 보완
 
@@ -559,7 +560,7 @@ com.lockerroom.resourceservice/
 ```
 1. ✅ 11.2 Cursor 페이지네이션 — 완료 (Base64 인코딩 + ID 기반 커서)
 2. ✅ 11.1 멱등성 적용 — 완료 (@Idempotent AOP + 7개 POST 엔드포인트)
-3. 11.3 파일 처리 — 게시글/문의의 파일 첨부가 실질적으로 미동작
+3. ✅ 11.3 파일 처리 — 완료 (MIME 검증 + 매직넘버 + 크기 분리 + 연결/해제 + 물리 삭제)
 4. 11.4 관리자 기능 — 필터 없으면 운영 불가
 5. 11.5 비즈니스 로직 — 권한, 비밀번호 검증 등 보안 관련
 6. 11.6 코드 품질 — ErrorCode 형식, DTO 검증, 상태코드 등

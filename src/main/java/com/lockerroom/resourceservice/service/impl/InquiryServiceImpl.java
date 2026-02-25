@@ -16,6 +16,7 @@ import com.lockerroom.resourceservice.repository.FileRepository;
 import com.lockerroom.resourceservice.repository.InquiryReplyRepository;
 import com.lockerroom.resourceservice.repository.InquiryRepository;
 import com.lockerroom.resourceservice.repository.UserRepository;
+import com.lockerroom.resourceservice.service.FileService;
 import com.lockerroom.resourceservice.service.InquiryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +35,7 @@ public class InquiryServiceImpl implements InquiryService {
     private final InquiryReplyRepository inquiryReplyRepository;
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
+    private final FileService fileService;
     private final InquiryMapper inquiryMapper;
     private final FileMapper fileMapper;
 
@@ -50,6 +52,8 @@ public class InquiryServiceImpl implements InquiryService {
                 .build();
 
         Inquiry saved = inquiryRepository.save(inquiry);
+
+        fileService.linkFilesToTarget(request.fileIds(), TargetType.INQUIRY, saved.getId(), userId);
 
         return toDetailResponse(saved);
     }

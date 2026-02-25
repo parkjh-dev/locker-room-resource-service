@@ -15,6 +15,7 @@ import com.lockerroom.resourceservice.model.enums.BoardType;
 import com.lockerroom.resourceservice.model.enums.TargetType;
 import com.lockerroom.resourceservice.repository.*;
 import com.lockerroom.resourceservice.service.BoardService;
+import com.lockerroom.resourceservice.service.FileService;
 import com.lockerroom.resourceservice.service.PostService;
 import com.lockerroom.resourceservice.utils.Constants;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class PostServiceImpl implements PostService {
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
     private final BoardService boardService;
+    private final FileService fileService;
     private final KafkaProducerService kafkaProducerService;
     private final PostMapper postMapper;
     private final FileMapper fileMapper;
@@ -53,6 +55,8 @@ public class PostServiceImpl implements PostService {
                 .build();
 
         Post saved = postRepository.save(post);
+
+        fileService.linkFilesToTarget(request.fileIds(), TargetType.POST, saved.getId(), userId);
 
         if (board.getType() == BoardType.QNA) {
             kafkaProducerService.send(
@@ -89,6 +93,8 @@ public class PostServiceImpl implements PostService {
         post.updateTitle(request.title());
         post.updateContent(request.content());
 
+        syncFiles(postId, request.fileIds(), userId);
+
         return toDetailResponse(post, userId);
     }
 
@@ -97,6 +103,8 @@ public class PostServiceImpl implements PostService {
     public void delete(Long postId, Long userId) {
         Post post = findPostById(postId);
         validatePostOwner(post, userId);
+
+        fileService.deleteFilesByTarget(TargetType.POST, postId);
         post.softDelete();
     }
 
@@ -168,6 +176,26 @@ public class PostServiceImpl implements PostService {
         return userRepository.findById(userId)
                 .filter(u -> !u.isDeleted())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private void syncFiles(Long postId, List<Long> newFileIds, Long userId) {
+        List<FileEntity> existingFiles = fileRepository.findByTargetTypeAndTargetIdAndDeletedAtIsNull(
+                TargetType.POST, postId);
+        List<Long> existingFileIds = existingFiles.stream().map(FileEntity::getId).toList();
+
+        List<Long> safeNewFileIds = (newFileIds != null) ? newFileIds : List.of();
+
+        List<FileEntity> toDelete = existingFiles.stream()
+                .filter(f -> !safeNewFileIds.contains(f.getId()))
+                .toList();
+        for (FileEntity file : toDelete) {
+            fileService.delete(file.getId(), userId);
+        }
+
+        List<Long> toLink = safeNewFileIds.stream()
+                .filter(id -> !existingFileIds.contains(id))
+                .toList();
+        fileService.linkFilesToTarget(toLink, TargetType.POST, postId, userId);
     }
 
     private void validatePostOwner(Post post, Long userId) {

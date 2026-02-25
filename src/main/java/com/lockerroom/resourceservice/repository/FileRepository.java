@@ -9,4 +9,6 @@ import java.util.List;
 public interface FileRepository extends JpaRepository<FileEntity, Long> {
 
     List<FileEntity> findByTargetTypeAndTargetIdAndDeletedAtIsNull(TargetType targetType, Long targetId);
+
+    List<FileEntity> findAllByIdInAndDeletedAtIsNull(List<Long> ids);
 }
