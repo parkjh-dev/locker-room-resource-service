@@ -38,6 +38,7 @@
 - [x] AWS S3 SDK
 - [x] MariaDB Connector/J (SDS 확정, 현재 MySQL connector → MariaDB Connector/J로 교체 필요)
 - [x] Spring Security
+- [x] Spring Boot Actuator (헬스체크, 메트릭, 로그 레벨 제어)
 
 ### 1.2 패키지 구조 생성
 ```

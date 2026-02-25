@@ -476,14 +476,16 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 | LOG-006 | 민감 정보 마스킹 | 비밀번호, 토큰, 개인정보 마스킹 처리 |
 | LOG-007 | 로그 보관 | 로컬: 파일 (logs/), 운영: AWS S3 (90일 보관) |
 
-### 12.2 모니터링 (TBD)
+### 12.2 모니터링
 
-| ID | 요구사항 | 후보 |
+| ID | 요구사항 | 상세 |
 |----|----------|------|
-| MON-001 | 메트릭 수집 | Prometheus + Grafana 또는 AWS CloudWatch |
-| MON-002 | 분산 트레이싱 | Micrometer Tracing + Zipkin/Jaeger |
-| MON-003 | 중앙화 로깅 | ELK Stack 또는 AWS CloudWatch Logs |
-| MON-004 | 알림 | 서비스 다운, 에러율 급증 시 Slack/이메일 알림 |
+| MON-001 | 헬스체크 | Spring Boot Actuator `/actuator/health` — DB, Redis, Kafka, Disk 상태 자동 감지 |
+| MON-002 | 메트릭 수집 | Actuator `/actuator/metrics` 기본 제공 (JVM, HTTP, 커넥션 풀). 향후 Prometheus + Grafana 또는 AWS CloudWatch 연동 |
+| MON-003 | 분산 트레이싱 | Micrometer Tracing + Zipkin/Jaeger (향후 적용) |
+| MON-004 | 중앙화 로깅 | ELK Stack 또는 AWS CloudWatch Logs (향후 적용) |
+| MON-005 | 런타임 로그 제어 | Actuator `/actuator/loggers` — 서비스 재시작 없이 로그 레벨 변경 |
+| MON-006 | 알림 | 서비스 다운, 에러율 급증 시 Slack/이메일 알림 (향후 적용) |
 
 ---
 
@@ -522,3 +524,4 @@ Infrastructure: MariaDB / Redis / Kafka / AWS S3 / LLM API
 | 1.0 | 2026-02-15 | - | 초안 작성 |
 | 1.1 | 2026-02-15 | - | MariaDB Connector/J 드라이버 명시 |
 | 1.2 | 2026-02-16 | - | 인증 서버 Keycloak 확정. Auth Service 요구사항 재구성, Redis 토큰 저장 제거, email.password-reset Kafka 토픽 제거, Gateway 블랙리스트 제거 |
+| 1.3 | 2026-02-25 | - | 모니터링 섹션 TBD 해소. Spring Boot Actuator 기반 헬스체크/메트릭/로그 제어 요구사항 확정 (MON-001~006) |

@@ -24,6 +24,7 @@
 | JDBC Driver | MariaDB Connector/J | latest |
 | CI/CD | Jenkins | latest |
 | Container | Docker | latest |
+| Monitoring | Spring Boot Actuator | 4.0 (Spring Boot 내장) |
 | Deployment | AWS EC2 + ECS | - |
 
 ### 1.3 서비스 구성
@@ -1184,6 +1185,48 @@ void toggleLike_alreadyLiked_removesLike() { ... }
 - 로컬: 콘솔 + 파일 (logs/ 디렉토리)
 - 운영: AWS S3 (일별 로테이션, 90일 보관)
 
+### 10.5 모니터링 (Spring Boot Actuator)
+
+#### 의존성
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+#### 노출 엔드포인트
+| 엔드포인트 | 경로 | 접근 권한 | 용도 |
+|-----------|------|----------|------|
+| health | `/actuator/health` | Public | 서비스 상태 확인 (DB, Redis, Kafka, Disk 등) |
+| info | `/actuator/info` | Public | 애플리케이션 메타 정보 |
+| metrics | `/actuator/metrics` | ADMIN | JVM, HTTP, 커넥션 풀 등 메트릭 |
+| loggers | `/actuator/loggers` | ADMIN | 런타임 로그 레벨 조회/변경 |
+| env | `/actuator/env` | ADMIN | 환경 설정 조회 |
+
+#### 설정 (application.yaml)
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, loggers, env
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      roles: ADMIN
+```
+
+#### 보안 정책
+- `/actuator/health`, `/actuator/info`: 인증 없이 접근 가능 (로드밸런서 헬스체크 등)
+- `/actuator/metrics`, `/actuator/loggers`, `/actuator/env`: ADMIN 역할 필요
+
+#### 향후 확장
+- Prometheus 메트릭 포맷 노출 (`micrometer-registry-prometheus` 추가 시 `/actuator/prometheus`)
+- Grafana 대시보드 연동
+- Micrometer Tracing + Zipkin/Jaeger 분산 트레이싱
+
 ---
 
 ## 11. 빌드 및 배포
@@ -1268,3 +1311,4 @@ public class SwaggerConfig {
 | 1.0 | 2026-02-15 | - | 초안 작성 |
 | 1.1 | 2026-02-15 | - | 패키지명 규칙 변경 (com.lockerroom.resourceservice), 빌드 도구 Maven 변경, MariaDB Connector/J 명시 |
 | 1.2 | 2026-02-16 | - | 인증 서버 Keycloak 확정. Auth Service JWT 자체 구현 → Keycloak 연동으로 변경, application.yml Keycloak 설정 추가 |
+| 1.3 | 2026-02-25 | - | Spring Boot Actuator 추가. 기술 스택 테이블 및 모니터링 섹션(10.5) 신규 작성 |

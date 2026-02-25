@@ -29,8 +29,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/{postId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/{postId}/comments").permitAll()
-                        // Swagger & tools
+                        // Swagger, Actuator & tools
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/h2-console/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers("/api/name", "/api/version").permitAll()
                         // Admin
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
