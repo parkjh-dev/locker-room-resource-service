@@ -2,6 +2,7 @@ package com.lockerroom.resourceservice.controller;
 
 import com.lockerroom.resourceservice.dto.request.*;
 import com.lockerroom.resourceservice.dto.response.*;
+import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.AdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class AdminController {
     @PutMapping("/users/{userId}/suspend")
     public ResponseEntity<ApiResponse<Void>> suspendUser(
             @PathVariable Long userId,
-            @RequestHeader("X-User-Id") Long adminId,
+            @CurrentUserId Long adminId,
             @Valid @RequestBody SuspendRequest request) {
         adminService.suspendUser(userId, adminId, request);
         return ResponseEntity.ok(ApiResponse.success());
@@ -40,7 +41,7 @@ public class AdminController {
     @PutMapping("/reports/{reportId}")
     public ResponseEntity<ApiResponse<Void>> processReport(
             @PathVariable Long reportId,
-            @RequestHeader("X-User-Id") Long adminId,
+            @CurrentUserId Long adminId,
             @Valid @RequestBody ReportProcessRequest request) {
         adminService.processReport(reportId, adminId, request);
         return ResponseEntity.ok(ApiResponse.success());
@@ -48,7 +49,7 @@ public class AdminController {
 
     @PostMapping("/notices")
     public ResponseEntity<ApiResponse<NoticeDetailResponse>> createNotice(
-            @RequestHeader("X-User-Id") Long adminId,
+            @CurrentUserId Long adminId,
             @Valid @RequestBody NoticeCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(adminService.createNotice(adminId, request)));
@@ -57,7 +58,7 @@ public class AdminController {
     @PutMapping("/notices/{noticeId}")
     public ResponseEntity<ApiResponse<NoticeDetailResponse>> updateNotice(
             @PathVariable Long noticeId,
-            @RequestHeader("X-User-Id") Long adminId,
+            @CurrentUserId Long adminId,
             @Valid @RequestBody NoticeCreateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(adminService.updateNotice(noticeId, adminId, request)));
     }
@@ -78,7 +79,7 @@ public class AdminController {
     @PostMapping("/inquiries/{inquiryId}/reply")
     public ResponseEntity<ApiResponse<InquiryDetailResponse>> replyInquiry(
             @PathVariable Long inquiryId,
-            @RequestHeader("X-User-Id") Long adminId,
+            @CurrentUserId Long adminId,
             @Valid @RequestBody InquiryReplyRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(adminService.replyInquiry(inquiryId, adminId, request)));
@@ -93,7 +94,7 @@ public class AdminController {
     @PutMapping("/requests/{requestId}")
     public ResponseEntity<ApiResponse<RequestDetailResponse>> processRequest(
             @PathVariable Long requestId,
-            @RequestHeader("X-User-Id") Long adminId,
+            @CurrentUserId Long adminId,
             @Valid @RequestBody RequestProcessRequest request) {
         return ResponseEntity.ok(ApiResponse.success(adminService.processRequest(requestId, adminId, request)));
     }

@@ -4,6 +4,7 @@ import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
 import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
 import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.CommentResponse;
+import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ public class CommentController {
     @PostMapping("/api/v1/posts/{postId}/comments")
     public ResponseEntity<ApiResponse<CommentResponse>> create(
             @PathVariable Long postId,
-            @RequestHeader("X-User-Id") Long userId,
+            @CurrentUserId Long userId,
             @Valid @RequestBody CommentCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(commentService.create(postId, userId, request)));
@@ -37,7 +38,7 @@ public class CommentController {
     @PutMapping("/api/v1/comments/{commentId}")
     public ResponseEntity<ApiResponse<CommentResponse>> update(
             @PathVariable Long commentId,
-            @RequestHeader("X-User-Id") Long userId,
+            @CurrentUserId Long userId,
             @Valid @RequestBody CommentUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(commentService.update(commentId, userId, request)));
     }
@@ -45,7 +46,7 @@ public class CommentController {
     @DeleteMapping("/api/v1/comments/{commentId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long commentId,
-            @RequestHeader("X-User-Id") Long userId) {
+            @CurrentUserId Long userId) {
         commentService.delete(commentId, userId);
         return ResponseEntity.ok(ApiResponse.success());
     }
@@ -53,7 +54,7 @@ public class CommentController {
     @PostMapping("/api/v1/comments/{commentId}/replies")
     public ResponseEntity<ApiResponse<CommentResponse>> createReply(
             @PathVariable Long commentId,
-            @RequestHeader("X-User-Id") Long userId,
+            @CurrentUserId Long userId,
             @Valid @RequestBody CommentCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(commentService.createReply(null, commentId, userId, request)));

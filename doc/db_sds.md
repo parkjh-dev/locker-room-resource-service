@@ -22,6 +22,7 @@
 ```sql
 CREATE TABLE users (
     id              BIGINT          NOT NULL AUTO_INCREMENT,
+    keycloak_id     VARCHAR(36)     NULL        COMMENT 'Keycloak UUID (JWT sub claim)',
     email           VARCHAR(255)    NOT NULL,
     password        VARCHAR(255)    NULL        COMMENT 'SSO 유저는 NULL',
     nickname        VARCHAR(50)     NOT NULL,
@@ -32,7 +33,8 @@ CREATE TABLE users (
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at      DATETIME        NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uk_users_email (email)
+    UNIQUE KEY uk_users_email (email),
+    UNIQUE KEY uk_users_keycloak_id (keycloak_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
@@ -388,6 +390,7 @@ FK 의존성을 고려한 실행 순서:
 | 테이블 | 인덱스명 | 컬럼 | 타입 |
 |--------|----------|------|------|
 | users | uk_users_email | email | UNIQUE |
+| users | uk_users_keycloak_id | keycloak_id | UNIQUE |
 | user_teams | uk_user_teams_user_sport | user_id, sport_id | UNIQUE |
 | teams | idx_teams_sport | sport_id | INDEX |
 | boards | idx_boards_team | team_id | INDEX |

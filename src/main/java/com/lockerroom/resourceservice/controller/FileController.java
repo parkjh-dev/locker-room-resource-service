@@ -2,6 +2,7 @@ package com.lockerroom.resourceservice.controller;
 
 import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.FileResponse;
+import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,7 @@ public class FileController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<FileResponse>> upload(
-            @RequestHeader("X-User-Id") Long userId,
+            @CurrentUserId Long userId,
             @RequestParam("file") MultipartFile file) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(fileService.upload(userId, file)));
@@ -27,7 +28,7 @@ public class FileController {
     @DeleteMapping("/{fileId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long fileId,
-            @RequestHeader("X-User-Id") Long userId) {
+            @CurrentUserId Long userId) {
         fileService.delete(fileId, userId);
         return ResponseEntity.ok(ApiResponse.success());
     }

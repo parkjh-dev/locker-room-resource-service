@@ -5,6 +5,7 @@ import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.BoardResponse;
 import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
 import com.lockerroom.resourceservice.dto.response.PostListResponse;
+import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +22,14 @@ public class BoardController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<BoardResponse>>> getBoards(
-            @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+            @CurrentUserId(required = false) Long userId) {
         return ResponseEntity.ok(ApiResponse.success(boardService.getBoards(userId)));
     }
 
     @GetMapping("/{boardId}/posts")
     public ResponseEntity<ApiResponse<CursorPageResponse<PostListResponse>>> getPostsByBoard(
             @PathVariable Long boardId,
-            @RequestHeader(value = "X-User-Id", required = false) Long userId,
+            @CurrentUserId(required = false) Long userId,
             @RequestParam(required = false) String searchType,
             @RequestParam(required = false) String keyword,
             @ModelAttribute CursorPageRequest pageRequest) {

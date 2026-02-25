@@ -6,6 +6,7 @@ import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
 import com.lockerroom.resourceservice.dto.response.RequestDetailResponse;
 import com.lockerroom.resourceservice.dto.response.RequestListResponse;
+import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.RequestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class RequestController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<RequestDetailResponse>> create(
-            @RequestHeader("X-User-Id") Long userId,
+            @CurrentUserId Long userId,
             @Valid @RequestBody RequestCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(requestService.create(userId, request)));
@@ -30,7 +31,7 @@ public class RequestController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<CursorPageResponse<RequestListResponse>>> getMyList(
-            @RequestHeader("X-User-Id") Long userId,
+            @CurrentUserId Long userId,
             @ModelAttribute CursorPageRequest pageRequest) {
         return ResponseEntity.ok(ApiResponse.success(requestService.getMyList(userId, pageRequest)));
     }
@@ -38,7 +39,7 @@ public class RequestController {
     @GetMapping("/{requestId}")
     public ResponseEntity<ApiResponse<RequestDetailResponse>> getDetail(
             @PathVariable Long requestId,
-            @RequestHeader("X-User-Id") Long userId) {
+            @CurrentUserId Long userId) {
         return ResponseEntity.ok(ApiResponse.success(requestService.getDetail(requestId, userId)));
     }
 }

@@ -4,6 +4,7 @@ import com.lockerroom.resourceservice.dto.request.PostCreateRequest;
 import com.lockerroom.resourceservice.dto.request.PostUpdateRequest;
 import com.lockerroom.resourceservice.dto.request.ReportRequest;
 import com.lockerroom.resourceservice.dto.response.*;
+import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class PostController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PostDetailResponse>> create(
-            @RequestHeader("X-User-Id") Long userId,
+            @CurrentUserId Long userId,
             @Valid @RequestBody PostCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(postService.create(userId, request)));
@@ -29,14 +30,14 @@ public class PostController {
     @GetMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostDetailResponse>> getDetail(
             @PathVariable Long postId,
-            @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+            @CurrentUserId(required = false) Long userId) {
         return ResponseEntity.ok(ApiResponse.success(postService.getDetail(postId, userId)));
     }
 
     @PutMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostDetailResponse>> update(
             @PathVariable Long postId,
-            @RequestHeader("X-User-Id") Long userId,
+            @CurrentUserId Long userId,
             @Valid @RequestBody PostUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(postService.update(postId, userId, request)));
     }
@@ -44,7 +45,7 @@ public class PostController {
     @DeleteMapping("/{postId}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long postId,
-            @RequestHeader("X-User-Id") Long userId) {
+            @CurrentUserId Long userId) {
         postService.delete(postId, userId);
         return ResponseEntity.ok(ApiResponse.success());
     }
@@ -52,14 +53,14 @@ public class PostController {
     @PostMapping("/{postId}/like")
     public ResponseEntity<ApiResponse<LikeResponse>> toggleLike(
             @PathVariable Long postId,
-            @RequestHeader("X-User-Id") Long userId) {
+            @CurrentUserId Long userId) {
         return ResponseEntity.ok(ApiResponse.success(postService.toggleLike(postId, userId)));
     }
 
     @PostMapping("/{postId}/report")
     public ResponseEntity<ApiResponse<ReportResponse>> report(
             @PathVariable Long postId,
-            @RequestHeader("X-User-Id") Long userId,
+            @CurrentUserId Long userId,
             @Valid @RequestBody ReportRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(postService.report(postId, userId, request)));

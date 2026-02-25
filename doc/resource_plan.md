@@ -365,7 +365,7 @@ com.lockerroom.resourceservice/
 | PUT | /admin/requests/{requestId} | 요청 처리 |
 
 ### 7.extra 공통 사항
-- 인증: `@RequestHeader("X-User-Id")` — Phase 8 JWT 통합 시 `@AuthenticationPrincipal`로 교체
+- 인증: `@CurrentUserId` 커스텀 어노테이션 — JWT `sub` 클레임(Keycloak UUID)에서 사용자 식별
 - 응답 래퍼: 모든 응답 `ApiResponse<T>`로 통일
 - 유효성 검증: `@Valid @RequestBody`로 Jakarta Validation 적용
 - 리소스 생성: POST 엔드포인트는 `HttpStatus.CREATED` (201) 반환
@@ -375,9 +375,11 @@ com.lockerroom.resourceservice/
 
 ## Phase 8: 외부 연동 ✅
 
-### 8.1 Security (Gateway 헤더 인증)
-- [x] `GatewayAuthenticationFilter` — X-User-Id, X-User-Role 헤더 → SecurityContext 설정
-- [x] `SecurityConfig` — 필터 등록 + `/api/v1/admin/**` ROLE_ADMIN 인가
+### 8.1 Security (Keycloak JWT OAuth2 Resource Server)
+- [x] `SecurityConfig` — OAuth2 Resource Server JWT + Keycloak role converter + `/api/v1/admin/**` ROLE_ADMIN 인가
+- [x] `KeycloakRoleConverter` — JWT `realm_access.roles` → Spring Security `GrantedAuthority` 변환
+- [x] `@CurrentUserId` 커스텀 어노테이션 + `CurrentUserIdArgumentResolver` — JWT `sub` → `User.keycloakId` → `userId` 해석
+- [x] `User.keycloakId` 필드 추가 (VARCHAR(36), UNIQUE, nullable)
 
 ### 8.2 Redis
 - [x] `RedisConfig` — StringRedisTemplate 빈 설정
@@ -416,9 +418,10 @@ com.lockerroom.resourceservice/
 | 레이어 | 대상 | 도구 | 테스트 수 | 상태 |
 |--------|------|------|:---------:|:----:|
 | Unit | Service (12개) | JUnit 5 + Mockito | 138 | [x] |
+| Unit | Security (1개) | JUnit 5 + Mockito | 5 | [x] |
 | Controller | Controller (4개) | @WebMvcTest + MockMvc | 39 | [x] |
 | Integration | Repository (5개) | @DataJpaTest + H2 | 64 | [x] |
-| **합계** | **21개 파일** | | **242** (1 skipped) | **PASS** |
+| **합계** | **22개 파일** | | **248** (1 skipped) | **PASS** |
 
 ---
 
@@ -447,9 +450,8 @@ com.lockerroom.resourceservice/
 | 빌드 도구 | Maven | SDS v1.1에서 Maven으로 변경 |
 | JDBC Driver | MariaDB Connector/J | SDS v1.1에서 명시 |
 | Java 버전 | 17 | 현재 프로젝트 유지 |
+| 인증 방식 | Keycloak JWT (OAuth2 Resource Server) + `@CurrentUserId` | JWT `sub` 클레임 → `User.keycloakId` → `userId` |
 
 ## 미결정 사항 (TBD)
 
-| 항목 | 설명 | 영향 |
-|------|------|------|
-| 인증 방식 | Gateway 토큰 검증 후 헤더 전달 vs 자체 JWT 검증 | SecurityConfig |
+_(없음)_

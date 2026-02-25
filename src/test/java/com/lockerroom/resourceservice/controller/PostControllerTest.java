@@ -2,12 +2,17 @@ package com.lockerroom.resourceservice.controller;
 
 import tools.jackson.databind.ObjectMapper;
 import com.lockerroom.resourceservice.configuration.SecurityConfig;
+import com.lockerroom.resourceservice.configuration.WebMvcConfig;
 import com.lockerroom.resourceservice.dto.request.PostCreateRequest;
 import com.lockerroom.resourceservice.dto.request.PostUpdateRequest;
 import com.lockerroom.resourceservice.dto.request.ReportRequest;
 import com.lockerroom.resourceservice.dto.response.*;
+import com.lockerroom.resourceservice.model.entity.User;
 import com.lockerroom.resourceservice.model.enums.ReportStatus;
+import com.lockerroom.resourceservice.model.enums.Role;
+import com.lockerroom.resourceservice.repository.UserRepository;
 import com.lockerroom.resourceservice.service.PostService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,7 +36,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(PostController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, WebMvcConfig.class})
 class PostControllerTest {
 
     @Autowired
@@ -45,9 +51,25 @@ class PostControllerTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
+    @MockitoBean
+    private UserRepository userRepository;
+
     private static final String BASE_URL = "/api/v1/posts";
     private static final Long USER_ID = 1L;
     private static final Long POST_ID = 100L;
+    private static final String KEYCLOAK_ID = "kc-user-uuid";
+
+    @BeforeEach
+    void setUp() {
+        User user = User.builder()
+                .id(USER_ID)
+                .keycloakId(KEYCLOAK_ID)
+                .email("test@example.com")
+                .nickname("testUser")
+                .role(Role.USER)
+                .build();
+        when(userRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.of(user));
+    }
 
     private PostDetailResponse createPostDetailResponse() {
         return new PostDetailResponse(
@@ -82,8 +104,7 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -102,8 +123,7 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -119,8 +139,7 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -142,8 +161,7 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/{postId}", POST_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString()))
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
                     .andExpect(jsonPath("$.data.id").value(POST_ID))
@@ -188,8 +206,7 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/{postId}", POST_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -208,8 +225,7 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/{postId}", POST_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -230,8 +246,7 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(delete(BASE_URL + "/{postId}", POST_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString()))
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"));
 
@@ -252,8 +267,7 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/{postId}/like", POST_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString()))
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
                     .andExpect(jsonPath("$.data.postId").value(POST_ID))
@@ -278,8 +292,7 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/{postId}/report", POST_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -299,8 +312,7 @@ class PostControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/{postId}/report", POST_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());

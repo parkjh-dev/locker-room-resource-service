@@ -2,12 +2,16 @@ package com.lockerroom.resourceservice.controller;
 
 import tools.jackson.databind.ObjectMapper;
 import com.lockerroom.resourceservice.configuration.SecurityConfig;
+import com.lockerroom.resourceservice.configuration.WebMvcConfig;
 import com.lockerroom.resourceservice.dto.request.UserUpdateRequest;
 import com.lockerroom.resourceservice.dto.request.WithdrawRequest;
 import com.lockerroom.resourceservice.dto.response.*;
+import com.lockerroom.resourceservice.model.entity.User;
 import com.lockerroom.resourceservice.model.enums.OAuthProvider;
 import com.lockerroom.resourceservice.model.enums.Role;
+import com.lockerroom.resourceservice.repository.UserRepository;
 import com.lockerroom.resourceservice.service.UserService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,7 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, WebMvcConfig.class})
 class UserControllerTest {
 
     @Autowired
@@ -45,8 +50,24 @@ class UserControllerTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
+    @MockitoBean
+    private UserRepository userRepository;
+
     private static final String BASE_URL = "/api/v1/users";
     private static final Long USER_ID = 1L;
+    private static final String KEYCLOAK_ID = "kc-user-uuid";
+
+    @BeforeEach
+    void setUp() {
+        User user = User.builder()
+                .id(USER_ID)
+                .keycloakId(KEYCLOAK_ID)
+                .email("test@example.com")
+                .nickname("testUser")
+                .role(Role.USER)
+                .build();
+        when(userRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.of(user));
+    }
 
     private UserResponse createUserResponse() {
         return new UserResponse(
@@ -73,8 +94,7 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/me")
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString()))
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
                     .andExpect(jsonPath("$.data.id").value(USER_ID))
@@ -103,8 +123,7 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/me")
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -122,8 +141,7 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/me")
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -145,8 +163,7 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(delete(BASE_URL + "/me")
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -176,8 +193,7 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/me/posts")
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .param("size", "20"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -210,8 +226,7 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/me/comments")
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .param("size", "20"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -245,8 +260,7 @@ class UserControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/me/likes")
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .param("size", "20"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))

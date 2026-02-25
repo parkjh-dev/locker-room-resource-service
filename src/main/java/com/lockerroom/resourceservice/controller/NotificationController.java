@@ -5,6 +5,7 @@ import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
 import com.lockerroom.resourceservice.dto.response.NotificationResponse;
 import com.lockerroom.resourceservice.dto.response.UnreadCountResponse;
+import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,28 +20,28 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<CursorPageResponse<NotificationResponse>>> getMyList(
-            @RequestHeader("X-User-Id") Long userId,
+            @CurrentUserId Long userId,
             @ModelAttribute CursorPageRequest pageRequest) {
         return ResponseEntity.ok(ApiResponse.success(notificationService.getMyList(userId, pageRequest)));
     }
 
     @GetMapping("/unread-count")
     public ResponseEntity<ApiResponse<UnreadCountResponse>> getUnreadCount(
-            @RequestHeader("X-User-Id") Long userId) {
+            @CurrentUserId Long userId) {
         return ResponseEntity.ok(ApiResponse.success(notificationService.getUnreadCount(userId)));
     }
 
     @PutMapping("/{notificationId}/read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @PathVariable Long notificationId,
-            @RequestHeader("X-User-Id") Long userId) {
+            @CurrentUserId Long userId) {
         notificationService.markAsRead(notificationId, userId);
         return ResponseEntity.ok(ApiResponse.success());
     }
 
     @PutMapping("/read-all")
     public ResponseEntity<ApiResponse<Void>> markAllAsRead(
-            @RequestHeader("X-User-Id") Long userId) {
+            @CurrentUserId Long userId) {
         notificationService.markAllAsRead(userId);
         return ResponseEntity.ok(ApiResponse.success());
     }

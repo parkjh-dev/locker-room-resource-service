@@ -2,15 +2,19 @@ package com.lockerroom.resourceservice.controller;
 
 import tools.jackson.databind.ObjectMapper;
 import com.lockerroom.resourceservice.configuration.SecurityConfig;
+import com.lockerroom.resourceservice.configuration.WebMvcConfig;
 import com.lockerroom.resourceservice.dto.request.NoticeCreateRequest;
 import com.lockerroom.resourceservice.dto.request.ReportProcessRequest;
 import com.lockerroom.resourceservice.dto.request.SuspendRequest;
 import com.lockerroom.resourceservice.dto.response.*;
+import com.lockerroom.resourceservice.model.entity.User;
 import com.lockerroom.resourceservice.model.enums.NoticeScope;
 import com.lockerroom.resourceservice.model.enums.OAuthProvider;
 import com.lockerroom.resourceservice.model.enums.ReportStatus;
 import com.lockerroom.resourceservice.model.enums.Role;
+import com.lockerroom.resourceservice.repository.UserRepository;
 import com.lockerroom.resourceservice.service.AdminService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,7 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AdminController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, WebMvcConfig.class})
 class AdminControllerTest {
 
     @Autowired
@@ -48,8 +53,24 @@ class AdminControllerTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
+    @MockitoBean
+    private UserRepository userRepository;
+
     private static final String BASE_URL = "/api/v1/admin";
     private static final Long ADMIN_ID = 1L;
+    private static final String KEYCLOAK_ID = "kc-admin-uuid";
+
+    @BeforeEach
+    void setUp() {
+        User admin = User.builder()
+                .id(ADMIN_ID)
+                .keycloakId(KEYCLOAK_ID)
+                .email("admin@example.com")
+                .nickname("admin1")
+                .role(Role.ADMIN)
+                .build();
+        when(userRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.of(admin));
+    }
 
     @Nested
     @DisplayName("GET /api/v1/admin/users")
@@ -72,8 +93,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/users")
-                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
-                            .header("X-User-Id", ADMIN_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_ADMIN"))
                             .param("size", "20"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -90,8 +110,7 @@ class AdminControllerTest {
         void getUsers_asUser_returns403() throws Exception {
             // when & then
             mockMvc.perform(get(BASE_URL + "/users")
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", "2"))
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
                     .andExpect(status().isForbidden());
 
             verify(adminService, never()).getUsers(any());
@@ -124,8 +143,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/users/{userId}/suspend", 10L)
-                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
-                            .header("X-User-Id", ADMIN_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_ADMIN"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -144,8 +162,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/users/{userId}/suspend", 10L)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", "2")
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
@@ -174,8 +191,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/notices")
-                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
-                            .header("X-User-Id", ADMIN_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_ADMIN"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -197,8 +213,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/notices")
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", "2")
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
@@ -216,8 +231,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(post(BASE_URL + "/notices")
-                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
-                            .header("X-User-Id", ADMIN_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_ADMIN"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -247,8 +261,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/reports")
-                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
-                            .header("X-User-Id", ADMIN_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_ADMIN"))
                             .param("size", "20"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
@@ -265,8 +278,7 @@ class AdminControllerTest {
         void getReports_asUser_returns403() throws Exception {
             // when & then
             mockMvc.perform(get(BASE_URL + "/reports")
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", "2"))
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
                     .andExpect(status().isForbidden());
 
             verify(adminService, never()).getReports(any());
@@ -286,8 +298,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/reports/{reportId}", 1L)
-                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
-                            .header("X-User-Id", ADMIN_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_ADMIN"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -304,8 +315,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/reports/{reportId}", 1L)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", "2")
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isForbidden());
@@ -334,8 +344,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/notices/{noticeId}", 1L)
-                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
-                            .header("X-User-Id", ADMIN_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_ADMIN"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -358,8 +367,7 @@ class AdminControllerTest {
 
             // when & then
             mockMvc.perform(delete(BASE_URL + "/notices/{noticeId}", 1L)
-                            .with(jwt().authorities(() -> "ROLE_ADMIN"))
-                            .header("X-User-Id", ADMIN_ID.toString()))
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_ADMIN")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"));
 
@@ -371,8 +379,7 @@ class AdminControllerTest {
         void deleteNotice_asUser_returns403() throws Exception {
             // when & then
             mockMvc.perform(delete(BASE_URL + "/notices/{noticeId}", 1L)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", "2"))
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
                     .andExpect(status().isForbidden());
 
             verify(adminService, never()).deleteNotice(any());

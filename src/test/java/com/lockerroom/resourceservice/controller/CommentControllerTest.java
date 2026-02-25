@@ -2,11 +2,16 @@ package com.lockerroom.resourceservice.controller;
 
 import tools.jackson.databind.ObjectMapper;
 import com.lockerroom.resourceservice.configuration.SecurityConfig;
+import com.lockerroom.resourceservice.configuration.WebMvcConfig;
 import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
 import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
 import com.lockerroom.resourceservice.dto.response.AuthorInfo;
 import com.lockerroom.resourceservice.dto.response.CommentResponse;
+import com.lockerroom.resourceservice.model.entity.User;
+import com.lockerroom.resourceservice.model.enums.Role;
+import com.lockerroom.resourceservice.repository.UserRepository;
 import com.lockerroom.resourceservice.service.CommentService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -29,7 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(CommentController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, WebMvcConfig.class})
 class CommentControllerTest {
 
     @Autowired
@@ -44,9 +50,25 @@ class CommentControllerTest {
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
+    @MockitoBean
+    private UserRepository userRepository;
+
     private static final Long USER_ID = 1L;
     private static final Long POST_ID = 100L;
     private static final Long COMMENT_ID = 200L;
+    private static final String KEYCLOAK_ID = "kc-user-uuid";
+
+    @BeforeEach
+    void setUp() {
+        User user = User.builder()
+                .id(USER_ID)
+                .keycloakId(KEYCLOAK_ID)
+                .email("test@example.com")
+                .nickname("testUser")
+                .role(Role.USER)
+                .build();
+        when(userRepository.findByKeycloakId(KEYCLOAK_ID)).thenReturn(Optional.of(user));
+    }
 
     private CommentResponse createCommentResponse() {
         return new CommentResponse(
@@ -116,8 +138,7 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(post("/api/v1/posts/{postId}/comments", POST_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -136,8 +157,7 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(post("/api/v1/posts/{postId}/comments", POST_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -164,8 +184,7 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(put("/api/v1/comments/{commentId}", COMMENT_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -184,8 +203,7 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(put("/api/v1/comments/{commentId}", COMMENT_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
@@ -206,8 +224,7 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(delete("/api/v1/comments/{commentId}", COMMENT_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString()))
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER")))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value("SUCCESS"));
 
@@ -233,8 +250,7 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(post("/api/v1/comments/{commentId}/replies", COMMENT_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -253,8 +269,7 @@ class CommentControllerTest {
 
             // when & then
             mockMvc.perform(post("/api/v1/comments/{commentId}/replies", COMMENT_ID)
-                            .with(jwt().authorities(() -> "ROLE_USER"))
-                            .header("X-User-Id", USER_ID.toString())
+                            .with(jwt().jwt(j -> j.subject(KEYCLOAK_ID)).authorities(() -> "ROLE_USER"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
