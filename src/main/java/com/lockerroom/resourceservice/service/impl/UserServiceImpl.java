@@ -31,6 +31,8 @@ public class UserServiceImpl implements UserService {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final PostLikeRepository postLikeRepository;
+    private final FootballTeamRepository footballTeamRepository;
+    private final BaseballTeamRepository baseballTeamRepository;
     private final UserMapper userMapper;
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
@@ -39,7 +41,9 @@ public class UserServiceImpl implements UserService {
     public UserResponse getMyInfo(Long userId) {
         User user = findUserById(userId);
         List<UserTeam> userTeams = userTeamRepository.findByUserId(userId);
-        List<UserTeamInfo> teams = userMapper.toUserTeamInfoList(userTeams);
+        List<UserTeamInfo> teams = userTeams.stream()
+                .map(ut -> userMapper.toUserTeamInfo(ut, resolveTeamNameFromUserTeam(ut)))
+                .toList();
 
         return userMapper.toResponse(user, teams);
     }
@@ -183,5 +187,19 @@ public class UserServiceImpl implements UserService {
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private String resolveTeamNameFromUserTeam(UserTeam ut) {
+        String sportNameEn = ut.getSport().getNameEn();
+        if ("Football".equalsIgnoreCase(sportNameEn)) {
+            return footballTeamRepository.findById(ut.getTeamId())
+                    .map(FootballTeam::getNameKo)
+                    .orElse(null);
+        } else if ("Baseball".equalsIgnoreCase(sportNameEn)) {
+            return baseballTeamRepository.findById(ut.getTeamId())
+                    .map(BaseballTeam::getNameKo)
+                    .orElse(null);
+        }
+        return null;
     }
 }

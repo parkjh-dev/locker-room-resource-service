@@ -36,13 +36,20 @@ public class AdminServiceImpl implements AdminService {
     private final PostReportRepository postReportRepository;
     private final PostRepository postRepository;
     private final NoticeRepository noticeRepository;
-    private final TeamRepository teamRepository;
     private final SportRepository sportRepository;
     private final BoardRepository boardRepository;
     private final InquiryRepository inquiryRepository;
     private final InquiryReplyRepository inquiryReplyRepository;
     private final RequestRepository requestRepository;
     private final FileRepository fileRepository;
+    private final FootballLeagueRepository footballLeagueRepository;
+    private final FootballTeamRepository footballTeamRepository;
+    private final FootballBoardRepository footballBoardRepository;
+    private final ActiveFootballBoardRepository activeFootballBoardRepository;
+    private final BaseballLeagueRepository baseballLeagueRepository;
+    private final BaseballTeamRepository baseballTeamRepository;
+    private final BaseballBoardRepository baseballBoardRepository;
+    private final ActiveBaseballBoardRepository activeBaseballBoardRepository;
     private final KafkaProducerService kafkaProducerService;
     private final UserMapper userMapper;
     private final PostMapper postMapper;
@@ -145,19 +152,11 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public NoticeDetailResponse createNotice(Long adminId, NoticeCreateRequest request) {
         User admin = findUserById(adminId);
-        Team team = null;
-
-        if (request.teamId() != null) {
-            team = teamRepository.findById(request.teamId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
-        }
 
         Notice notice = Notice.builder()
                 .title(request.title())
                 .content(request.content())
                 .isPinned(request.isPinned())
-                .scope(request.scope())
-                .team(team)
                 .admin(admin)
                 .build();
 
@@ -174,15 +173,6 @@ public class AdminServiceImpl implements AdminService {
         notice.updateTitle(request.title());
         notice.updateContent(request.content());
         notice.updateIsPinned(request.isPinned());
-        notice.updateScope(request.scope());
-
-        if (request.teamId() != null) {
-            Team team = teamRepository.findById(request.teamId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
-            notice.updateTeam(team);
-        } else {
-            notice.updateTeam(null);
-        }
 
         return noticeMapper.toDetailResponse(notice);
     }
@@ -269,51 +259,104 @@ public class AdminServiceImpl implements AdminService {
         entity.process(request.status(), admin, request.rejectReason());
 
         if (request.status() == RequestStatus.APPROVED) {
-            autoCreateFromRequest(entity, request.sportId());
+            autoCreateFromRequest(entity, request.sportId(), request.leagueId());
         }
 
         return requestMapper.toDetailResponse(entity);
     }
 
-    private void autoCreateFromRequest(Request entity, Long sportId) {
+    private void autoCreateFromRequest(Request entity, Long sportId, Long leagueId) {
         if (entity.getType() == RequestType.SPORT) {
             Sport sport = Sport.builder()
-                    .name(entity.getName())
+                    .nameKo(entity.getName())
+                    .nameEn(entity.getName())
                     .build();
             sportRepository.save(sport);
             log.info("Auto-created Sport '{}' from request #{}", entity.getName(), entity.getId());
         } else if (entity.getType() == RequestType.TEAM) {
-            if (sportId == null) {
-                throw new CustomException(ErrorCode.BAD_REQUEST,
-                        "TEAM 요청 승인 시 sportId가 필요합니다.");
+            if (sportId == null || leagueId == null) {
+                throw new CustomException(ErrorCode.BAD_REQUEST);
             }
-
             Sport sport = sportRepository.findById(sportId)
                     .orElseThrow(() -> new CustomException(ErrorCode.SPORT_NOT_FOUND));
 
-            Team team = Team.builder()
-                    .sport(sport)
-                    .name(entity.getName())
-                    .build();
-            Team savedTeam = teamRepository.save(team);
-
-            Board teamBoard = Board.builder()
-                    .name(entity.getName())
-                    .type(BoardType.TEAM)
-                    .team(savedTeam)
-                    .build();
-            boardRepository.save(teamBoard);
-
-            Board newsBoard = Board.builder()
-                    .name(entity.getName() + " 뉴스")
-                    .type(BoardType.NEWS)
-                    .team(savedTeam)
-                    .build();
-            boardRepository.save(newsBoard);
-
-            log.info("Auto-created Team '{}' with TEAM/NEWS boards from request #{}",
-                    entity.getName(), entity.getId());
+            String sportNameEn = sport.getNameEn().toLowerCase();
+            if (sportNameEn.contains("football") || sportNameEn.contains("soccer")) {
+                createFootballTeam(entity, leagueId);
+            } else if (sportNameEn.contains("baseball")) {
+                createBaseballTeam(entity, leagueId);
+            } else {
+                log.warn("Unsupported sport '{}' for TEAM auto-creation, request #{}", sport.getNameEn(), entity.getId());
+            }
         }
+    }
+
+    private void createFootballTeam(Request entity, Long leagueId) {
+        FootballLeague league = footballLeagueRepository.findById(leagueId)
+                .orElseThrow(() -> new CustomException(ErrorCode.LEAGUE_NOT_FOUND));
+
+        FootballTeam team = FootballTeam.builder()
+                .league(league)
+                .nameKo(entity.getName())
+                .nameEn(entity.getName())
+                .build();
+        footballTeamRepository.save(team);
+
+        FootballBoard teamBoard = FootballBoard.builder()
+                .footballTeam(team)
+                .name(entity.getName() + " 게시판")
+                .type(SportBoardType.TEAM)
+                .build();
+        footballBoardRepository.save(teamBoard);
+
+        FootballBoard newsBoard = FootballBoard.builder()
+                .footballTeam(team)
+                .name(entity.getName() + " 뉴스")
+                .type(SportBoardType.NEWS)
+                .build();
+        footballBoardRepository.save(newsBoard);
+
+        ActiveFootballBoard activeBoard = ActiveFootballBoard.builder()
+                .footballTeam(team)
+                .board(teamBoard)
+                .build();
+        activeFootballBoardRepository.save(activeBoard);
+
+        log.info("Auto-created FootballTeam '{}' with boards from request #{}", entity.getName(), entity.getId());
+    }
+
+    private void createBaseballTeam(Request entity, Long leagueId) {
+        BaseballLeague league = baseballLeagueRepository.findById(leagueId)
+                .orElseThrow(() -> new CustomException(ErrorCode.LEAGUE_NOT_FOUND));
+
+        BaseballTeam team = BaseballTeam.builder()
+                .league(league)
+                .nameKo(entity.getName())
+                .nameEn(entity.getName())
+                .build();
+        baseballTeamRepository.save(team);
+
+        BaseballBoard teamBoard = BaseballBoard.builder()
+                .baseballTeam(team)
+                .name(entity.getName() + " 게시판")
+                .type(SportBoardType.TEAM)
+                .build();
+        baseballBoardRepository.save(teamBoard);
+
+        BaseballBoard newsBoard = BaseballBoard.builder()
+                .baseballTeam(team)
+                .name(entity.getName() + " 뉴스")
+                .type(SportBoardType.NEWS)
+                .build();
+        baseballBoardRepository.save(newsBoard);
+
+        ActiveBaseballBoard activeBoard = ActiveBaseballBoard.builder()
+                .baseballTeam(team)
+                .board(teamBoard)
+                .build();
+        activeBaseballBoardRepository.save(activeBoard);
+
+        log.info("Auto-created BaseballTeam '{}' with boards from request #{}", entity.getName(), entity.getId());
     }
 
     private void handleReportAction(String action, PostReport report, User admin, Integer suspensionDays) {

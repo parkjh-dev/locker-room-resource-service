@@ -8,7 +8,6 @@ import com.lockerroom.resourceservice.dto.request.ReportProcessRequest;
 import com.lockerroom.resourceservice.dto.request.SuspendRequest;
 import com.lockerroom.resourceservice.dto.response.*;
 import com.lockerroom.resourceservice.model.entity.User;
-import com.lockerroom.resourceservice.model.enums.NoticeScope;
 import com.lockerroom.resourceservice.model.enums.OAuthProvider;
 import com.lockerroom.resourceservice.model.enums.ReportStatus;
 import com.lockerroom.resourceservice.model.enums.Role;
@@ -185,12 +184,11 @@ class AdminControllerTest {
         void createNotice_asAdmin_success() throws Exception {
             // given
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "Important Notice", "Notice content", true, NoticeScope.ALL, null
+                    "Important Notice", "Notice content", true
             );
             NoticeDetailResponse response = new NoticeDetailResponse(
                     1L, "Important Notice", "Notice content", true,
-                    NoticeScope.ALL, null, null, "admin1",
-                    LocalDateTime.now(), LocalDateTime.now()
+                    "admin1", LocalDateTime.now(), LocalDateTime.now()
             );
             when(adminService.createNotice(eq(ADMIN_ID), any(NoticeCreateRequest.class))).thenReturn(response);
 
@@ -202,8 +200,7 @@ class AdminControllerTest {
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.code").value("SUCCESS"))
                     .andExpect(jsonPath("$.data.id").value(1))
-                    .andExpect(jsonPath("$.data.title").value("Important Notice"))
-                    .andExpect(jsonPath("$.data.scope").value("ALL"));
+                    .andExpect(jsonPath("$.data.title").value("Important Notice"));
 
             verify(adminService).createNotice(eq(ADMIN_ID), any(NoticeCreateRequest.class));
         }
@@ -213,7 +210,7 @@ class AdminControllerTest {
         void createNotice_asUser_returns403() throws Exception {
             // given
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "Notice", "Content", false, NoticeScope.ALL, null
+                    "Notice", "Content", false
             );
 
             // when & then
@@ -231,7 +228,7 @@ class AdminControllerTest {
         void createNotice_blankTitle_returns400() throws Exception {
             // given
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "", "Content", false, NoticeScope.ALL, null
+                    "", "Content", false
             );
 
             // when & then
@@ -338,12 +335,11 @@ class AdminControllerTest {
         void updateNotice_asAdmin_success() throws Exception {
             // given
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "Updated Notice", "Updated content", false, NoticeScope.ALL, null
+                    "Updated Notice", "Updated content", false
             );
             NoticeDetailResponse response = new NoticeDetailResponse(
                     1L, "Updated Notice", "Updated content", false,
-                    NoticeScope.ALL, null, null, "admin1",
-                    LocalDateTime.now(), LocalDateTime.now()
+                    "admin1", LocalDateTime.now(), LocalDateTime.now()
             );
             when(adminService.updateNotice(eq(1L), eq(ADMIN_ID), any(NoticeCreateRequest.class))).thenReturn(response);
 

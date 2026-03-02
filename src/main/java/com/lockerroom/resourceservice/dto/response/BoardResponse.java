@@ -5,8 +5,6 @@ import com.lockerroom.resourceservice.model.enums.BoardType;
 public record BoardResponse(
         Long id,
         String name,
-        BoardType type,
-        Long teamId,
-        String teamName
+        BoardType type
 ) {
 }

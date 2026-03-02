@@ -12,14 +12,12 @@ import com.lockerroom.resourceservice.model.entity.Post;
 import com.lockerroom.resourceservice.model.enums.BoardType;
 import com.lockerroom.resourceservice.repository.BoardRepository;
 import com.lockerroom.resourceservice.repository.PostRepository;
-import com.lockerroom.resourceservice.repository.UserTeamRepository;
 import com.lockerroom.resourceservice.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -29,41 +27,22 @@ public class BoardServiceImpl implements BoardService {
 
     private final BoardRepository boardRepository;
     private final PostRepository postRepository;
-    private final UserTeamRepository userTeamRepository;
     private final PostMapper postMapper;
 
     @Override
     public List<BoardResponse> getBoards(Long userId) {
-        List<Board> publicBoards = boardRepository.findByTypeIn(
-                List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE, BoardType.NEWS));
+        List<Board> boards = boardRepository.findByTypeIn(
+                List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE));
 
-        List<Board> teamBoards = new ArrayList<>();
-        if (userId != null) {
-            userTeamRepository.findByUserId(userId).forEach(ut ->
-                    teamBoards.addAll(boardRepository.findByTeamId(ut.getTeam().getId()))
-            );
-        }
-
-        List<Board> allBoards = new ArrayList<>(publicBoards);
-        allBoards.addAll(teamBoards);
-
-        return allBoards.stream()
+        return boards.stream()
                 .map(postMapper::toBoardResponse)
                 .toList();
     }
 
     @Override
     public Board validateBoardAccess(Long boardId, Long userId) {
-        Board board = boardRepository.findById(boardId)
+        return boardRepository.findById(boardId)
                 .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND));
-
-        if (board.getType() == BoardType.TEAM && board.getTeam() != null) {
-            if (userId == null || !userTeamRepository.existsByUserIdAndTeamId(userId, board.getTeam().getId())) {
-                throw new CustomException(ErrorCode.BOARD_ACCESS_DENIED);
-            }
-        }
-
-        return board;
     }
 
     @Override

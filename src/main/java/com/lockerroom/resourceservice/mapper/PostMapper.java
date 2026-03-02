@@ -5,7 +5,6 @@ import com.lockerroom.resourceservice.model.entity.Board;
 import com.lockerroom.resourceservice.model.entity.Post;
 import com.lockerroom.resourceservice.model.entity.PostReport;
 import com.lockerroom.resourceservice.model.entity.Sport;
-import com.lockerroom.resourceservice.model.entity.Team;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -55,13 +54,8 @@ public interface PostMapper {
     @Mapping(source = "user.nickname", target = "reporterNickname")
     ReportListResponse toReportListResponse(PostReport report);
 
-    @Mapping(source = "team.id", target = "teamId")
-    @Mapping(source = "team.name", target = "teamName")
     BoardResponse toBoardResponse(Board board);
 
     @Mapping(source = "active", target = "isActive")
     SportResponse toSportResponse(Sport sport);
-
-    @Mapping(source = "active", target = "isActive")
-    TeamResponse toTeamResponse(Team team);
 }

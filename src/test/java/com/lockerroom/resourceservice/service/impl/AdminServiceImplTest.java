@@ -38,13 +38,20 @@ class AdminServiceImplTest {
     @Mock private PostReportRepository postReportRepository;
     @Mock private PostRepository postRepository;
     @Mock private NoticeRepository noticeRepository;
-    @Mock private TeamRepository teamRepository;
     @Mock private InquiryRepository inquiryRepository;
     @Mock private InquiryReplyRepository inquiryReplyRepository;
     @Mock private RequestRepository requestRepository;
     @Mock private FileRepository fileRepository;
     @Mock private SportRepository sportRepository;
     @Mock private BoardRepository boardRepository;
+    @Mock private FootballLeagueRepository footballLeagueRepository;
+    @Mock private FootballTeamRepository footballTeamRepository;
+    @Mock private FootballBoardRepository footballBoardRepository;
+    @Mock private ActiveFootballBoardRepository activeFootballBoardRepository;
+    @Mock private BaseballLeagueRepository baseballLeagueRepository;
+    @Mock private BaseballTeamRepository baseballTeamRepository;
+    @Mock private BaseballBoardRepository baseballBoardRepository;
+    @Mock private ActiveBaseballBoardRepository activeBaseballBoardRepository;
     @Mock private KafkaProducerService kafkaProducerService;
     @Mock private UserMapper userMapper;
     @Mock private PostMapper postMapper;
@@ -250,15 +257,15 @@ class AdminServiceImplTest {
     class CreateNotice {
 
         @Test
-        @DisplayName("should create notice without team")
-        void createNotice_allScope_success() {
+        @DisplayName("should create notice successfully")
+        void createNotice_success() {
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "공지 제목", "공지 내용", true, NoticeScope.ALL, null);
+                    "공지 제목", "공지 내용", true);
             Notice notice = Notice.builder()
-                    .id(1L).title("공지 제목").content("공지 내용").isPinned(true).scope(NoticeScope.ALL).admin(admin)
+                    .id(1L).title("공지 제목").content("공지 내용").isPinned(true).admin(admin)
                     .build();
             NoticeDetailResponse response = new NoticeDetailResponse(
-                    1L, "공지 제목", "공지 내용", true, NoticeScope.ALL, null, null, "admin", null, null);
+                    1L, "공지 제목", "공지 내용", true, "admin", null, null);
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
             when(noticeRepository.save(any(Notice.class))).thenReturn(notice);
@@ -267,46 +274,7 @@ class AdminServiceImplTest {
             NoticeDetailResponse result = adminService.createNotice(1L, request);
 
             assertThat(result.title()).isEqualTo("공지 제목");
-            assertThat(result.scope()).isEqualTo(NoticeScope.ALL);
             verify(noticeRepository).save(any(Notice.class));
-        }
-
-        @Test
-        @DisplayName("should create notice with team")
-        void createNotice_teamScope_success() {
-            Team team = Team.builder().id(1L).name("울산 HD FC").build();
-            NoticeCreateRequest request = new NoticeCreateRequest(
-                    "팀 공지", "팀 공지 내용", false, NoticeScope.TEAM, 1L);
-            Notice notice = Notice.builder()
-                    .id(1L).title("팀 공지").content("팀 공지 내용").scope(NoticeScope.TEAM).team(team).admin(admin)
-                    .build();
-            NoticeDetailResponse response = new NoticeDetailResponse(
-                    1L, "팀 공지", "팀 공지 내용", false, NoticeScope.TEAM, 1L, "울산 HD FC", "admin", null, null);
-
-            when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
-            when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
-            when(noticeRepository.save(any(Notice.class))).thenReturn(notice);
-            when(noticeMapper.toDetailResponse(notice)).thenReturn(response);
-
-            NoticeDetailResponse result = adminService.createNotice(1L, request);
-
-            assertThat(result.teamId()).isEqualTo(1L);
-            assertThat(result.scope()).isEqualTo(NoticeScope.TEAM);
-        }
-
-        @Test
-        @DisplayName("should throw exception when team not found")
-        void createNotice_teamNotFound() {
-            NoticeCreateRequest request = new NoticeCreateRequest(
-                    "팀 공지", "내용", false, NoticeScope.TEAM, 999L);
-
-            when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
-            when(teamRepository.findById(999L)).thenReturn(Optional.empty());
-
-            CustomException exception = assertThrows(CustomException.class,
-                    () -> adminService.createNotice(1L, request));
-
-            assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
         }
     }
 
@@ -318,12 +286,12 @@ class AdminServiceImplTest {
         @DisplayName("should update notice successfully")
         void updateNotice_success() {
             Notice notice = Notice.builder()
-                    .id(1L).title("원래 제목").content("원래 내용").isPinned(false).scope(NoticeScope.ALL).admin(admin)
+                    .id(1L).title("원래 제목").content("원래 내용").isPinned(false).admin(admin)
                     .build();
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "수정 제목", "수정 내용", true, NoticeScope.ALL, null);
+                    "수정 제목", "수정 내용", true);
             NoticeDetailResponse response = new NoticeDetailResponse(
-                    1L, "수정 제목", "수정 내용", true, NoticeScope.ALL, null, null, "admin", null, null);
+                    1L, "수정 제목", "수정 내용", true, "admin", null, null);
 
             when(noticeRepository.findById(1L)).thenReturn(Optional.of(notice));
             when(noticeMapper.toDetailResponse(notice)).thenReturn(response);
@@ -338,7 +306,7 @@ class AdminServiceImplTest {
         @Test
         @DisplayName("should throw exception when notice not found")
         void updateNotice_notFound() {
-            NoticeCreateRequest request = new NoticeCreateRequest("제목", "내용", false, NoticeScope.ALL, null);
+            NoticeCreateRequest request = new NoticeCreateRequest("제목", "내용", false);
             when(noticeRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
@@ -350,7 +318,7 @@ class AdminServiceImplTest {
         @Test
         @DisplayName("should throw exception when entity not found")
         void updateNotice_deleted() {
-            NoticeCreateRequest request = new NoticeCreateRequest("제목", "내용", false, NoticeScope.ALL, null);
+            NoticeCreateRequest request = new NoticeCreateRequest("제목", "내용", false);
             when(noticeRepository.findById(1L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
@@ -493,25 +461,22 @@ class AdminServiceImplTest {
     class ProcessRequest {
 
         @Test
-        @DisplayName("should approve request successfully")
-        void processRequest_approve() {
+        @DisplayName("should approve SPORT request and auto-create sport")
+        void processRequest_approveSport() {
             Request requestEntity = Request.builder()
-                    .id(1L).user(user).type(RequestType.TEAM).name("수원 삼성").reason("추가 요청").build();
-            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.APPROVED, null, 1L);
+                    .id(1L).user(user).type(RequestType.SPORT).name("배드민턴").reason("추가 요청").build();
+            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.APPROVED, null, null, null);
             RequestDetailResponse response = new RequestDetailResponse(
-                    1L, RequestType.TEAM, "수원 삼성", "추가 요청", RequestStatus.APPROVED, null, null, null);
+                    1L, RequestType.SPORT, "배드민턴", "추가 요청", RequestStatus.APPROVED, null, null, null);
 
-            Sport sport = Sport.builder().id(1L).name("축구").build();
             when(requestRepository.findById(1L)).thenReturn(Optional.of(requestEntity));
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
-            when(sportRepository.findById(1L)).thenReturn(Optional.of(sport));
-            when(teamRepository.save(any(Team.class))).thenReturn(Team.builder().id(1L).name("수원 삼성").sport(sport).build());
             when(requestMapper.toDetailResponse(requestEntity)).thenReturn(response);
 
             RequestDetailResponse result = adminService.processRequest(1L, 1L, request);
 
             assertThat(result.status()).isEqualTo(RequestStatus.APPROVED);
-            assertThat(requestEntity.getStatus()).isEqualTo(RequestStatus.APPROVED);
+            verify(sportRepository).save(any(Sport.class));
         }
 
         @Test
@@ -519,7 +484,7 @@ class AdminServiceImplTest {
         void processRequest_reject() {
             Request requestEntity = Request.builder()
                     .id(1L).user(user).type(RequestType.TEAM).name("수원 삼성").reason("추가 요청").build();
-            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.REJECTED, "K리그1만 지원", null);
+            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.REJECTED, "K리그1만 지원", null, null);
             RequestDetailResponse response = new RequestDetailResponse(
                     1L, RequestType.TEAM, "수원 삼성", "추가 요청", RequestStatus.REJECTED, "K리그1만 지원", null, null);
 
@@ -536,13 +501,43 @@ class AdminServiceImplTest {
         @Test
         @DisplayName("should throw exception when request not found")
         void processRequest_notFound() {
-            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.APPROVED, null, null);
+            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.APPROVED, null, null, null);
             when(requestRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> adminService.processRequest(999L, 1L, request));
 
             assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.REQUEST_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("should approve TEAM request and auto-create football team with boards")
+        void processRequest_approveTeam_football() {
+            Request requestEntity = Request.builder()
+                    .id(2L).user(user).type(RequestType.TEAM).name("수원 삼성").reason("팀 추가 요청").build();
+            RequestProcessRequest request = new RequestProcessRequest(RequestStatus.APPROVED, null, 1L, 10L);
+            RequestDetailResponse response = new RequestDetailResponse(
+                    2L, RequestType.TEAM, "수원 삼성", "팀 추가 요청", RequestStatus.APPROVED, null, null, null);
+
+            Sport football = Sport.builder().id(1L).nameKo("축구").nameEn("Football").build();
+            Country country = Country.builder().id(1L).nameKo("영국").nameEn("England").build();
+            FootballLeague league = FootballLeague.builder().id(10L).country(country).nameKo("프리미어리그").nameEn("Premier League").build();
+
+            when(requestRepository.findById(2L)).thenReturn(Optional.of(requestEntity));
+            when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
+            when(sportRepository.findById(1L)).thenReturn(Optional.of(football));
+            when(footballLeagueRepository.findById(10L)).thenReturn(Optional.of(league));
+            when(footballTeamRepository.save(any(FootballTeam.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(footballBoardRepository.save(any(FootballBoard.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(activeFootballBoardRepository.save(any(ActiveFootballBoard.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(requestMapper.toDetailResponse(requestEntity)).thenReturn(response);
+
+            RequestDetailResponse result = adminService.processRequest(2L, 1L, request);
+
+            assertThat(result.status()).isEqualTo(RequestStatus.APPROVED);
+            verify(footballTeamRepository).save(any(FootballTeam.class));
+            verify(footballBoardRepository, times(2)).save(any(FootballBoard.class));
+            verify(activeFootballBoardRepository).save(any(ActiveFootballBoard.class));
         }
     }
 }

@@ -68,9 +68,8 @@ public class AdminController {
 
     @GetMapping("/notices")
     public ResponseEntity<ApiResponse<CursorPageResponse<NoticeListResponse>>> getNotices(
-            @ModelAttribute CursorPageRequest pageRequest,
-            @RequestParam(required = false) Long teamId) {
-        return ResponseEntity.ok(ApiResponse.success(noticeService.getList(teamId, pageRequest)));
+            @ModelAttribute CursorPageRequest pageRequest) {
+        return ResponseEntity.ok(ApiResponse.success(noticeService.getList(pageRequest)));
     }
 
     @PostMapping("/notices")

@@ -19,9 +19,8 @@ public class NoticeController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<CursorPageResponse<NoticeListResponse>>> getList(
-            @RequestParam(required = false) Long teamId,
             @ModelAttribute CursorPageRequest pageRequest) {
-        return ResponseEntity.ok(ApiResponse.success(noticeService.getList(teamId, pageRequest)));
+        return ResponseEntity.ok(ApiResponse.success(noticeService.getList(pageRequest)));
     }
 
     @GetMapping("/{noticeId}")

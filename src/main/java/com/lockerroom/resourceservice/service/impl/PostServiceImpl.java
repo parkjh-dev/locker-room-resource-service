@@ -37,6 +37,8 @@ public class PostServiceImpl implements PostService {
     private final PostReportRepository postReportRepository;
     private final UserRepository userRepository;
     private final UserTeamRepository userTeamRepository;
+    private final FootballTeamRepository footballTeamRepository;
+    private final BaseballTeamRepository baseballTeamRepository;
     private final FileRepository fileRepository;
     private final BoardService boardService;
     private final FileService fileService;
@@ -173,9 +175,7 @@ public class PostServiceImpl implements PostService {
                 TargetType.POST, post.getId());
         List<FileResponse> fileResponses = fileMapper.toResponseList(files);
 
-        String teamName = userTeamRepository.findFirstByUserIdOrderByIdAsc(post.getUser().getId())
-                .map(ut -> ut.getTeam().getName())
-                .orElse(null);
+        String teamName = resolveTeamName(post.getUser().getId());
 
         return postMapper.toDetailResponse(post, isLiked, fileResponses, teamName);
     }
@@ -217,5 +217,23 @@ public class PostServiceImpl implements PostService {
         if (actor.getRole() == Role.ADMIN) return;
 
         throw new CustomException(ErrorCode.POST_ACCESS_DENIED);
+    }
+
+    private String resolveTeamName(Long userId) {
+        return userTeamRepository.findFirstByUserIdOrderByIdAsc(userId)
+                .map(ut -> {
+                    String sportNameEn = ut.getSport().getNameEn();
+                    if ("Football".equalsIgnoreCase(sportNameEn)) {
+                        return footballTeamRepository.findById(ut.getTeamId())
+                                .map(FootballTeam::getNameKo)
+                                .orElse(null);
+                    } else if ("Baseball".equalsIgnoreCase(sportNameEn)) {
+                        return baseballTeamRepository.findById(ut.getTeamId())
+                                .map(BaseballTeam::getNameKo)
+                                .orElse(null);
+                    }
+                    return (String) null;
+                })
+                .orElse(null);
     }
 }

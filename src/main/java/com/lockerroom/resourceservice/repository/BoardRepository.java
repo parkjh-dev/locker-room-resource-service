@@ -9,6 +9,4 @@ import java.util.List;
 public interface BoardRepository extends JpaRepository<Board, Long> {
 
     List<Board> findByTypeIn(List<BoardType> types);
-
-    List<Board> findByTeamId(Long teamId);
 }

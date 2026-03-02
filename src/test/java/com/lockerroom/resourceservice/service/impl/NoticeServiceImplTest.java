@@ -9,7 +9,6 @@ import com.lockerroom.resourceservice.exceptions.ErrorCode;
 import com.lockerroom.resourceservice.mapper.NoticeMapper;
 import com.lockerroom.resourceservice.model.entity.Notice;
 import com.lockerroom.resourceservice.model.entity.User;
-import com.lockerroom.resourceservice.model.enums.NoticeScope;
 import com.lockerroom.resourceservice.model.enums.Role;
 import com.lockerroom.resourceservice.repository.NoticeRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +55,6 @@ class NoticeServiceImplTest {
                 .id(1L)
                 .title("Notice Title")
                 .content("Notice Content")
-                .scope(NoticeScope.ALL)
                 .admin(admin)
                 .build();
 
@@ -65,7 +63,6 @@ class NoticeServiceImplTest {
                 .title("Pinned Notice")
                 .content("Pinned Content")
                 .isPinned(true)
-                .scope(NoticeScope.ALL)
                 .admin(admin)
                 .build();
     }
@@ -81,14 +78,14 @@ class NoticeServiceImplTest {
             pageRequest.setSize(1);
 
             NoticeListResponse response1 = new NoticeListResponse(
-                    2L, "Pinned Notice", true, NoticeScope.ALL, null, null
+                    2L, "Pinned Notice", true, null
             );
 
-            when(noticeRepository.findFilteredNotices(any(), any(PageRequest.class)))
+            when(noticeRepository.findByDeletedAtIsNullOrderByIsPinnedDescCreatedAtDesc(any(PageRequest.class)))
                     .thenReturn(List.of(pinnedNotice, notice));
             when(noticeMapper.toListResponse(pinnedNotice)).thenReturn(response1);
 
-            CursorPageResponse<NoticeListResponse> result = noticeService.getList(null, pageRequest);
+            CursorPageResponse<NoticeListResponse> result = noticeService.getList(pageRequest);
 
             assertThat(result.getItems()).hasSize(1);
             assertThat(result.isHasNext()).isTrue();
@@ -102,18 +99,18 @@ class NoticeServiceImplTest {
             pageRequest.setSize(10);
 
             NoticeListResponse response1 = new NoticeListResponse(
-                    2L, "Pinned Notice", true, NoticeScope.ALL, null, null
+                    2L, "Pinned Notice", true, null
             );
             NoticeListResponse response2 = new NoticeListResponse(
-                    1L, "Notice Title", false, NoticeScope.ALL, null, null
+                    1L, "Notice Title", false, null
             );
 
-            when(noticeRepository.findFilteredNotices(any(), any(PageRequest.class)))
+            when(noticeRepository.findByDeletedAtIsNullOrderByIsPinnedDescCreatedAtDesc(any(PageRequest.class)))
                     .thenReturn(List.of(pinnedNotice, notice));
             when(noticeMapper.toListResponse(pinnedNotice)).thenReturn(response1);
             when(noticeMapper.toListResponse(notice)).thenReturn(response2);
 
-            CursorPageResponse<NoticeListResponse> result = noticeService.getList(null, pageRequest);
+            CursorPageResponse<NoticeListResponse> result = noticeService.getList(pageRequest);
 
             assertThat(result.getItems()).hasSize(2);
             assertThat(result.isHasNext()).isFalse();
@@ -126,10 +123,10 @@ class NoticeServiceImplTest {
             CursorPageRequest pageRequest = new CursorPageRequest();
             pageRequest.setSize(10);
 
-            when(noticeRepository.findFilteredNotices(any(), any(PageRequest.class)))
+            when(noticeRepository.findByDeletedAtIsNullOrderByIsPinnedDescCreatedAtDesc(any(PageRequest.class)))
                     .thenReturn(Collections.emptyList());
 
-            CursorPageResponse<NoticeListResponse> result = noticeService.getList(null, pageRequest);
+            CursorPageResponse<NoticeListResponse> result = noticeService.getList(pageRequest);
 
             assertThat(result.getItems()).isEmpty();
             assertThat(result.isHasNext()).isFalse();
@@ -146,8 +143,7 @@ class NoticeServiceImplTest {
         void getDetail_success() {
             NoticeDetailResponse expectedResponse = new NoticeDetailResponse(
                     1L, "Notice Title", "Notice Content",
-                    false, NoticeScope.ALL, null, null,
-                    "admin", null, null
+                    false, "admin", null, null
             );
 
             when(noticeRepository.findById(1L)).thenReturn(Optional.of(notice));

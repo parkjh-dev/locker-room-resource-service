@@ -10,16 +10,10 @@ import com.lockerroom.resourceservice.exceptions.ErrorCode;
 import com.lockerroom.resourceservice.kafka.KafkaProducerService;
 import com.lockerroom.resourceservice.kafka.event.NotificationEvent;
 import com.lockerroom.resourceservice.mapper.CommentMapper;
-import com.lockerroom.resourceservice.model.entity.Comment;
-import com.lockerroom.resourceservice.model.entity.Post;
-import com.lockerroom.resourceservice.model.entity.User;
+import com.lockerroom.resourceservice.model.entity.*;
 import com.lockerroom.resourceservice.model.enums.NotificationType;
 import com.lockerroom.resourceservice.model.enums.Role;
-import com.lockerroom.resourceservice.model.entity.UserTeam;
-import com.lockerroom.resourceservice.repository.CommentRepository;
-import com.lockerroom.resourceservice.repository.PostRepository;
-import com.lockerroom.resourceservice.repository.UserRepository;
-import com.lockerroom.resourceservice.repository.UserTeamRepository;
+import com.lockerroom.resourceservice.repository.*;
 import com.lockerroom.resourceservice.service.CommentService;
 import com.lockerroom.resourceservice.utils.Constants;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +35,8 @@ public class CommentServiceImpl implements CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final UserTeamRepository userTeamRepository;
+    private final FootballTeamRepository footballTeamRepository;
+    private final BaseballTeamRepository baseballTeamRepository;
     private final KafkaProducerService kafkaProducerService;
     private final CommentMapper commentMapper;
 
@@ -214,17 +210,55 @@ public class CommentServiceImpl implements CommentService {
 
     private String resolveTeamName(Long userId) {
         return userTeamRepository.findFirstByUserIdOrderByIdAsc(userId)
-                .map(ut -> ut.getTeam().getName())
+                .map(this::resolveTeamNameFromUserTeam)
                 .orElse(null);
     }
 
     private Map<Long, String> buildTeamNameMap(List<Long> userIds) {
-        return userTeamRepository.findByUserIdIn(userIds).stream()
+        List<UserTeam> userTeams = userTeamRepository.findByUserIdIn(userIds);
+
+        List<Long> footballTeamIds = new java.util.ArrayList<>();
+        List<Long> baseballTeamIds = new java.util.ArrayList<>();
+
+        for (UserTeam ut : userTeams) {
+            String sportEn = ut.getSport().getNameEn();
+            if ("Football".equalsIgnoreCase(sportEn)) {
+                footballTeamIds.add(ut.getTeamId());
+            } else if ("Baseball".equalsIgnoreCase(sportEn)) {
+                baseballTeamIds.add(ut.getTeamId());
+            }
+        }
+
+        java.util.Map<Long, String> teamNameById = new java.util.HashMap<>();
+        if (!footballTeamIds.isEmpty()) {
+            footballTeamRepository.findAllById(footballTeamIds)
+                    .forEach(ft -> teamNameById.put(ft.getId(), ft.getNameKo()));
+        }
+        if (!baseballTeamIds.isEmpty()) {
+            baseballTeamRepository.findAllById(baseballTeamIds)
+                    .forEach(bt -> teamNameById.put(bt.getId(), bt.getNameKo()));
+        }
+
+        return userTeams.stream()
                 .collect(Collectors.toMap(
                         ut -> ut.getUser().getId(),
-                        ut -> ut.getTeam().getName(),
+                        ut -> teamNameById.getOrDefault(ut.getTeamId(), ""),
                         (first, second) -> first
                 ));
+    }
+
+    private String resolveTeamNameFromUserTeam(UserTeam ut) {
+        String sportNameEn = ut.getSport().getNameEn();
+        if ("Football".equalsIgnoreCase(sportNameEn)) {
+            return footballTeamRepository.findById(ut.getTeamId())
+                    .map(FootballTeam::getNameKo)
+                    .orElse(null);
+        } else if ("Baseball".equalsIgnoreCase(sportNameEn)) {
+            return baseballTeamRepository.findById(ut.getTeamId())
+                    .map(BaseballTeam::getNameKo)
+                    .orElse(null);
+        }
+        return null;
     }
 
     private void validateCommentOwner(Comment comment, Long userId) {

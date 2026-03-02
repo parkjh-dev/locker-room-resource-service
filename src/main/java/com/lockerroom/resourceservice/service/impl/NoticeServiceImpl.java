@@ -26,9 +26,9 @@ public class NoticeServiceImpl implements NoticeService {
     private final NoticeMapper noticeMapper;
 
     @Override
-    public CursorPageResponse<NoticeListResponse> getList(Long teamId, CursorPageRequest pageRequest) {
-        List<Notice> notices = noticeRepository.findFilteredNotices(
-                teamId, PageRequest.of(0, pageRequest.getSize() + 1));
+    public CursorPageResponse<NoticeListResponse> getList(CursorPageRequest pageRequest) {
+        List<Notice> notices = noticeRepository.findByDeletedAtIsNullOrderByIsPinnedDescCreatedAtDesc(
+                PageRequest.of(0, pageRequest.getSize() + 1));
 
         boolean hasNext = notices.size() > pageRequest.getSize();
         List<Notice> resultNotices = hasNext ? notices.subList(0, pageRequest.getSize()) : notices;

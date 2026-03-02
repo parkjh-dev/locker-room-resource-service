@@ -13,9 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-@Table(name = "boards", indexes = {
-        @Index(name = "idx_boards_team", columnList = "team_id")
-})
+@Table(name = "boards")
 public class Board extends BaseEntity {
 
     @Id
@@ -28,8 +26,4 @@ public class Board extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BoardType type;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
-    private Team team;
 }

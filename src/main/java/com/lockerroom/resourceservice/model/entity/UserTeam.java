@@ -14,6 +14,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(name = "user_teams", uniqueConstraints = {
         @UniqueConstraint(name = "uk_user_teams_user_sport", columnNames = {"user_id", "sport_id"})
+}, indexes = {
+        @Index(name = "idx_user_teams_sport_team", columnList = "sport_id, team_id")
 })
 public class UserTeam extends BaseEntity {
 
@@ -25,9 +27,8 @@ public class UserTeam extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id", nullable = false)
-    private Team team;
+    @Column(name = "team_id", nullable = false)
+    private Long teamId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sport_id", nullable = false)

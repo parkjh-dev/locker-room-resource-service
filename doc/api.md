@@ -434,41 +434,8 @@ Idempotency-Key: {UUID}
   "code": "SUCCESS",
   "message": "요청이 성공적으로 처리되었습니다.",
   "data": [
-    { "id": 1, "name": "축구", "isActive": true },
-    { "id": 2, "name": "야구", "isActive": true }
-  ]
-}
-```
-
----
-
-#### 2.2.2 GET `/sports/{sportId}/teams` - 팀 목록 조회
-
-**인증**: 불필요
-
-**Path Parameter**
-| 파라미터 | 타입 | 설명 |
-|----------|------|------|
-| sportId | long | 종목 ID |
-
-**Response 200**
-```json
-{
-  "code": "SUCCESS",
-  "message": "요청이 성공적으로 처리되었습니다.",
-  "data": [
-    {
-      "id": 1,
-      "name": "울산 HD FC",
-      "logoUrl": "https://s3.../logos/ulsan.png",
-      "isActive": true
-    },
-    {
-      "id": 2,
-      "name": "김천 상무 FC",
-      "logoUrl": "https://s3.../logos/gimcheon.png",
-      "isActive": true
-    }
+    { "id": 1, "nameKo": "축구", "nameEn": "Football", "isActive": true },
+    { "id": 2, "nameKo": "야구", "nameEn": "Baseball", "isActive": true }
   ]
 }
 ```
@@ -993,7 +960,6 @@ Idempotency-Key: {UUID}
 |----------|------|------|--------|------|
 | cursor | string | X | null | 커서 |
 | size | int | X | 20 | 조회 개수 |
-| teamId | long | X | null | 팀 공지 필터 (null이면 전체 공지만) |
 
 **Response 200**
 ```json
@@ -1006,8 +972,6 @@ Idempotency-Key: {UUID}
         "id": 1,
         "title": "서비스 오픈 안내",
         "isPinned": true,
-        "scope": "ALL",
-        "teamName": null,
         "createdAt": "2026-02-01T00:00:00Z"
       }
     ],
@@ -1035,9 +999,6 @@ Idempotency-Key: {UUID}
     "title": "서비스 오픈 안내",
     "content": "라커룸 서비스가 정식 오픈되었습니다...",
     "isPinned": true,
-    "scope": "ALL",
-    "teamId": null,
-    "teamName": null,
     "adminNickname": "관리자",
     "createdAt": "2026-02-01T00:00:00Z",
     "updatedAt": "2026-02-01T00:00:00Z"
@@ -1522,7 +1483,6 @@ Idempotency-Key: {UUID}
 |----------|------|------|--------|------|
 | cursor | string | X | null | 커서 |
 | size | int | X | 20 | 조회 개수 |
-| teamId | long | X | null | 팀 공지 필터 |
 
 **Response 200**: `GET /notices` 응답과 동일 (CursorPageResponse<NoticeListResponse>)
 
@@ -1609,9 +1569,7 @@ Idempotency-Key: {UUID}
 {
   "title": "서비스 점검 안내",
   "content": "2026년 2월 20일 02:00~06:00 서비스 점검이 예정되어 있습니다.",
-  "isPinned": true,
-  "scope": "ALL",
-  "teamId": null
+  "isPinned": true
 }
 ```
 
@@ -1620,8 +1578,6 @@ Idempotency-Key: {UUID}
 | title | string | O | 1~200자 |
 | content | string | O | 1~10000자 |
 | isPinned | boolean | X | 기본 false |
-| scope | string | O | ALL, TEAM |
-| teamId | long | X | scope=TEAM일 때 필수 |
 
 **Response 201**
 ```json
@@ -1779,8 +1735,10 @@ Idempotency-Key: {UUID}
 **Request Body**
 ```json
 {
-  "status": "REJECTED",
-  "rejectReason": "현재 K리그1 팀만 지원하고 있습니다."
+  "status": "APPROVED",
+  "rejectReason": null,
+  "sportId": 1,
+  "leagueId": 10
 }
 ```
 
@@ -1788,6 +1746,8 @@ Idempotency-Key: {UUID}
 |------|------|------|-------------|
 | status | string | O | APPROVED, REJECTED |
 | rejectReason | string | X | REJECTED 시 필수, 1~1000자 |
+| sportId | long | X | TEAM 승인 시 필수, 존재하는 종목 ID |
+| leagueId | long | X | TEAM 승인 시 필수, 존재하는 리그 ID |
 
 **Response 200**
 ```json
@@ -1796,13 +1756,13 @@ Idempotency-Key: {UUID}
   "message": "요청이 처리되었습니다.",
   "data": {
     "requestId": 5,
-    "status": "REJECTED",
+    "status": "APPROVED",
     "processedAt": "2026-02-15T10:00:00Z"
   }
 }
 ```
 
-> APPROVED 시 해당 종목/팀이 자동 생성되고, 관련 게시판도 함께 생성.
+> APPROVED 시: SPORT 요청은 종목이 자동 생성되고, TEAM 요청은 sportId/leagueId 기반으로 종목별 팀 + 게시판(TEAM/NEWS) + 활성화 보드가 자동 생성된다.
 
 ---
 
@@ -1890,6 +1850,8 @@ Idempotency-Key: {UUID}
 | POST | POST_ACCESS_DENIED | 403 | 게시글 접근 권한 없음 |
 | POST | POST_ALREADY_REPORTED | 409 | 이미 신고한 게시글 |
 | SUSPENSION | SUSPENSION_NOT_FOUND | 404 | 활성 정지 없음 |
+| SPORT | SPORT_NOT_FOUND | 404 | 종목 없음 |
+| LEAGUE | LEAGUE_NOT_FOUND | 404 | 리그 없음 |
 | COMMENT | COMMENT_NOT_FOUND | 404 | 댓글 없음 |
 | COMMENT | COMMENT_REPLY_DEPTH_EXCEEDED | 400 | 대댓글 depth 초과 |
 | FILE | FILE_SIZE_EXCEEDED | 400 | 파일 크기 초과 |
@@ -1911,3 +1873,4 @@ Idempotency-Key: {UUID}
 | 1.2 | 2026-02-25 | - | Phase 20 반영: sort 파라미터 camelCase 통일 (created_at→createdAt, like_count→likeCount), 에러코드 시맨틱 코드 확정 |
 | 1.3 | 2026-02-25 | - | Phase 12 반영: 인기 게시글(GET /posts/popular), 대시보드(GET /admin/dashboard), 정지 해제(PUT /admin/users/{userId}/unsuspend), 관리자 공지 목록(GET /admin/notices) 추가. AuthorInfo.teamName 추가. SuspendRequest.suspendedUntil OffsetDateTime 변경. SUSPENSION_NOT_FOUND 에러 코드 추가 |
 | 1.4 | 2026-02-26 | - | Phase 13 반영: profileImageUrl 필드 추가 (UserResponse, AuthorInfo, UserUpdateRequest). 파일 업로드 targetType에 PROFILE 추가 |
+| 1.5 | 2026-03-02 | - | Phase 14 반영: Sport nameKo/nameEn 분리, Notice scope/teamId/teamName 제거, GET /sports/{sportId}/teams 제거, PUT /admin/requests에 sportId/leagueId 추가 |

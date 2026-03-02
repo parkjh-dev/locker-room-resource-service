@@ -1,5 +1,6 @@
 package com.lockerroom.resourceservice.model.entity;
 
+import com.lockerroom.resourceservice.model.enums.SportBoardType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -12,26 +13,23 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-@Table(name = "teams", indexes = {
-        @Index(name = "idx_teams_sport", columnList = "sport_id")
+@Table(name = "baseball_boards", indexes = {
+        @Index(name = "idx_baseball_boards_team", columnList = "baseball_team_id")
 })
-public class Team extends BaseEntity {
+public class BaseballBoard extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sport_id", nullable = false)
-    private Sport sport;
+    @JoinColumn(name = "baseball_team_id", nullable = false)
+    private BaseballTeam baseballTeam;
 
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(length = 500)
-    private String logoUrl;
-
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    @Builder.Default
-    private boolean isActive = true;
+    private SportBoardType type;
 }

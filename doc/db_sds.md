@@ -8,6 +8,7 @@
 - Engine: InnoDB
 - Charset: utf8mb4 / Collation: utf8mb4_unicode_ci
 - 공통 필드: `created_at`, `updated_at`, `deleted_at` (Soft Delete)
+    - 예외: `continents`, `countries` (정적 참조 테이블로 타임스탬프/Soft Delete 미적용)
 - PK: BIGINT AUTO_INCREMENT
 - Soft Delete: `deleted_at IS NULL` → 활성 레코드, `deleted_at IS NOT NULL` → 삭제 레코드
 - ENUM은 MariaDB ENUM 타입 사용
@@ -22,37 +23,20 @@
 ```sql
 CREATE TABLE users (
     id              BIGINT          NOT NULL AUTO_INCREMENT,
-    keycloak_id     VARCHAR(36)     NULL        COMMENT 'Keycloak UUID (JWT sub claim)',
     email           VARCHAR(255)    NOT NULL,
+    keycloak_id     VARCHAR(36)     NULL        COMMENT 'Keycloak 사용자 UUID',
     password        VARCHAR(255)    NULL        COMMENT 'SSO 유저는 NULL',
     nickname        VARCHAR(50)     NOT NULL,
     role            ENUM('USER', 'ADMIN') NOT NULL DEFAULT 'USER',
     provider        ENUM('GOOGLE', 'KAKAO', 'NAVER') NULL,
     provider_id     VARCHAR(255)    NULL        COMMENT 'SSO 고유 ID',
-    profile_image_url VARCHAR(500) NULL        COMMENT '프로필 이미지 URL',
+    profile_image_url VARCHAR(500)  NULL        COMMENT '프로필 이미지 URL',
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at      DATETIME        NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uk_users_email (email),
     UNIQUE KEY uk_users_keycloak_id (keycloak_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-```
-
-```sql
-CREATE TABLE user_teams (
-    id              BIGINT          NOT NULL AUTO_INCREMENT,
-    user_id         BIGINT          NOT NULL,
-    team_id         BIGINT          NOT NULL,
-    sport_id        BIGINT          NOT NULL    COMMENT '팀의 종목 (비정규화)',
-    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at      DATETIME        NULL,
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_user_teams_user_sport (user_id, sport_id),
-    CONSTRAINT fk_user_teams_user FOREIGN KEY (user_id) REFERENCES users (id),
-    CONSTRAINT fk_user_teams_team FOREIGN KEY (team_id) REFERENCES teams (id),
-    CONSTRAINT fk_user_teams_sport FOREIGN KEY (sport_id) REFERENCES sports (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
@@ -91,12 +75,259 @@ CREATE TABLE user_withdrawals (
 
 ---
 
-### 2. 종목/팀
+### 2. 대륙
+
+```sql
+CREATE TABLE continents (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    name_en         VARCHAR(50)     NOT NULL    COMMENT '영문명',
+    name_ko         VARCHAR(50)     NOT NULL    COMMENT '한글명',
+    code            VARCHAR(10)     NOT NULL    COMMENT '대륙 코드',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_continents_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 3. 국가
+
+```sql
+CREATE TABLE countries (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    continent_id    BIGINT          NOT NULL,
+    name_ko         VARCHAR(100)    NOT NULL    COMMENT '한글명',
+    name_en         VARCHAR(100)    NOT NULL    COMMENT '영문명',
+    code            VARCHAR(10)     NOT NULL    COMMENT '국가 코드 (ISO 3166-1 alpha-2)',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_countries_code (code),
+    INDEX idx_countries_continent (continent_id),
+    CONSTRAINT fk_countries_continent FOREIGN KEY (continent_id) REFERENCES continents (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 4. 축구 리그
+
+```sql
+CREATE TABLE football_leagues (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    country_id      BIGINT          NOT NULL,
+    logo_url        VARCHAR(500)    NULL        COMMENT '리그 로고 이미지 경로 (호스트 제외)',
+    name_en         VARCHAR(100)    NOT NULL    COMMENT '영문명',
+    name_ko         VARCHAR(100)    NOT NULL    COMMENT '한글명',
+    tier            TINYINT         NOT NULL DEFAULT 1 COMMENT '리그 등급 (1부, 2부 등)',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at      DATETIME        NULL,
+    PRIMARY KEY (id),
+    INDEX idx_football_leagues_country (country_id),
+    CONSTRAINT fk_football_leagues_country FOREIGN KEY (country_id) REFERENCES countries (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 5. 축구 팀
+
+```sql
+CREATE TABLE football_teams (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    league_id       BIGINT          NOT NULL,
+    logo_url        VARCHAR(500)    NULL        COMMENT '팀 로고 이미지 경로 (호스트 제외)',
+    name_en         VARCHAR(100)    NOT NULL    COMMENT '영문명',
+    name_ko         VARCHAR(100)    NOT NULL    COMMENT '한글명',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at      DATETIME        NULL,
+    PRIMARY KEY (id),
+    INDEX idx_football_teams_league (league_id),
+    CONSTRAINT fk_football_teams_league FOREIGN KEY (league_id) REFERENCES football_leagues (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 6. 축구 게시판/게시글
+
+```sql
+CREATE TABLE football_boards (
+    id                  BIGINT          NOT NULL AUTO_INCREMENT,
+    football_team_id    BIGINT          NOT NULL,
+    name                VARCHAR(100)    NOT NULL,
+    type                ENUM('TEAM', 'NEWS') NOT NULL,
+    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at          DATETIME        NULL,
+    PRIMARY KEY (id),
+    INDEX idx_football_boards_team (football_team_id),
+    CONSTRAINT fk_football_boards_team FOREIGN KEY (football_team_id) REFERENCES football_teams (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+```sql
+CREATE TABLE football_posts (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    board_id        BIGINT          NOT NULL,
+    user_id         BIGINT          NOT NULL    COMMENT '작성자',
+    title           VARCHAR(200)    NOT NULL,
+    content         TEXT            NOT NULL,
+    view_count      INT             NOT NULL DEFAULT 0,
+    like_count      INT             NOT NULL DEFAULT 0   COMMENT '좋아요 수 (캐싱)',
+    comment_count   INT             NOT NULL DEFAULT 0   COMMENT '댓글 수 (캐싱)',
+    is_ai_generated TINYINT(1)      NOT NULL DEFAULT 0,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at      DATETIME        NULL,
+    PRIMARY KEY (id),
+    INDEX idx_football_posts_board_created (board_id, created_at),
+    INDEX idx_football_posts_user (user_id),
+    CONSTRAINT fk_football_posts_board FOREIGN KEY (board_id) REFERENCES football_boards (id),
+    CONSTRAINT fk_football_posts_user FOREIGN KEY (user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+```sql
+CREATE TABLE active_football_boards (
+    id                  BIGINT          NOT NULL AUTO_INCREMENT,
+    football_team_id    BIGINT          NOT NULL,
+    board_id            BIGINT          NULL,
+    is_active           TINYINT(1)      NOT NULL DEFAULT 1,
+    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at          DATETIME        NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_active_football_boards_team (football_team_id),
+    CONSTRAINT fk_active_football_boards_team FOREIGN KEY (football_team_id) REFERENCES football_teams (id),
+    CONSTRAINT fk_active_football_boards_board FOREIGN KEY (board_id) REFERENCES football_boards (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 7. 야구 리그
+
+```sql
+CREATE TABLE baseball_leagues (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    country_id      BIGINT          NOT NULL,
+    logo_url        VARCHAR(500)    NULL        COMMENT '리그 로고 이미지 경로 (호스트 제외)',
+    name_en         VARCHAR(100)    NOT NULL    COMMENT '영문명',
+    name_ko         VARCHAR(100)    NOT NULL    COMMENT '한글명',
+    tier            TINYINT         NOT NULL DEFAULT 1 COMMENT '리그 등급 (1군, 2군 등)',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at      DATETIME        NULL,
+    PRIMARY KEY (id),
+    INDEX idx_baseball_leagues_country (country_id),
+    CONSTRAINT fk_baseball_leagues_country FOREIGN KEY (country_id) REFERENCES countries (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 8. 야구 팀
+
+```sql
+CREATE TABLE baseball_teams (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    league_id       BIGINT          NOT NULL,
+    logo_url        VARCHAR(500)    NULL        COMMENT '팀 로고 이미지 경로 (호스트 제외)',
+    name_en         VARCHAR(100)    NOT NULL    COMMENT '영문명',
+    name_ko         VARCHAR(100)    NOT NULL    COMMENT '한글명',
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at      DATETIME        NULL,
+    PRIMARY KEY (id),
+    INDEX idx_baseball_teams_league (league_id),
+    CONSTRAINT fk_baseball_teams_league FOREIGN KEY (league_id) REFERENCES baseball_leagues (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 9. 야구 게시판/게시글
+
+```sql
+CREATE TABLE baseball_boards (
+    id                  BIGINT          NOT NULL AUTO_INCREMENT,
+    baseball_team_id    BIGINT          NOT NULL,
+    name                VARCHAR(100)    NOT NULL,
+    type                ENUM('TEAM', 'NEWS') NOT NULL,
+    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at          DATETIME        NULL,
+    PRIMARY KEY (id),
+    INDEX idx_baseball_boards_team (baseball_team_id),
+    CONSTRAINT fk_baseball_boards_team FOREIGN KEY (baseball_team_id) REFERENCES baseball_teams (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+```sql
+CREATE TABLE baseball_posts (
+    id              BIGINT          NOT NULL AUTO_INCREMENT,
+    board_id        BIGINT          NOT NULL,
+    user_id         BIGINT          NOT NULL    COMMENT '작성자',
+    title           VARCHAR(200)    NOT NULL,
+    content         TEXT            NOT NULL,
+    view_count      INT             NOT NULL DEFAULT 0,
+    like_count      INT             NOT NULL DEFAULT 0   COMMENT '좋아요 수 (캐싱)',
+    comment_count   INT             NOT NULL DEFAULT 0   COMMENT '댓글 수 (캐싱)',
+    is_ai_generated TINYINT(1)      NOT NULL DEFAULT 0,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at      DATETIME        NULL,
+    PRIMARY KEY (id),
+    INDEX idx_baseball_posts_board_created (board_id, created_at),
+    INDEX idx_baseball_posts_user (user_id),
+    CONSTRAINT fk_baseball_posts_board FOREIGN KEY (board_id) REFERENCES baseball_boards (id),
+    CONSTRAINT fk_baseball_posts_user FOREIGN KEY (user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+```sql
+CREATE TABLE active_baseball_boards (
+    id                  BIGINT          NOT NULL AUTO_INCREMENT,
+    baseball_team_id    BIGINT          NOT NULL,
+    board_id            BIGINT          NULL,
+    is_active           TINYINT(1)      NOT NULL DEFAULT 1,
+    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at          DATETIME        NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_active_baseball_boards_team (baseball_team_id),
+    CONSTRAINT fk_active_baseball_boards_team FOREIGN KEY (baseball_team_id) REFERENCES baseball_teams (id),
+    CONSTRAINT fk_active_baseball_boards_board FOREIGN KEY (board_id) REFERENCES baseball_boards (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 10. 태그
+
+```sql
+CREATE TABLE tags (
+    id          BIGINT          NOT NULL AUTO_INCREMENT,
+    scope       ENUM('COMMON', 'SPORT') NOT NULL,
+    name        VARCHAR(50)     NOT NULL,
+    created_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at  DATETIME        NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_tags_scope_name (scope, name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 11. 종목
 
 ```sql
 CREATE TABLE sports (
     id              BIGINT          NOT NULL AUTO_INCREMENT,
-    name            VARCHAR(50)     NOT NULL    COMMENT '종목명 (축구, 야구 등)',
+    name_ko         VARCHAR(50)     NOT NULL    COMMENT '종목명 국문 (축구, 야구 등)',
+    name_en         VARCHAR(50)     NOT NULL    COMMENT '종목명 영문 (Football, Baseball 등)',
     is_active       TINYINT(1)      NOT NULL DEFAULT 1,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -105,38 +336,40 @@ CREATE TABLE sports (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
+---
+
+### 12. 사용자 응원팀
+
 ```sql
-CREATE TABLE teams (
+CREATE TABLE user_teams (
     id              BIGINT          NOT NULL AUTO_INCREMENT,
+    user_id         BIGINT          NOT NULL,
     sport_id        BIGINT          NOT NULL,
-    name            VARCHAR(100)    NOT NULL,
-    logo_url        VARCHAR(500)    NULL,
-    is_active       TINYINT(1)      NOT NULL DEFAULT 1,
+    team_id         BIGINT          NOT NULL    COMMENT '종목별 팀 ID (폴리모픽, FK 없음)',
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at      DATETIME        NULL,
     PRIMARY KEY (id),
-    INDEX idx_teams_sport (sport_id),
-    CONSTRAINT fk_teams_sport FOREIGN KEY (sport_id) REFERENCES sports (id)
+    UNIQUE KEY uk_user_teams_user_sport (user_id, sport_id),
+    INDEX idx_user_teams_sport_team (sport_id, team_id),
+    CONSTRAINT fk_user_teams_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_user_teams_sport FOREIGN KEY (sport_id) REFERENCES sports (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ---
 
-### 3. 게시판/게시글
+### 13. 게시판/게시글
 
 ```sql
 CREATE TABLE boards (
     id              BIGINT          NOT NULL AUTO_INCREMENT,
     name            VARCHAR(100)    NOT NULL,
-    type            ENUM('TEAM', 'COMMON', 'QNA', 'NOTICE', 'NEWS') NOT NULL,
-    team_id         BIGINT          NULL        COMMENT '팀 전용 게시판인 경우',
+    type            ENUM('COMMON', 'QNA', 'NOTICE') NOT NULL,
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at      DATETIME        NULL,
-    PRIMARY KEY (id),
-    INDEX idx_boards_team (team_id),
-    CONSTRAINT fk_boards_team FOREIGN KEY (team_id) REFERENCES teams (id)
+    PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
@@ -200,7 +433,47 @@ CREATE TABLE post_reports (
 
 ---
 
-### 4. 댓글
+### 14. 태그 매핑
+
+```sql
+CREATE TABLE post_tag_mappings (
+    id          BIGINT      NOT NULL AUTO_INCREMENT,
+    post_id     BIGINT      NOT NULL,
+    tag_id      BIGINT      NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_post_tag (post_id, tag_id),
+    CONSTRAINT fk_ptm_post FOREIGN KEY (post_id) REFERENCES posts (id),
+    CONSTRAINT fk_ptm_tag  FOREIGN KEY (tag_id)  REFERENCES tags (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+```sql
+CREATE TABLE football_post_tag_mappings (
+    id          BIGINT      NOT NULL AUTO_INCREMENT,
+    post_id     BIGINT      NOT NULL,
+    tag_id      BIGINT      NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_football_post_tag (post_id, tag_id),
+    CONSTRAINT fk_fptm_post FOREIGN KEY (post_id) REFERENCES football_posts (id),
+    CONSTRAINT fk_fptm_tag  FOREIGN KEY (tag_id)  REFERENCES tags (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+```sql
+CREATE TABLE baseball_post_tag_mappings (
+    id          BIGINT      NOT NULL AUTO_INCREMENT,
+    post_id     BIGINT      NOT NULL,
+    tag_id      BIGINT      NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_baseball_post_tag (post_id, tag_id),
+    CONSTRAINT fk_bptm_post FOREIGN KEY (post_id) REFERENCES baseball_posts (id),
+    CONSTRAINT fk_bptm_tag  FOREIGN KEY (tag_id)  REFERENCES tags (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+### 15. 댓글
 
 ```sql
 CREATE TABLE comments (
@@ -225,7 +498,7 @@ CREATE TABLE comments (
 
 ---
 
-### 5. 공지사항
+### 16. 공지사항
 
 ```sql
 CREATE TABLE notices (
@@ -233,22 +506,18 @@ CREATE TABLE notices (
     title           VARCHAR(200)    NOT NULL,
     content         TEXT            NOT NULL,
     is_pinned       TINYINT(1)      NOT NULL DEFAULT 0,
-    scope           ENUM('ALL', 'TEAM') NOT NULL DEFAULT 'ALL',
-    team_id         BIGINT          NULL        COMMENT '팀 공지인 경우',
     admin_id        BIGINT          NOT NULL    COMMENT '작성 관리자',
     created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at      DATETIME        NULL,
     PRIMARY KEY (id),
-    INDEX idx_notices_team (team_id),
-    CONSTRAINT fk_notices_team FOREIGN KEY (team_id) REFERENCES teams (id),
     CONSTRAINT fk_notices_admin FOREIGN KEY (admin_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ---
 
-### 6. 고객센터
+### 17. 고객센터
 
 ```sql
 CREATE TABLE inquiries (
@@ -286,7 +555,7 @@ CREATE TABLE inquiry_replies (
 
 ---
 
-### 7. 요청
+### 18. 요청
 
 ```sql
 CREATE TABLE requests (
@@ -312,13 +581,13 @@ CREATE TABLE requests (
 
 ---
 
-### 8. 파일
+### 19. 파일
 
 ```sql
 CREATE TABLE files (
     id              BIGINT          NOT NULL AUTO_INCREMENT,
     user_id         BIGINT          NOT NULL    COMMENT '업로더',
-    target_type     ENUM('POST', 'INQUIRY', 'COMMENT', 'NOTICE', 'PROFILE') NOT NULL,
+    target_type     ENUM('POST', 'INQUIRY', 'COMMENT', 'PROFILE') NOT NULL,
     target_id       BIGINT          NOT NULL,
     original_name   VARCHAR(255)    NOT NULL,
     stored_name     VARCHAR(255)    NOT NULL,
@@ -337,13 +606,13 @@ CREATE TABLE files (
 
 ---
 
-### 9. 알림
+### 20. 알림
 
 ```sql
 CREATE TABLE notifications (
     id              BIGINT          NOT NULL AUTO_INCREMENT,
     user_id         BIGINT          NOT NULL    COMMENT '수신자',
-    type            ENUM('COMMENT', 'REPLY', 'NOTICE', 'INQUIRY_REPLY') NOT NULL,
+    type            ENUM('COMMENT', 'REPLY', 'NOTICE', 'INQUIRY_REPLY', 'REPORT_PROCESSED') NOT NULL,
     target_type     ENUM('POST', 'COMMENT', 'NOTICE', 'INQUIRY') NOT NULL,
     target_id       BIGINT          NOT NULL,
     message         VARCHAR(500)    NOT NULL,
@@ -366,22 +635,37 @@ FK 의존성을 고려한 실행 순서:
 
 ```
 1. users
-2. sports
-3. teams
-4. user_teams
-5. user_suspensions
-6. user_withdrawals
-7. boards
-8. posts
-9. post_likes
-10. post_reports
-11. comments
-12. notices
-13. inquiries
-14. inquiry_replies
-15. requests
-16. files
-17. notifications
+2. continents
+3. countries
+4. football_leagues
+5. football_teams
+6. football_boards
+7. football_posts
+8. active_football_boards
+9. baseball_leagues
+10. baseball_teams
+11. baseball_boards
+12. baseball_posts
+13. active_baseball_boards
+14. tags
+15. sports
+16. user_teams
+17. user_suspensions
+18. user_withdrawals
+19. boards
+20. posts
+21. post_likes
+22. post_reports
+23. post_tag_mappings
+24. football_post_tag_mappings
+25. baseball_post_tag_mappings
+26. comments
+27. notices
+28. inquiries
+29. inquiry_replies
+30. requests
+31. files
+32. notifications
 ```
 
 ---
@@ -390,11 +674,24 @@ FK 의존성을 고려한 실행 순서:
 
 | 테이블 | 인덱스명 | 컬럼 | 타입 |
 |--------|----------|------|------|
-| users | uk_users_email | email | UNIQUE |
-| users | uk_users_keycloak_id | keycloak_id | UNIQUE |
 | user_teams | uk_user_teams_user_sport | user_id, sport_id | UNIQUE |
-| teams | idx_teams_sport | sport_id | INDEX |
-| boards | idx_boards_team | team_id | INDEX |
+| user_teams | idx_user_teams_sport_team | sport_id, team_id | INDEX |
+| users | uk_users_email | email | UNIQUE |
+| continents | uk_continents_code | code | UNIQUE |
+| countries | uk_countries_code | code | UNIQUE |
+| countries | idx_countries_continent | continent_id | INDEX |
+| football_leagues | idx_football_leagues_country | country_id | INDEX |
+| football_teams | idx_football_teams_league | league_id | INDEX |
+| football_boards | idx_football_boards_team | football_team_id | INDEX |
+| football_posts | idx_football_posts_board_created | board_id, created_at | INDEX |
+| football_posts | idx_football_posts_user | user_id | INDEX |
+| active_football_boards | uk_active_football_boards_team | football_team_id | UNIQUE |
+| baseball_leagues | idx_baseball_leagues_country | country_id | INDEX |
+| baseball_teams | idx_baseball_teams_league | league_id | INDEX |
+| baseball_boards | idx_baseball_boards_team | baseball_team_id | INDEX |
+| baseball_posts | idx_baseball_posts_board_created | board_id, created_at | INDEX |
+| baseball_posts | idx_baseball_posts_user | user_id | INDEX |
+| active_baseball_boards | uk_active_baseball_boards_team | baseball_team_id | UNIQUE |
 | posts | idx_posts_board_created | board_id, created_at | INDEX |
 | posts | idx_posts_user | user_id | INDEX |
 | post_likes | uk_post_likes_post_user | post_id, user_id | UNIQUE |
@@ -409,102 +706,50 @@ FK 의존성을 고려한 실행 순서:
 | requests | idx_requests_status | status | INDEX |
 | files | idx_files_target | target_type, target_id | INDEX |
 | files | idx_files_user | user_id | INDEX |
+| tags | uk_tags_scope_name | scope, name | UNIQUE |
+| post_tag_mappings | uk_post_tag | post_id, tag_id | UNIQUE |
+| football_post_tag_mappings | uk_football_post_tag | post_id, tag_id | UNIQUE |
+| baseball_post_tag_mappings | uk_baseball_post_tag | post_id, tag_id | UNIQUE |
 | notifications | idx_notifications_user_read | user_id, is_read | INDEX |
 
 ---
 
 ## 초기 데이터 (Seed)
 
-```sql
--- 종목
-INSERT INTO sports (name, is_active) VALUES ('축구', 1);
-INSERT INTO sports (name, is_active) VALUES ('야구', 1);
+### Init 파일 실행 순서
 
--- 축구 팀 (K리그1 기준)
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '울산 HD FC', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '김천 상무 FC', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '전북 현대 모터스', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, 'FC 서울', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '포항 스틸러스', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '수원 FC', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '제주 유나이티드', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '인천 유나이티드', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '대전 하나 시티즌', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '강원 FC', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '대구 FC', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (1, '광주 FC', 1);
+`docker-entrypoint-initdb.d`에서 파일명 알파벳 순으로 실행된다. 숫자 접두사로 FK 의존성 순서를 보장한다.
 
--- 야구 팀 (KBO 기준)
-INSERT INTO teams (sport_id, name, is_active) VALUES (2, '삼성 라이온즈', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (2, 'LG 트윈스', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (2, 'KT 위즈', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (2, 'SSG 랜더스', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (2, 'NC 다이노스', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (2, '두산 베어스', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (2, 'KIA 타이거즈', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (2, '롯데 자이언츠', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (2, '한화 이글스', 1);
-INSERT INTO teams (sport_id, name, is_active) VALUES (2, '키움 히어로즈', 1);
+| 순서 | 파일명 | 내용 |
+|------|--------|------|
+| 01 | `01_init.sql` | 테이블 32개 생성 (DDL만) |
+| 02 | `02_seed.sql` | 공통 시드 (관리자, 종목, 게시판, 태그) |
+| 03 | `03_continent.sql` | 대륙 데이터 |
+| 04 | `04_countries.sql` | 국가 데이터 |
+| 05 | `05_football_leagues.sql` | 축구 리그 데이터 |
+| 06 | `06_football_teams.sql` | 축구 팀 데이터 |
+| 07 | `07_football_boards.sql` | 축구 게시판 + 활성화 데이터 |
+| 08 | `08_baseball_leagues.sql` | 야구 리그 데이터 |
+| 09 | `09_baseball_teams.sql` | 야구 팀 데이터 |
+| 10 | `10_baseball_boards.sql` | 야구 게시판 + 활성화 데이터 |
+| 11 | `11_dummy.sql` | 더미 데이터 (개발용, user_teams 포함) |
 
--- 공통 게시판
-INSERT INTO boards (name, type, team_id) VALUES ('공통 게시판', 'COMMON', NULL);
-INSERT INTO boards (name, type, team_id) VALUES ('Q&A 게시판', 'QNA', NULL);
-INSERT INTO boards (name, type, team_id) VALUES ('공지사항', 'NOTICE', NULL);
+### 파일별 시드 내용
 
--- 팀 전용 게시판 (각 팀별 자동 생성)
--- 축구 팀 게시판
-INSERT INTO boards (name, type, team_id) VALUES ('울산 HD FC 게시판', 'TEAM', 1);
-INSERT INTO boards (name, type, team_id) VALUES ('김천 상무 FC 게시판', 'TEAM', 2);
-INSERT INTO boards (name, type, team_id) VALUES ('전북 현대 모터스 게시판', 'TEAM', 3);
-INSERT INTO boards (name, type, team_id) VALUES ('FC 서울 게시판', 'TEAM', 4);
-INSERT INTO boards (name, type, team_id) VALUES ('포항 스틸러스 게시판', 'TEAM', 5);
-INSERT INTO boards (name, type, team_id) VALUES ('수원 FC 게시판', 'TEAM', 6);
-INSERT INTO boards (name, type, team_id) VALUES ('제주 유나이티드 게시판', 'TEAM', 7);
-INSERT INTO boards (name, type, team_id) VALUES ('인천 유나이티드 게시판', 'TEAM', 8);
-INSERT INTO boards (name, type, team_id) VALUES ('대전 하나 시티즌 게시판', 'TEAM', 9);
-INSERT INTO boards (name, type, team_id) VALUES ('강원 FC 게시판', 'TEAM', 10);
-INSERT INTO boards (name, type, team_id) VALUES ('대구 FC 게시판', 'TEAM', 11);
-INSERT INTO boards (name, type, team_id) VALUES ('광주 FC 게시판', 'TEAM', 12);
-
--- 야구 팀 게시판
-INSERT INTO boards (name, type, team_id) VALUES ('삼성 라이온즈 게시판', 'TEAM', 13);
-INSERT INTO boards (name, type, team_id) VALUES ('LG 트윈스 게시판', 'TEAM', 14);
-INSERT INTO boards (name, type, team_id) VALUES ('KT 위즈 게시판', 'TEAM', 15);
-INSERT INTO boards (name, type, team_id) VALUES ('SSG 랜더스 게시판', 'TEAM', 16);
-INSERT INTO boards (name, type, team_id) VALUES ('NC 다이노스 게시판', 'TEAM', 17);
-INSERT INTO boards (name, type, team_id) VALUES ('두산 베어스 게시판', 'TEAM', 18);
-INSERT INTO boards (name, type, team_id) VALUES ('KIA 타이거즈 게시판', 'TEAM', 19);
-INSERT INTO boards (name, type, team_id) VALUES ('롯데 자이언츠 게시판', 'TEAM', 20);
-INSERT INTO boards (name, type, team_id) VALUES ('한화 이글스 게시판', 'TEAM', 21);
-INSERT INTO boards (name, type, team_id) VALUES ('키움 히어로즈 게시판', 'TEAM', 22);
-
--- 팀 뉴스 게시판 (AI 자동 생성용)
--- 축구 팀 뉴스
-INSERT INTO boards (name, type, team_id) VALUES ('울산 HD FC 뉴스', 'NEWS', 1);
-INSERT INTO boards (name, type, team_id) VALUES ('김천 상무 FC 뉴스', 'NEWS', 2);
-INSERT INTO boards (name, type, team_id) VALUES ('전북 현대 모터스 뉴스', 'NEWS', 3);
-INSERT INTO boards (name, type, team_id) VALUES ('FC 서울 뉴스', 'NEWS', 4);
-INSERT INTO boards (name, type, team_id) VALUES ('포항 스틸러스 뉴스', 'NEWS', 5);
-INSERT INTO boards (name, type, team_id) VALUES ('수원 FC 뉴스', 'NEWS', 6);
-INSERT INTO boards (name, type, team_id) VALUES ('제주 유나이티드 뉴스', 'NEWS', 7);
-INSERT INTO boards (name, type, team_id) VALUES ('인천 유나이티드 뉴스', 'NEWS', 8);
-INSERT INTO boards (name, type, team_id) VALUES ('대전 하나 시티즌 뉴스', 'NEWS', 9);
-INSERT INTO boards (name, type, team_id) VALUES ('강원 FC 뉴스', 'NEWS', 10);
-INSERT INTO boards (name, type, team_id) VALUES ('대구 FC 뉴스', 'NEWS', 11);
-INSERT INTO boards (name, type, team_id) VALUES ('광주 FC 뉴스', 'NEWS', 12);
-
--- 야구 팀 뉴스
-INSERT INTO boards (name, type, team_id) VALUES ('삼성 라이온즈 뉴스', 'NEWS', 13);
-INSERT INTO boards (name, type, team_id) VALUES ('LG 트윈스 뉴스', 'NEWS', 14);
-INSERT INTO boards (name, type, team_id) VALUES ('KT 위즈 뉴스', 'NEWS', 15);
-INSERT INTO boards (name, type, team_id) VALUES ('SSG 랜더스 뉴스', 'NEWS', 16);
-INSERT INTO boards (name, type, team_id) VALUES ('NC 다이노스 뉴스', 'NEWS', 17);
-INSERT INTO boards (name, type, team_id) VALUES ('두산 베어스 뉴스', 'NEWS', 18);
-INSERT INTO boards (name, type, team_id) VALUES ('KIA 타이거즈 뉴스', 'NEWS', 19);
-INSERT INTO boards (name, type, team_id) VALUES ('롯데 자이언츠 뉴스', 'NEWS', 20);
-INSERT INTO boards (name, type, team_id) VALUES ('한화 이글스 뉴스', 'NEWS', 21);
-INSERT INTO boards (name, type, team_id) VALUES ('키움 히어로즈 뉴스', 'NEWS', 22);
-
--- 관리자 계정
-INSERT INTO users (email, password, nickname, role) VALUES ('admin@lockerroom.com', '$2a$10$PLACEHOLDER_BCRYPT_HASH', '관리자', 'ADMIN');
-```
+| 파일 | 대상 테이블 | 데이터 |
+|------|------------|--------|
+| `02_seed.sql` | `users` | 관리자 계정 1건 |
+| | `sports` | 종목 2건 (축구, 야구) |
+| | `boards` | 공통 3건 (COMMON, QNA, NOTICE) |
+| | `tags` | COMMON 3건 (자유, 질문, 정보), SPORT 3건 (경기후기, 이적, 하이라이트) |
+| `03_continent.sql` | `continents` | 대륙 데이터 |
+| `04_countries.sql` | `countries` | 국가 데이터 |
+| `05_football_leagues.sql` | `football_leagues` | 축구 리그 데이터 (CSV 기반) |
+| `06_football_teams.sql` | `football_teams` | 축구 팀 데이터 (CSV 기반) |
+| `07_football_boards.sql` | `football_boards` | `INSERT...SELECT`로 팀당 TEAM/NEWS 게시판 2건 자동 생성 |
+| | `active_football_boards` | `INSERT...SELECT`로 팀당 활성화 1건 자동 생성 |
+| `08_baseball_leagues.sql` | `baseball_leagues` | 야구 리그 데이터 (CSV 기반) |
+| `09_baseball_teams.sql` | `baseball_teams` | 야구 팀 데이터 (CSV 기반) |
+| `10_baseball_boards.sql` | `baseball_boards` | `INSERT...SELECT`로 팀당 TEAM/NEWS 게시판 2건 자동 생성 |
+| | `active_baseball_boards` | `INSERT...SELECT`로 팀당 활성화 1건 자동 생성 |
+| `11_dummy.sql` | `user_teams` | 더미 사용자 응원팀 8건 (서브쿼리로 팀 이름 기반 매핑) |

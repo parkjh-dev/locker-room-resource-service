@@ -42,6 +42,8 @@ class UserServiceImplTest {
     @Mock private PostRepository postRepository;
     @Mock private CommentRepository commentRepository;
     @Mock private PostLikeRepository postLikeRepository;
+    @Mock private FootballTeamRepository footballTeamRepository;
+    @Mock private BaseballTeamRepository baseballTeamRepository;
     @Mock private UserMapper userMapper;
     @Mock private PostMapper postMapper;
     @Mock private CommentMapper commentMapper;
@@ -83,11 +85,9 @@ class UserServiceImplTest {
     class GetMyInfo {
 
         @Test
-        @DisplayName("should return user info with teams")
+        @DisplayName("should return user info with empty teams")
         void getMyInfo_success() {
-            List<UserTeamInfo> teamInfos = List.of(
-                    new UserTeamInfo(1L, "Team A", 1L, "Soccer")
-            );
+            List<UserTeamInfo> teamInfos = Collections.emptyList();
             UserResponse expectedResponse = new UserResponse(
                     1L, "user@test.com", "testuser",
                     Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
@@ -95,7 +95,6 @@ class UserServiceImplTest {
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(userTeamRepository.findByUserId(1L)).thenReturn(Collections.emptyList());
-            when(userMapper.toUserTeamInfoList(anyList())).thenReturn(teamInfos);
             when(userMapper.toResponse(user, teamInfos)).thenReturn(expectedResponse);
 
             UserResponse result = userService.getMyInfo(1L);
@@ -104,6 +103,30 @@ class UserServiceImplTest {
             assertThat(result.id()).isEqualTo(1L);
             assertThat(result.email()).isEqualTo("user@test.com");
             assertThat(result.nickname()).isEqualTo("testuser");
+        }
+
+        @Test
+        @DisplayName("should return user info with team resolved from football")
+        void getMyInfo_withFootballTeam() {
+            Sport football = Sport.builder().id(1L).nameKo("축구").nameEn("Football").isActive(true).build();
+            UserTeam userTeam = UserTeam.builder().id(1L).user(user).teamId(10L).sport(football).build();
+            FootballTeam ft = FootballTeam.builder().id(10L).nameKo("울산 HD FC").nameEn("Ulsan HD FC").build();
+            UserTeamInfo teamInfo = new UserTeamInfo(10L, "울산 HD FC", 1L, "축구");
+            List<UserTeamInfo> teamInfos = List.of(teamInfo);
+            UserResponse expectedResponse = new UserResponse(
+                    1L, "user@test.com", "testuser",
+                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
+            );
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(userTeamRepository.findByUserId(1L)).thenReturn(List.of(userTeam));
+            when(footballTeamRepository.findById(10L)).thenReturn(Optional.of(ft));
+            when(userMapper.toUserTeamInfo(userTeam, "울산 HD FC")).thenReturn(teamInfo);
+            when(userMapper.toResponse(user, teamInfos)).thenReturn(expectedResponse);
+
+            UserResponse result = userService.getMyInfo(1L);
+
+            assertThat(result).isNotNull();
             assertThat(result.teams()).hasSize(1);
         }
 
@@ -147,7 +170,6 @@ class UserServiceImplTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(userRepository.existsByNickname("newnickname")).thenReturn(false);
             when(userTeamRepository.findByUserId(1L)).thenReturn(Collections.emptyList());
-            when(userMapper.toUserTeamInfoList(anyList())).thenReturn(teamInfos);
             when(userMapper.toResponse(user, teamInfos)).thenReturn(expectedResponse);
 
             UserResponse result = userService.updateMyInfo(1L, request);
@@ -168,7 +190,6 @@ class UserServiceImplTest {
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(userTeamRepository.findByUserId(1L)).thenReturn(Collections.emptyList());
-            when(userMapper.toUserTeamInfoList(anyList())).thenReturn(teamInfos);
             when(userMapper.toResponse(user, teamInfos)).thenReturn(expectedResponse);
 
             UserResponse result = userService.updateMyInfo(1L, request);
@@ -204,7 +225,6 @@ class UserServiceImplTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(userRepository.existsByNickname("testuser")).thenReturn(true);
             when(userTeamRepository.findByUserId(1L)).thenReturn(Collections.emptyList());
-            when(userMapper.toUserTeamInfoList(anyList())).thenReturn(teamInfos);
             when(userMapper.toResponse(user, teamInfos)).thenReturn(expectedResponse);
 
             UserResponse result = userService.updateMyInfo(1L, request);

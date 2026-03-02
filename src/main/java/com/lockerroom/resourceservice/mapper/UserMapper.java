@@ -6,14 +6,11 @@ import com.lockerroom.resourceservice.dto.response.UserTeamInfo;
 import com.lockerroom.resourceservice.model.entity.User;
 import com.lockerroom.resourceservice.model.entity.UserTeam;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-
-import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    default UserResponse toResponse(User user, List<UserTeamInfo> teams) {
+    default UserResponse toResponse(User user, java.util.List<UserTeamInfo> teams) {
         return new UserResponse(
                 user.getId(),
                 user.getEmail(),
@@ -26,13 +23,14 @@ public interface UserMapper {
         );
     }
 
-    @Mapping(source = "team.id", target = "teamId")
-    @Mapping(source = "team.name", target = "teamName")
-    @Mapping(source = "sport.id", target = "sportId")
-    @Mapping(source = "sport.name", target = "sportName")
-    UserTeamInfo toUserTeamInfo(UserTeam userTeam);
-
-    List<UserTeamInfo> toUserTeamInfoList(List<UserTeam> userTeams);
+    default UserTeamInfo toUserTeamInfo(UserTeam userTeam, String teamName) {
+        return new UserTeamInfo(
+                userTeam.getTeamId(),
+                teamName,
+                userTeam.getSport().getId(),
+                userTeam.getSport().getNameKo()
+        );
+    }
 
     default AdminUserListResponse toAdminListResponse(User user, boolean isSuspended) {
         return new AdminUserListResponse(

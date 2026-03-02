@@ -1,6 +1,5 @@
 package com.lockerroom.resourceservice.model.entity;
 
-import com.lockerroom.resourceservice.model.enums.NoticeScope;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -13,9 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-@Table(name = "notices", indexes = {
-        @Index(name = "idx_notices_team", columnList = "team_id")
-})
+@Table(name = "notices")
 public class Notice extends BaseEntity {
 
     @Id
@@ -32,15 +29,6 @@ public class Notice extends BaseEntity {
     @Builder.Default
     private boolean isPinned = false;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @Builder.Default
-    private NoticeScope scope = NoticeScope.ALL;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
-    private Team team;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id", nullable = false)
     private User admin;
@@ -55,13 +43,5 @@ public class Notice extends BaseEntity {
 
     public void updateIsPinned(boolean isPinned) {
         this.isPinned = isPinned;
-    }
-
-    public void updateScope(NoticeScope scope) {
-        this.scope = scope;
-    }
-
-    public void updateTeam(Team team) {
-        this.team = team;
     }
 }

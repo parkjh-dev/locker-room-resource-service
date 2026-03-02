@@ -19,8 +19,11 @@ public class Sport extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50)
-    private String name;
+    @Column(name = "name_ko", nullable = false, length = 50)
+    private String nameKo;
+
+    @Column(name = "name_en", nullable = false, length = 50)
+    private String nameEn;
 
     @Column(nullable = false)
     @Builder.Default

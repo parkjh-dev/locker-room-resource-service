@@ -672,6 +672,205 @@ com.lockerroom.resourceservice/
 
 ---
 
+## Phase 14: DB 스키마 정합성 — 종목별 테이블 분리 및 신규 엔티티 구현
+
+> 점검 일시: 2026-03-02
+> 대상: `doc/db_sds.md` 스키마 설계와 코드 구현체 간 불일치 해소
+> 범위: Entity/Repository 레이어 우선 구현 (종목별 API는 후속 Phase에서)
+
+### 변경 요약
+
+| 구분 | 항목 | 수량 |
+|------|------|:----:|
+| 신규 Entity | Continent, Country, FootballLeague, FootballTeam, FootballBoard, FootballPost, ActiveFootballBoard, BaseballLeague, BaseballTeam, BaseballBoard, BaseballPost, ActiveBaseballBoard, Tag, PostTagMapping, FootballPostTagMapping, BaseballPostTagMapping | 16 |
+| 신규 Repository | 위 Entity 대응 | 16 |
+| 신규 Enum | TagScope, SportBoardType | 2 |
+| 수정 Entity | Sport, Board, Notice, UserTeam | 4 |
+| 수정 Enum | BoardType (TEAM/NEWS 제거) | 1 |
+| 제거 Entity | Team | 1 |
+| 제거 Enum | NoticeScope | 1 |
+| 영향받는 Service | AdminServiceImpl, BoardServiceImpl, SportServiceImpl, NoticeServiceImpl, UserServiceImpl, CommentServiceImpl, PostServiceImpl | 7 |
+| 영향받는 DTO | TeamResponse, BoardResponse, NoticeDetailResponse, NoticeListResponse, NoticeCreateRequest, UserTeamInfo, AuthorInfo | 7 |
+| 영향받는 Mapper | UserMapper, NoticeMapper, PostMapper, CommentMapper | 4 |
+
+---
+
+### 14.1 신규 Enum 추가
+
+- [x] `TagScope` — `COMMON`, `SPORT` (tags 테이블 scope 컬럼)
+- [x] `SportBoardType` — `TEAM`, `NEWS` (football_boards/baseball_boards 전용)
+
+### 14.2 신규 Entity 구현 — 지리 (2개, BaseEntity 미상속)
+
+> `continents`, `countries`는 정적 참조 테이블. created_at/updated_at/deleted_at 없음.
+
+- [x] `Continent.java` — id, nameEn, nameKo, code (UNIQUE)
+  - `@Table(name = "continents")`, BaseEntity 미상속, `@SQLRestriction` 미적용
+- [x] `Country.java` — id, continent (@ManyToOne), nameKo, nameEn, code (UNIQUE)
+  - `@Table(name = "countries")`, BaseEntity 미상속
+
+### 14.3 신규 Entity 구현 — 축구 (5개, BaseEntity 상속)
+
+- [x] `FootballLeague.java` — id, country (@ManyToOne), logoUrl, nameEn, nameKo, tier (TINYINT)
+  - `@Table(name = "football_leagues")`, extends BaseEntity
+- [x] `FootballTeam.java` — id, league (@ManyToOne FootballLeague), logoUrl, nameEn, nameKo
+  - `@Table(name = "football_teams")`, extends BaseEntity
+- [x] `FootballBoard.java` — id, footballTeam (@ManyToOne FootballTeam), name, type (SportBoardType)
+  - `@Table(name = "football_boards")`, extends BaseEntity
+- [x] `FootballPost.java` — id, board (@ManyToOne FootballBoard), user (@ManyToOne User), title, content, viewCount, likeCount, commentCount, isAiGenerated
+  - `@Table(name = "football_posts")`, extends BaseEntity
+- [x] `ActiveFootballBoard.java` — id, footballTeam (@ManyToOne, UNIQUE), board (@ManyToOne FootballBoard, nullable), isActive
+  - `@Table(name = "active_football_boards")`, extends BaseEntity
+
+### 14.4 신규 Entity 구현 — 야구 (5개, BaseEntity 상속)
+
+- [x] `BaseballLeague.java` — id, country (@ManyToOne), logoUrl, nameEn, nameKo, tier
+  - `@Table(name = "baseball_leagues")`, extends BaseEntity
+- [x] `BaseballTeam.java` — id, league (@ManyToOne BaseballLeague), logoUrl, nameEn, nameKo
+  - `@Table(name = "baseball_teams")`, extends BaseEntity
+- [x] `BaseballBoard.java` — id, baseballTeam (@ManyToOne BaseballTeam), name, type (SportBoardType)
+  - `@Table(name = "baseball_boards")`, extends BaseEntity
+- [x] `BaseballPost.java` — id, board (@ManyToOne BaseballBoard), user (@ManyToOne User), title, content, viewCount, likeCount, commentCount, isAiGenerated
+  - `@Table(name = "baseball_posts")`, extends BaseEntity
+- [x] `ActiveBaseballBoard.java` — id, baseballTeam (@ManyToOne, UNIQUE), board (@ManyToOne BaseballBoard, nullable), isActive
+  - `@Table(name = "active_baseball_boards")`, extends BaseEntity
+
+### 14.5 신규 Entity 구현 — 태그 (4개)
+
+- [x] `Tag.java` — id, scope (TagScope), name (UNIQUE with scope)
+  - `@Table(name = "tags")`, extends BaseEntity
+- [x] `PostTagMapping.java` — id, post (@ManyToOne Post), tag (@ManyToOne Tag)
+  - `@Table(name = "post_tag_mappings")`, BaseEntity 미상속 (타임스탬프 없음)
+- [x] `FootballPostTagMapping.java` — id, post (@ManyToOne FootballPost), tag (@ManyToOne Tag)
+  - `@Table(name = "football_post_tag_mappings")`, BaseEntity 미상속
+- [x] `BaseballPostTagMapping.java` — id, post (@ManyToOne BaseballPost), tag (@ManyToOne Tag)
+  - `@Table(name = "baseball_post_tag_mappings")`, BaseEntity 미상속
+
+### 14.6 기존 Entity 수정 (4개)
+
+- [x] `Sport.java` — `name` 필드 제거, `nameKo`(VARCHAR 50) + `nameEn`(VARCHAR 50) 추가
+- [x] `Board.java` — `team` 필드(@ManyToOne Team) 제거, `@Index(team_id)` 제거
+  - BoardType은 COMMON, QNA, NOTICE만 사용
+- [x] `Notice.java` — `scope` 필드 제거, `team` 필드(@ManyToOne Team) 제거, `@Index(team_id)` 제거
+  - `updateScope()`, `updateTeam()` 메서드 제거
+- [x] `UserTeam.java` — `team` 필드(@ManyToOne Team) → `teamId`(Long, 일반 컬럼, FK 없음)로 변경
+  - 폴리모픽 설계: sport_id에 따라 football_teams 또는 baseball_teams 참조
+  - `@Index(name = "idx_user_teams_sport_team", columnList = "sport_id, team_id")` 추가
+
+### 14.7 기존 Enum 수정/제거
+
+- [x] `BoardType.java` — `TEAM`, `NEWS` 값 제거 → `COMMON`, `QNA`, `NOTICE`만 유지
+- [x] `NoticeScope.java` — **파일 삭제** (Notice에서 scope 제거)
+
+### 14.8 기존 Entity 제거
+
+- [x] `Team.java` — **파일 삭제** (football_teams/baseball_teams로 대체)
+- [x] `TeamRepository.java` — **파일 삭제**
+
+### 14.9 신규 Repository 구현 (16개)
+
+- [x] `ContinentRepository` — `findAll()` (정적 목록)
+- [x] `CountryRepository` — `findByContinentId(Long continentId)`
+- [x] `FootballLeagueRepository` — `findByCountryId(Long countryId)`
+- [x] `FootballTeamRepository` — `findByLeagueId(Long leagueId)`, `findById`
+- [x] `FootballBoardRepository` — `findByFootballTeamId(Long teamId)`
+- [x] `FootballPostRepository` — 기본 CRUD
+- [x] `ActiveFootballBoardRepository` — `findByFootballTeamId(Long teamId)`
+- [x] `BaseballLeagueRepository` — `findByCountryId(Long countryId)`
+- [x] `BaseballTeamRepository` — `findByLeagueId(Long leagueId)`, `findById`
+- [x] `BaseballBoardRepository` — `findByBaseballTeamId(Long teamId)`
+- [x] `BaseballPostRepository` — 기본 CRUD
+- [x] `ActiveBaseballBoardRepository` — `findByBaseballTeamId(Long teamId)`
+- [x] `TagRepository` — `findByScope(TagScope scope)`, `findAll()`
+- [x] `PostTagMappingRepository` — `findByPostId(Long postId)`
+- [x] `FootballPostTagMappingRepository` — `findByPostId(Long postId)`
+- [x] `BaseballPostTagMappingRepository` — `findByPostId(Long postId)`
+
+### 14.10 기존 Service/Controller/DTO 수정
+
+> 기존 코드에서 `Team`, `NoticeScope`, `BoardType.TEAM/NEWS`를 참조하는 모든 코드 수정
+
+#### 14.10.1 BoardService/BoardServiceImpl
+- [x] `getBoards()` — `findByTypeIn([COMMON, QNA, NOTICE])` (TEAM/NEWS 제거, 이미 일치할 수 있음)
+- [x] `validateBoardAccess()` — team 기반 접근 제어 로직 제거 (generic boards는 team 무관)
+- [x] `BoardResponse` — `teamId`, `teamName` 필드 제거
+
+#### 14.10.2 NoticeService/NoticeServiceImpl
+- [x] `getList()` — `teamId` 필터링 파라미터 제거
+- [x] `NoticeRepository.findFilteredNotices()` — teamId/scope 관련 JPQL 제거
+- [x] `NoticeController` — `@RequestParam teamId` 제거
+- [x] `NoticeListResponse` — `scope`, `teamName` 필드 제거
+- [x] `NoticeDetailResponse` — `scope`, `teamId`, `teamName` 필드 제거
+- [x] `NoticeCreateRequest` — `scope`, `teamId` 필드 제거
+- [x] `NoticeMapper` — scope/team 관련 매핑 제거
+
+#### 14.10.3 AdminServiceImpl
+- [x] `createNotice()` — team 조회/연결 로직 제거
+- [x] `updateNotice()` — team/scope 업데이트 로직 제거
+- [x] `processRequest()` → `autoCreateFromRequest()` — Team 자동 생성 로직 변경
+  - TEAM 요청 승인 시 기존: `Team` + `Board`(TEAM) + `Board`(NEWS) 생성
+  - 변경 후: 종목별 팀 테이블에 직접 삽입 (sport_id로 축구/야구 분기) + 종목별 Board 생성
+  - `TeamRepository` → `FootballTeamRepository` / `BaseballTeamRepository` 분기
+- [x] `AdminController` — `TeamRepository` 의존성 제거
+
+#### 14.10.4 SportServiceImpl/SportController
+- [x] `getTeamsBySport()` — 현재 `teamRepository.findBySportIdAndIsActiveTrue()` 사용
+  - 변경: sport_id로 축구/야구 분기하여 해당 종목 팀 조회
+  - 또는 해당 메서드 제거/변경 (종목별 전용 Controller로 이관)
+- [x] `SportResponse` — `name` → `nameKo`, `nameEn` 필드 변경
+
+#### 14.10.5 UserServiceImpl/UserMapper
+- [x] `UserTeamInfo` DTO — `teamName` 조회 방식 변경
+  - 기존: `userTeam.getTeam().getName()`
+  - 변경: `userTeam.getTeamId()` + sport_id 기반으로 football_teams/baseball_teams에서 이름 조회
+- [x] `UserMapper.toResponse()` — UserTeamInfo 생성 로직 변경
+
+#### 14.10.6 PostServiceImpl/CommentServiceImpl — AuthorInfo teamName
+- [x] `resolveTeamName()` 로직 변경 — `UserTeam.teamId` (Long) 기반 + sport 분기 조회
+
+### 14.11 기존 테스트 수정
+
+- [x] `BoardServiceImplTest` — Team 참조 제거, BoardType.TEAM/NEWS 사용 제거
+- [x] `AdminServiceImplTest` — Team 자동 생성 테스트 변경, NoticeScope 제거
+- [x] `AdminControllerTest` — NoticeScope/teamId 관련 테스트 제거
+- [x] `SportServiceImplTest` — TeamRepository → 종목별 Repository 변경
+- [x] `PostServiceImplTest` — AuthorInfo teamName 조회 로직 변경
+- [x] `CommentServiceImplTest` — AuthorInfo teamName 조회 로직 변경
+- [x] `UserServiceImplTest` — UserTeamInfo 생성 로직 변경
+- [x] `NoticeServiceImplTest` — teamId/scope 필터 관련 테스트 제거
+- [x] `RequestServiceImplTest` — Team 참조 제거 (필요시)
+- [x] `./mvnw test` — 전체 테스트 통과 확인 (240 tests, 0 failures)
+
+### 14.12 문서 업데이트
+
+- [x] `db_sds.md` — 코드 확장 필드 반영:
+  - `users` 테이블에 `keycloak_id` 컬럼 추가
+  - `files.target_type` ENUM에 `PROFILE` 값 추가
+  - `notifications.type` ENUM에 `REPORT_PROCESSED` 값 추가
+- [x] `api.md` — Sport 응답 필드(nameKo/nameEn), Notice scope/team 제거, teams endpoint 제거, leagueId 추가 반영
+- [x] `work_list.md` — Phase 14 완료 체크
+
+---
+
+### Phase 14 구현 순서 (권장)
+
+```
+1. 14.1  신규 Enum (TagScope, SportBoardType)
+2. 14.2  지리 Entity (Continent, Country) — 의존성 없음
+3. 14.5  태그 Entity (Tag, Mappings)
+4. 14.6  기존 Entity 수정 (Sport, Board, Notice, UserTeam)
+5. 14.7  Enum 수정/제거 (BoardType, NoticeScope)
+6. 14.8  Team 제거
+7. 14.3  축구 Entity (5개)
+8. 14.4  야구 Entity (5개)
+9. 14.9  신규 Repository (16개)
+10. 14.10 기존 Service/Controller/DTO 수정
+11. 14.11 테스트 수정 + 전체 테스트 통과 확인
+12. 14.12 문서 업데이트
+```
+
+---
+
 ## 구현 우선순위 (권장 순서)
 
 ```
