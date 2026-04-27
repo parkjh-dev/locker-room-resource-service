@@ -5,6 +5,7 @@ import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.BoardResponse;
 import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
 import com.lockerroom.resourceservice.dto.response.PostListResponse;
+import com.lockerroom.resourceservice.model.enums.SearchType;
 import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.BoardService;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class BoardController {
     public ResponseEntity<ApiResponse<CursorPageResponse<PostListResponse>>> getPostsByBoard(
             @PathVariable Long boardId,
             @CurrentUserId(required = false) Long userId,
-            @RequestParam(required = false) String searchType,
+            @RequestParam(required = false) SearchType searchType,
             @RequestParam(required = false) String keyword,
             @ModelAttribute CursorPageRequest pageRequest) {
         return ResponseEntity.ok(ApiResponse.success(

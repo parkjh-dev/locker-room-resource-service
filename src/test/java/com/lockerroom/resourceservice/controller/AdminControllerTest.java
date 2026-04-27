@@ -5,6 +5,7 @@ import com.lockerroom.resourceservice.configuration.SecurityConfig;
 import com.lockerroom.resourceservice.configuration.WebMvcConfig;
 import com.lockerroom.resourceservice.dto.request.NoticeCreateRequest;
 import com.lockerroom.resourceservice.dto.request.ReportProcessRequest;
+import com.lockerroom.resourceservice.model.enums.ReportAction;
 import com.lockerroom.resourceservice.dto.request.SuspendRequest;
 import com.lockerroom.resourceservice.dto.response.*;
 import com.lockerroom.resourceservice.model.entity.User;
@@ -295,7 +296,7 @@ class AdminControllerTest {
         @DisplayName("should process report and return 200")
         void processReport_asAdmin_success() throws Exception {
             // given
-            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, "Post deleted", null);
+            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, ReportAction.DELETE_POST, null);
             doNothing().when(adminService).processReport(eq(1L), eq(ADMIN_ID), any(ReportProcessRequest.class));
 
             // when & then
@@ -313,7 +314,7 @@ class AdminControllerTest {
         @DisplayName("should return 403 when user role is USER")
         void processReport_asUser_returns403() throws Exception {
             // given
-            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, "action", null);
+            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, ReportAction.DELETE_POST, null);
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/reports/{reportId}", 1L)

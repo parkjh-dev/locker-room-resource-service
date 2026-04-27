@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -44,10 +45,18 @@ class FileServiceImplTest {
     private User user;
     private User otherUser;
 
+    @SuppressWarnings("unchecked")
+    private static ObjectProvider<S3Client> providerOf(S3Client client) {
+        ObjectProvider<S3Client> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenReturn(client);
+        return provider;
+    }
+
     @BeforeEach
     void setUp() {
         // S3Client null → local fallback mode
-        fileService = new FileServiceImpl(fileRepository, userRepository, fileMapper, null, "test-bucket");
+        fileService = new FileServiceImpl(fileRepository, userRepository, fileMapper,
+                providerOf(null), "test-bucket");
 
         user = User.builder()
                 .id(1L)
@@ -139,7 +148,7 @@ class FileServiceImplTest {
         @DisplayName("should upload file to S3 successfully")
         void upload_withS3_success() throws Exception {
             FileServiceImpl s3FileService = new FileServiceImpl(
-                    fileRepository, userRepository, fileMapper, s3Client, "test-bucket");
+                    fileRepository, userRepository, fileMapper, providerOf(s3Client), "test-bucket");
 
             FileEntity savedFile = FileEntity.builder()
                     .id(1L).user(user).targetType(TargetType.POST).targetId(0L)

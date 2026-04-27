@@ -5,6 +5,7 @@ import com.lockerroom.resourceservice.dto.response.BoardResponse;
 import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
 import com.lockerroom.resourceservice.dto.response.PostListResponse;
 import com.lockerroom.resourceservice.model.entity.Board;
+import com.lockerroom.resourceservice.model.enums.SearchType;
 
 import java.util.List;
 
@@ -15,6 +16,6 @@ public interface BoardService {
     Board validateBoardAccess(Long boardId, Long userId);
 
     CursorPageResponse<PostListResponse> getPostsByBoard(Long boardId, Long userId,
-                                                          String searchType, String keyword,
+                                                          SearchType searchType, String keyword,
                                                           CursorPageRequest pageRequest);
 }

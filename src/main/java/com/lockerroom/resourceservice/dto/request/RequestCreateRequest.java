@@ -8,6 +8,6 @@ import jakarta.validation.constraints.Size;
 public record RequestCreateRequest(
         @NotNull RequestType type,
         @NotBlank @Size(max = 100) String name,
-        @NotBlank String reason
+        @NotBlank @Size(max = 2000) String reason
 ) {
 }

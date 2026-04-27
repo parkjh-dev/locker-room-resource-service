@@ -8,10 +8,18 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PostReportRepository extends JpaRepository<PostReport, Long> {
 
     boolean existsByPostIdAndUserId(Long postId, Long userId);
+
+    @Query("SELECT r FROM PostReport r " +
+           "JOIN FETCH r.post p " +
+           "JOIN FETCH p.user " +
+           "JOIN FETCH r.user " +
+           "WHERE r.id = :id")
+    Optional<PostReport> findByIdWithPostAndUser(@Param("id") Long id);
 
     @Query("SELECT r FROM PostReport r " +
            "JOIN FETCH r.post p " +

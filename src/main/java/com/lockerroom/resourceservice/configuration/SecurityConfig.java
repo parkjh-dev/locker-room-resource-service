@@ -31,8 +31,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/popular").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/{postId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/{postId}/comments").permitAll()
-                        // Swagger, Actuator & tools
-                        .requestMatchers("/swagger-ui/**", "/api-docs/**", "/h2-console/**").permitAll()
+                        // Swagger & tools
+                        .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers("/api/name", "/api/version").permitAll()

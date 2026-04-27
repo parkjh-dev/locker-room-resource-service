@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 public record NoticeCreateRequest(
         @NotBlank @Size(max = 200) String title,
-        @NotBlank String content,
+        @NotBlank @Size(max = 10000) String content,
         boolean isPinned
 ) {
 }

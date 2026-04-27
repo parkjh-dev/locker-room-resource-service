@@ -1,11 +1,14 @@
 package com.lockerroom.resourceservice.dto.request;
 
+import com.lockerroom.resourceservice.model.enums.ReportAction;
 import com.lockerroom.resourceservice.model.enums.ReportStatus;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 public record ReportProcessRequest(
         @NotNull ReportStatus status,
-        String action,
-        Integer suspensionDays
+        ReportAction action,
+        @Min(1) @Max(365) Integer suspensionDays
 ) {
 }

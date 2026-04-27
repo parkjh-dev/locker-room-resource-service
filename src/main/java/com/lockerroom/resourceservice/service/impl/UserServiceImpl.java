@@ -18,7 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional(readOnly = true)
@@ -40,12 +43,46 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getMyInfo(Long userId) {
         User user = findUserById(userId);
-        List<UserTeam> userTeams = userTeamRepository.findByUserId(userId);
+        List<UserTeam> userTeams = userTeamRepository.findByUserIdWithSport(userId);
+        Map<Long, String> teamNameByUserTeamId = batchResolveTeamNames(userTeams);
         List<UserTeamInfo> teams = userTeams.stream()
-                .map(ut -> userMapper.toUserTeamInfo(ut, resolveTeamNameFromUserTeam(ut)))
+                .map(ut -> userMapper.toUserTeamInfo(ut, teamNameByUserTeamId.get(ut.getId())))
                 .toList();
 
         return userMapper.toResponse(user, teams);
+    }
+
+    private Map<Long, String> batchResolveTeamNames(List<UserTeam> userTeams) {
+        if (userTeams.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Long> footballTeamIds = new ArrayList<>();
+        List<Long> baseballTeamIds = new ArrayList<>();
+        for (UserTeam ut : userTeams) {
+            String sportEn = ut.getSport().getNameEn();
+            if ("Football".equalsIgnoreCase(sportEn)) {
+                footballTeamIds.add(ut.getTeamId());
+            } else if ("Baseball".equalsIgnoreCase(sportEn)) {
+                baseballTeamIds.add(ut.getTeamId());
+            }
+        }
+
+        Map<Long, String> teamNameByTeamId = new HashMap<>();
+        if (!footballTeamIds.isEmpty()) {
+            footballTeamRepository.findAllById(footballTeamIds)
+                    .forEach(ft -> teamNameByTeamId.put(ft.getId(), ft.getNameKo()));
+        }
+        if (!baseballTeamIds.isEmpty()) {
+            baseballTeamRepository.findAllById(baseballTeamIds)
+                    .forEach(bt -> teamNameByTeamId.put(bt.getId(), bt.getNameKo()));
+        }
+
+        Map<Long, String> result = new HashMap<>();
+        for (UserTeam ut : userTeams) {
+            result.put(ut.getId(), teamNameByTeamId.get(ut.getTeamId()));
+        }
+        return result;
     }
 
     @Override

@@ -9,12 +9,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
 
     List<Inquiry> findByUserIdAndDeletedAtIsNullOrderByIdDesc(Long userId, Pageable pageable);
 
     List<Inquiry> findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long userId, Long cursorId, Pageable pageable);
+
+    @Query("SELECT i FROM Inquiry i JOIN FETCH i.user WHERE i.id = :id AND i.deletedAt IS NULL")
+    Optional<Inquiry> findByIdWithUser(@Param("id") Long id);
 
     @Query("SELECT i FROM Inquiry i " +
            "JOIN FETCH i.user " +

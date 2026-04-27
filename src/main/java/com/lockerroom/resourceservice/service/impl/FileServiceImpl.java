@@ -12,7 +12,7 @@ import com.lockerroom.resourceservice.repository.UserRepository;
 import com.lockerroom.resourceservice.service.FileService;
 import com.lockerroom.resourceservice.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +21,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +37,7 @@ public class FileServiceImpl implements FileService {
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
     private final FileMapper fileMapper;
-    private final S3Client s3Client;
+    private final ObjectProvider<S3Client> s3ClientProvider;
     private final String bucketName;
 
     private static final Map<String, byte[]> MAGIC_NUMBERS = Map.of(
@@ -47,18 +48,20 @@ public class FileServiceImpl implements FileService {
     );
     private static final byte[] RIFF_HEADER = {0x52, 0x49, 0x46, 0x46};
     private static final byte[] WEBP_SIGNATURE = {0x57, 0x45, 0x42, 0x50};
+    private static final int MAX_ORIGINAL_NAME_LENGTH = 200;
+    private static final String DEFAULT_FILE_NAME = "file";
 
     public FileServiceImpl(FileRepository fileRepository,
                            UserRepository userRepository,
                            FileMapper fileMapper,
-                           @Autowired(required = false) S3Client s3Client,
+                           ObjectProvider<S3Client> s3ClientProvider,
                            @Value("${aws.s3.bucket}") String bucketName) {
         this.fileRepository = fileRepository;
         this.userRepository = userRepository;
         this.fileMapper = fileMapper;
-        this.s3Client = s3Client;
+        this.s3ClientProvider = s3ClientProvider;
         this.bucketName = bucketName;
-        if (s3Client == null) {
+        if (s3ClientProvider.getIfAvailable() == null) {
             log.info("S3Client not available — file upload/delete will use local path only");
         }
     }
@@ -74,10 +77,11 @@ public class FileServiceImpl implements FileService {
         validateFileSize(file.getSize(), mimeType);
         validateMagicNumber(file, mimeType);
 
-        String originalName = file.getOriginalFilename();
+        String originalName = sanitizeOriginalName(file.getOriginalFilename());
         String storedName = UUID.randomUUID() + "_" + originalName;
         String s3Path = "uploads/" + storedName;
 
+        S3Client s3Client = s3ClientProvider.getIfAvailable();
         if (s3Client != null) {
             try {
                 PutObjectRequest putRequest = PutObjectRequest.builder()
@@ -85,6 +89,8 @@ public class FileServiceImpl implements FileService {
                         .key(s3Path)
                         .contentType(mimeType)
                         .contentLength(file.getSize())
+                        .contentDisposition("attachment; filename=\"" + originalName + "\"")
+                        .serverSideEncryption(ServerSideEncryption.AES256)
                         .build();
                 s3Client.putObject(putRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
                 log.info("File uploaded to S3: {}", s3Path);
@@ -163,6 +169,7 @@ public class FileServiceImpl implements FileService {
     }
 
     private void deleteFromS3(FileEntity file) {
+        S3Client s3Client = s3ClientProvider.getIfAvailable();
         if (s3Client != null) {
             DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
                     .bucket(bucketName)
@@ -192,15 +199,16 @@ public class FileServiceImpl implements FileService {
     }
 
     private void validateMagicNumber(MultipartFile file, String mimeType) {
-        if ("text/plain".equals(mimeType)) {
-            return;
-        }
-
         try (InputStream is = file.getInputStream()) {
             byte[] header = new byte[12];
             int bytesRead = is.read(header);
             if (bytesRead < 3) {
                 throw new CustomException(ErrorCode.FILE_TYPE_NOT_ALLOWED);
+            }
+
+            if ("text/plain".equals(mimeType)) {
+                rejectExecutableHeaders(header, bytesRead);
+                return;
             }
 
             if ("image/webp".equals(mimeType)) {
@@ -217,6 +225,48 @@ public class FileServiceImpl implements FileService {
         } catch (IOException e) {
             throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
         }
+    }
+
+    private void rejectExecutableHeaders(byte[] header, int bytesRead) {
+        // NUL byte in first 8 bytes implies binary, not text.
+        for (int i = 0; i < Math.min(bytesRead, 8); i++) {
+            if (header[i] == 0x00) {
+                throw new CustomException(ErrorCode.FILE_TYPE_NOT_ALLOWED);
+            }
+        }
+        // Common executable signatures: ELF (0x7F E L F), Mach-O (0xCFFAEDFE / 0xFEEDFACE...),
+        // Windows PE (MZ: 0x4D 0x5A), Java class (0xCAFEBABE).
+        if (bytesRead >= 4) {
+            if (header[0] == 0x7F && header[1] == 0x45 && header[2] == 0x4C && header[3] == 0x46) {
+                throw new CustomException(ErrorCode.FILE_TYPE_NOT_ALLOWED);
+            }
+            if ((header[0] & 0xFF) == 0xCA && (header[1] & 0xFF) == 0xFE
+                    && (header[2] & 0xFF) == 0xBA && (header[3] & 0xFF) == 0xBE) {
+                throw new CustomException(ErrorCode.FILE_TYPE_NOT_ALLOWED);
+            }
+        }
+        if (bytesRead >= 2 && header[0] == 0x4D && header[1] == 0x5A) {
+            throw new CustomException(ErrorCode.FILE_TYPE_NOT_ALLOWED);
+        }
+    }
+
+    private String sanitizeOriginalName(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return DEFAULT_FILE_NAME;
+        }
+        // Strip any directory prefix (e.g. "..\foo/bar.png" → "bar.png") and reject NUL.
+        int slash = Math.max(raw.lastIndexOf('/'), raw.lastIndexOf('\\'));
+        String base = (slash >= 0) ? raw.substring(slash + 1) : raw;
+        // Drop control chars (0x00-0x1F, 0x7F) and replace path/whitespace separators.
+        String cleaned = base.replaceAll("[\\p{Cntrl}]", "")
+                .replaceAll("[\\s/\\\\]+", "_");
+        if (cleaned.isBlank() || cleaned.equals(".") || cleaned.equals("..")) {
+            return DEFAULT_FILE_NAME;
+        }
+        if (cleaned.length() > MAX_ORIGINAL_NAME_LENGTH) {
+            cleaned = cleaned.substring(cleaned.length() - MAX_ORIGINAL_NAME_LENGTH);
+        }
+        return cleaned;
     }
 
     private boolean startsWith(byte[] data, byte[] prefix) {

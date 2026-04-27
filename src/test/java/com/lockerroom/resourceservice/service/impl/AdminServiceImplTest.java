@@ -97,8 +97,8 @@ class AdminServiceImplTest {
 
             when(userRepository.findUsersFiltered(isNull(), isNull(), isNull(), any(PageRequest.class)))
                     .thenReturn(List.of(user));
-            when(userSuspensionRepository.findActiveByUserId(eq(2L), any(OffsetDateTime.class)))
-                    .thenReturn(Optional.empty());
+            when(userSuspensionRepository.findActiveSuspendedUserIds(anyList(), any(OffsetDateTime.class)))
+                    .thenReturn(List.of());
             when(userMapper.toAdminListResponse(user, false)).thenReturn(response);
 
             CursorPageResponse<AdminUserListResponse> result = adminService.getUsers(pageRequest, null, null);
@@ -120,8 +120,8 @@ class AdminServiceImplTest {
 
             when(userRepository.findUsersFiltered(isNull(), isNull(), isNull(), any(PageRequest.class)))
                     .thenReturn(List.of(user, user2));
-            when(userSuspensionRepository.findActiveByUserId(eq(2L), any(OffsetDateTime.class)))
-                    .thenReturn(Optional.empty());
+            when(userSuspensionRepository.findActiveSuspendedUserIds(anyList(), any(OffsetDateTime.class)))
+                    .thenReturn(List.of());
             when(userMapper.toAdminListResponse(user, false)).thenReturn(response);
 
             CursorPageResponse<AdminUserListResponse> result = adminService.getUsers(pageRequest, null, null);
@@ -214,7 +214,7 @@ class AdminServiceImplTest {
             PostReport report = PostReport.builder().id(1L).post(post).user(user).reason("spam").build();
             ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, null, null);
 
-            when(postReportRepository.findById(1L)).thenReturn(Optional.of(report));
+            when(postReportRepository.findByIdWithPostAndUser(1L)).thenReturn(Optional.of(report));
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
 
             adminService.processReport(1L, 1L, request);
@@ -229,9 +229,9 @@ class AdminServiceImplTest {
         void processReport_deleteAction() {
             Post post = Post.builder().id(1L).title("Test").build();
             PostReport report = PostReport.builder().id(1L).post(post).user(user).reason("spam").build();
-            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, "DELETE_POST", null);
+            ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, ReportAction.DELETE_POST, null);
 
-            when(postReportRepository.findById(1L)).thenReturn(Optional.of(report));
+            when(postReportRepository.findByIdWithPostAndUser(1L)).thenReturn(Optional.of(report));
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
 
             adminService.processReport(1L, 1L, request);
@@ -243,7 +243,7 @@ class AdminServiceImplTest {
         @DisplayName("should throw exception when report not found")
         void processReport_reportNotFound() {
             ReportProcessRequest request = new ReportProcessRequest(ReportStatus.APPROVED, null, null);
-            when(postReportRepository.findById(999L)).thenReturn(Optional.empty());
+            when(postReportRepository.findByIdWithPostAndUser(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> adminService.processReport(999L, 1L, request));
@@ -396,7 +396,7 @@ class AdminServiceImplTest {
                     Collections.emptyList(), List.of(new InquiryReplyResponse(1L, "admin", "답변 내용입니다.", null)),
                     null);
 
-            when(inquiryRepository.findById(1L)).thenReturn(Optional.of(inquiry));
+            when(inquiryRepository.findByIdWithUser(1L)).thenReturn(Optional.of(inquiry));
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
             when(inquiryReplyRepository.save(any(InquiryReply.class)))
                     .thenReturn(InquiryReply.builder().id(1L).build());
@@ -421,7 +421,7 @@ class AdminServiceImplTest {
         @DisplayName("should throw exception when inquiry not found")
         void replyInquiry_notFound() {
             InquiryReplyRequest request = new InquiryReplyRequest("답변");
-            when(inquiryRepository.findById(999L)).thenReturn(Optional.empty());
+            when(inquiryRepository.findByIdWithUser(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
                     () -> adminService.replyInquiry(999L, 1L, request));

@@ -21,7 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import com.lockerroom.resourceservice.model.enums.ReportAction;
 
 @Slf4j
 @Service
@@ -72,12 +75,14 @@ public class AdminServiceImpl implements AdminService {
 
         List<User> users = userRepository.findUsersFiltered(keyword, role, cursorId, pageable);
 
-        return buildCursorPage(users, pageRequest.getSize(), u -> {
-            boolean isSuspended = userSuspensionRepository
-                    .findActiveByUserId(u.getId(), OffsetDateTime.now())
-                    .isPresent();
-            return userMapper.toAdminListResponse(u, isSuspended);
-        }, User::getId);
+        List<Long> userIds = users.stream().map(User::getId).toList();
+        Set<Long> suspendedUserIds = userIds.isEmpty()
+                ? Set.of()
+                : new HashSet<>(userSuspensionRepository.findActiveSuspendedUserIds(userIds, OffsetDateTime.now()));
+
+        return buildCursorPage(users, pageRequest.getSize(),
+                u -> userMapper.toAdminListResponse(u, suspendedUserIds.contains(u.getId())),
+                User::getId);
     }
 
     @Override
@@ -101,12 +106,15 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public void unsuspendUser(Long userId, Long adminId) {
         findUserById(userId);
+        User admin = findUserById(adminId);
 
         UserSuspension suspension = userSuspensionRepository
                 .findActiveByUserId(userId, OffsetDateTime.now())
                 .orElseThrow(() -> new CustomException(ErrorCode.SUSPENSION_NOT_FOUND));
 
         suspension.softDelete();
+        log.info("Suspension #{} on user #{} unsuspended by admin #{}({})",
+                suspension.getId(), userId, admin.getId(), admin.getNickname());
     }
 
     @Override
@@ -122,7 +130,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public void processReport(Long reportId, Long adminId, ReportProcessRequest request) {
-        PostReport report = postReportRepository.findById(reportId)
+        PostReport report = postReportRepository.findByIdWithPostAndUser(reportId)
                 .orElseThrow(() -> new CustomException(ErrorCode.REPORT_NOT_FOUND));
 
         User admin = findUserById(adminId);
@@ -199,7 +207,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public InquiryDetailResponse replyInquiry(Long inquiryId, Long adminId, InquiryReplyRequest request) {
-        Inquiry inquiry = inquiryRepository.findById(inquiryId)
+        Inquiry inquiry = inquiryRepository.findByIdWithUser(inquiryId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INQUIRY_NOT_FOUND));
 
         User admin = findUserById(adminId);
@@ -358,10 +366,10 @@ public class AdminServiceImpl implements AdminService {
         log.info("Auto-created BaseballTeam '{}' with boards from request #{}", entity.getName(), entity.getId());
     }
 
-    private void handleReportAction(String action, PostReport report, User admin, Integer suspensionDays) {
-        switch (action.toUpperCase()) {
-            case "DELETE_POST" -> report.getPost().softDelete();
-            case "SUSPEND_USER" -> {
+    private void handleReportAction(ReportAction action, PostReport report, User admin, Integer suspensionDays) {
+        switch (action) {
+            case DELETE_POST -> report.getPost().softDelete();
+            case SUSPEND_USER -> {
                 int days = (suspensionDays != null) ? suspensionDays : DEFAULT_SUSPENSION_DAYS;
                 UserSuspension suspension = UserSuspension.builder()
                         .user(report.getPost().getUser())
@@ -373,8 +381,12 @@ public class AdminServiceImpl implements AdminService {
                 userSuspensionRepository.save(suspension);
                 report.getPost().softDelete();
             }
-            default -> log.warn("Unknown report action: {}", action);
         }
+    }
+
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
     private <E, R> CursorPageResponse<R> buildCursorPage(
@@ -397,8 +409,4 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
-    private User findUserById(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-    }
 }

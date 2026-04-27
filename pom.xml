@@ -96,6 +96,12 @@
 			<version>${aws-sdk.version}</version>
 		</dependency>
 
+		<!-- Caffeine (in-memory cache for idempotency fallback) -->
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>

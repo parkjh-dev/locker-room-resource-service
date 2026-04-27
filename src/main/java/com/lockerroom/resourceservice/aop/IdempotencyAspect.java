@@ -27,6 +27,7 @@ import java.util.Map;
 public class IdempotencyAspect {
 
     private static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
+    private static final int IDEMPOTENCY_KEY_MAX_LENGTH = 128;
 
     private final IdempotencyService idempotencyService;
     private final ObjectMapper objectMapper;
@@ -36,26 +37,36 @@ public class IdempotencyAspect {
         HttpServletRequest request = getCurrentRequest();
         String idempotencyKey = request.getHeader(IDEMPOTENCY_HEADER);
 
-        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()
+                || idempotencyKey.length() > IDEMPOTENCY_KEY_MAX_LENGTH) {
             throw new CustomException(ErrorCode.IDEMPOTENCY_KEY_MISSING);
         }
 
         String compositeKey = buildCompositeKey(idempotencyKey);
 
-        if (idempotencyService.isDuplicate(compositeKey)) {
-            log.debug("Duplicate request detected for idempotency key: {}", idempotencyKey);
-            String cachedResponse = idempotencyService.getExistingResponse(compositeKey);
-            return deserializeResponse(cachedResponse);
+        if (!idempotencyService.tryClaim(compositeKey)) {
+            String existing = idempotencyService.getExistingResponse(compositeKey);
+            if (existing == null || idempotencyService.isInFlight(existing)) {
+                log.debug("Concurrent in-flight request for idempotency key: {}", idempotencyKey);
+                throw new CustomException(ErrorCode.IDEMPOTENCY_DUPLICATE);
+            }
+            log.debug("Replaying cached response for idempotency key: {}", idempotencyKey);
+            return deserializeResponse(existing);
         }
 
-        Object result = joinPoint.proceed();
-
-        if (result instanceof ResponseEntity<?> responseEntity) {
-            String serialized = serializeResponse(responseEntity);
-            idempotencyService.saveResponse(compositeKey, serialized);
+        boolean savedReal = false;
+        try {
+            Object result = joinPoint.proceed();
+            if (result instanceof ResponseEntity<?> responseEntity) {
+                idempotencyService.saveResponse(compositeKey, serializeResponse(responseEntity));
+                savedReal = true;
+            }
+            return result;
+        } finally {
+            if (!savedReal) {
+                idempotencyService.releaseClaim(compositeKey);
+            }
         }
-
-        return result;
     }
 
     private String buildCompositeKey(String idempotencyKey) {

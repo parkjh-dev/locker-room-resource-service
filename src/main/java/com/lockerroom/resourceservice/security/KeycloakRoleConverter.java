@@ -12,15 +12,18 @@ import java.util.Map;
 public class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
 
     @Override
-    @SuppressWarnings("unchecked")
     public Collection<GrantedAuthority> convert(Jwt jwt) {
         Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-        if (realmAccess == null || !realmAccess.containsKey("roles")) {
+        if (realmAccess == null) {
             return List.of();
         }
-
-        List<String> roles = (List<String>) realmAccess.get("roles");
+        Object rawRoles = realmAccess.get("roles");
+        if (!(rawRoles instanceof List<?> roles)) {
+            return List.of();
+        }
         return roles.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
                 .map(role -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                 .toList();
     }

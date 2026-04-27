@@ -11,6 +11,6 @@ public record InquiryCreateRequest(
         @NotNull InquiryType type,
         @NotBlank @Size(max = 200) String title,
         @NotBlank @Size(max = 5000) String content,
-        List<Long> fileIds
+        @Size(max = 5) List<Long> fileIds
 ) {
 }

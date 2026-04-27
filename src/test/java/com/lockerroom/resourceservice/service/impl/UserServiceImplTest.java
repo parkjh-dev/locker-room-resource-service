@@ -94,7 +94,7 @@ class UserServiceImplTest {
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(userTeamRepository.findByUserId(1L)).thenReturn(Collections.emptyList());
+            when(userTeamRepository.findByUserIdWithSport(1L)).thenReturn(Collections.emptyList());
             when(userMapper.toResponse(user, teamInfos)).thenReturn(expectedResponse);
 
             UserResponse result = userService.getMyInfo(1L);
@@ -119,8 +119,8 @@ class UserServiceImplTest {
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(userTeamRepository.findByUserId(1L)).thenReturn(List.of(userTeam));
-            when(footballTeamRepository.findById(10L)).thenReturn(Optional.of(ft));
+            when(userTeamRepository.findByUserIdWithSport(1L)).thenReturn(List.of(userTeam));
+            when(footballTeamRepository.findAllById(List.of(10L))).thenReturn(List.of(ft));
             when(userMapper.toUserTeamInfo(userTeam, "울산 HD FC")).thenReturn(teamInfo);
             when(userMapper.toResponse(user, teamInfos)).thenReturn(expectedResponse);
 
@@ -169,7 +169,7 @@ class UserServiceImplTest {
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(userRepository.existsByNickname("newnickname")).thenReturn(false);
-            when(userTeamRepository.findByUserId(1L)).thenReturn(Collections.emptyList());
+            when(userTeamRepository.findByUserIdWithSport(1L)).thenReturn(Collections.emptyList());
             when(userMapper.toResponse(user, teamInfos)).thenReturn(expectedResponse);
 
             UserResponse result = userService.updateMyInfo(1L, request);
@@ -189,7 +189,7 @@ class UserServiceImplTest {
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-            when(userTeamRepository.findByUserId(1L)).thenReturn(Collections.emptyList());
+            when(userTeamRepository.findByUserIdWithSport(1L)).thenReturn(Collections.emptyList());
             when(userMapper.toResponse(user, teamInfos)).thenReturn(expectedResponse);
 
             UserResponse result = userService.updateMyInfo(1L, request);
@@ -224,7 +224,7 @@ class UserServiceImplTest {
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(userRepository.existsByNickname("testuser")).thenReturn(true);
-            when(userTeamRepository.findByUserId(1L)).thenReturn(Collections.emptyList());
+            when(userTeamRepository.findByUserIdWithSport(1L)).thenReturn(Collections.emptyList());
             when(userMapper.toResponse(user, teamInfos)).thenReturn(expectedResponse);
 
             UserResponse result = userService.updateMyInfo(1L, request);

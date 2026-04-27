@@ -1,21 +1,20 @@
 package com.lockerroom.resourceservice.kafka;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class KafkaProducerService {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
-
-    public KafkaProducerService(@Autowired(required = false) KafkaTemplate<String, Object> kafkaTemplate) {
-        this.kafkaTemplate = kafkaTemplate;
-    }
+    private final ObjectProvider<KafkaTemplate<String, Object>> kafkaTemplateProvider;
 
     public void send(String topic, String key, Object event) {
+        KafkaTemplate<String, Object> kafkaTemplate = kafkaTemplateProvider.getIfAvailable();
         if (kafkaTemplate == null) {
             log.debug("KafkaTemplate not available — skipping event publish to topic: {}", topic);
             return;

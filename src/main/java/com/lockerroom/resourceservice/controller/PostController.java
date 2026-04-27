@@ -9,22 +9,26 @@ import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.PostService;
 import java.util.List;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/posts")
 @RequiredArgsConstructor
+@Validated
 public class PostController {
 
     private final PostService postService;
 
     @GetMapping("/popular")
     public ResponseEntity<ApiResponse<List<PostListResponse>>> getPopularPosts(
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) Integer days) {
+            @RequestParam(defaultValue = "10") @Min(1) @Max(50) int size,
+            @RequestParam(required = false) @Min(1) @Max(365) Integer days) {
         return ResponseEntity.ok(ApiResponse.success("인기 게시글을 조회했습니다.", postService.getPopularPosts(size, days)));
     }
 

@@ -1,5 +1,6 @@
 package com.lockerroom.resourceservice.controller;
 
+import com.lockerroom.resourceservice.aop.RateLimit;
 import com.lockerroom.resourceservice.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.dto.response.FileResponse;
 import com.lockerroom.resourceservice.model.enums.TargetType;
@@ -18,6 +19,7 @@ public class FileController {
 
     private final FileService fileService;
 
+    @RateLimit(bucket = "file-upload", max = 10, windowSeconds = 60)
     @PostMapping
     public ResponseEntity<ApiResponse<FileResponse>> upload(
             @CurrentUserId Long userId,

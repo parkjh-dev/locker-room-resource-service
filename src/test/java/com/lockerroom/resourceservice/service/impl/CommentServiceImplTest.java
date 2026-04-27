@@ -435,7 +435,7 @@ class CommentServiceImplTest {
             when(postRepository.findById(1L)).thenReturn(Optional.of(post));
             when(commentRepository.findByPostIdAndParentIsNullAndDeletedAtIsNullOrderByIdAsc(eq(1L), any()))
                     .thenReturn(List.of(rootComment));
-            when(commentRepository.findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(1L))
+            when(commentRepository.findByParentIdInAndDeletedAtIsNullOrderByParentIdAscCreatedAtAsc(List.of(1L)))
                     .thenReturn(List.of(replyComment));
             when(commentMapper.toResponse(eq(replyComment), any())).thenReturn(replyResponse);
             when(commentMapper.toResponseWithReplies(eq(rootComment), anyList(), any())).thenReturn(rootResponse);

@@ -7,14 +7,17 @@ import com.lockerroom.resourceservice.security.CurrentUserId;
 import com.lockerroom.resourceservice.service.AdminService;
 import com.lockerroom.resourceservice.service.NoticeService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
+@Validated
 public class AdminController {
 
     private final AdminService adminService;
@@ -28,7 +31,7 @@ public class AdminController {
     @GetMapping("/users")
     public ResponseEntity<ApiResponse<CursorPageResponse<AdminUserListResponse>>> getUsers(
             @ModelAttribute CursorPageRequest pageRequest,
-            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) @Size(max = 100) String keyword,
             @RequestParam(required = false) Role role) {
         return ResponseEntity.ok(ApiResponse.success(adminService.getUsers(pageRequest, keyword, role)));
     }

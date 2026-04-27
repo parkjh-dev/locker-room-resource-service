@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -151,19 +152,22 @@ public class CommentServiceImpl implements CommentService {
         List<Comment> resultComments = hasNext
                 ? rootComments.subList(0, pageRequest.getSize()) : rootComments;
 
-        // Batch-load teamNames for N+1 prevention
-        List<Long> allUserIds = resultComments.stream()
-                .map(c -> c.getUser().getId())
-                .collect(Collectors.toList());
-        resultComments.forEach(c -> {
-            List<Comment> replies = commentRepository
-                    .findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(c.getId());
-            replies.forEach(r -> allUserIds.add(r.getUser().getId()));
-        });
+        // Batch-load replies grouped by parent id (single query)
+        List<Long> rootIds = resultComments.stream().map(Comment::getId).toList();
+        List<Comment> allReplies = rootIds.isEmpty()
+                ? List.of()
+                : commentRepository.findByParentIdInAndDeletedAtIsNullOrderByParentIdAscCreatedAtAsc(rootIds);
+        Map<Long, List<Comment>> repliesByParent = allReplies.stream()
+                .collect(Collectors.groupingBy(c -> c.getParent().getId()));
+
+        // Batch-load teamNames for N+1 prevention (root + reply authors)
+        List<Long> allUserIds = new ArrayList<>();
+        resultComments.forEach(c -> allUserIds.add(c.getUser().getId()));
+        allReplies.forEach(r -> allUserIds.add(r.getUser().getId()));
         Map<Long, String> teamNameMap = buildTeamNameMap(allUserIds);
 
         List<CommentResponse> items = resultComments.stream()
-                .map(c -> toResponseWithReplies(c, teamNameMap))
+                .map(c -> toResponseWithReplies(c, repliesByParent.getOrDefault(c.getId(), List.of()), teamNameMap))
                 .toList();
 
         String nextCursor = hasNext
@@ -177,10 +181,7 @@ public class CommentServiceImpl implements CommentService {
                 .build();
     }
 
-    private CommentResponse toResponseWithReplies(Comment comment, Map<Long, String> teamNameMap) {
-        List<Comment> replies = commentRepository
-                .findByParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(comment.getId());
-
+    private CommentResponse toResponseWithReplies(Comment comment, List<Comment> replies, Map<Long, String> teamNameMap) {
         List<CommentResponse> replyResponses = replies.stream()
                 .map(r -> commentMapper.toResponse(r, teamNameMap.get(r.getUser().getId())))
                 .toList();

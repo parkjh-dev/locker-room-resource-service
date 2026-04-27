@@ -1,60 +1,87 @@
 package com.lockerroom.resourceservice.service.impl;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.lockerroom.resourceservice.service.IdempotencyService;
 import com.lockerroom.resourceservice.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
 public class IdempotencyServiceImpl implements IdempotencyService {
 
-    private final StringRedisTemplate redisTemplate;
+    static final String IN_FLIGHT_PLACEHOLDER = "__IN_FLIGHT__";
+    private static final long FALLBACK_MAX_SIZE = 10_000;
 
-    // Redis 미사용 시 인메모리 폴백
-    private final Map<String, String> fallbackStore = new ConcurrentHashMap<>();
+    private final ObjectProvider<StringRedisTemplate> redisProvider;
+    private final Cache<String, String> fallbackCache;
 
-    public IdempotencyServiceImpl(@Autowired(required = false) StringRedisTemplate redisTemplate) {
-        this.redisTemplate = redisTemplate;
-        if (redisTemplate == null) {
-            log.info("StringRedisTemplate not available — using in-memory fallback for idempotency");
+    public IdempotencyServiceImpl(ObjectProvider<StringRedisTemplate> redisProvider) {
+        this.redisProvider = redisProvider;
+        this.fallbackCache = Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofHours(Constants.IDEMPOTENCY_TTL_HOURS))
+                .maximumSize(FALLBACK_MAX_SIZE)
+                .build();
+        if (redisProvider.getIfAvailable() == null) {
+            log.info("StringRedisTemplate not available — using Caffeine fallback for idempotency");
         }
     }
 
     @Override
-    public boolean isDuplicate(String idempotencyKey) {
-        String redisKey = Constants.REDIS_IDEMPOTENCY_KEY + idempotencyKey;
-        if (redisTemplate != null) {
-            return Boolean.TRUE.equals(redisTemplate.hasKey(redisKey));
+    public boolean tryClaim(String idempotencyKey) {
+        StringRedisTemplate redis = redisProvider.getIfAvailable();
+        String redisKey = redisKey(idempotencyKey);
+        if (redis != null) {
+            Boolean claimed = redis.opsForValue().setIfAbsent(redisKey, IN_FLIGHT_PLACEHOLDER,
+                    Duration.ofHours(Constants.IDEMPOTENCY_TTL_HOURS));
+            return Boolean.TRUE.equals(claimed);
         }
-        return fallbackStore.containsKey(idempotencyKey);
+        return fallbackCache.asMap().putIfAbsent(idempotencyKey, IN_FLIGHT_PLACEHOLDER) == null;
     }
 
     @Override
     public String getExistingResponse(String idempotencyKey) {
-        String redisKey = Constants.REDIS_IDEMPOTENCY_KEY + idempotencyKey;
-        if (redisTemplate != null) {
-            return redisTemplate.opsForValue().get(redisKey);
+        StringRedisTemplate redis = redisProvider.getIfAvailable();
+        if (redis != null) {
+            return redis.opsForValue().get(redisKey(idempotencyKey));
         }
-        return fallbackStore.get(idempotencyKey);
+        return fallbackCache.getIfPresent(idempotencyKey);
+    }
+
+    @Override
+    public boolean isInFlight(String value) {
+        return IN_FLIGHT_PLACEHOLDER.equals(value);
     }
 
     @Override
     public void saveResponse(String idempotencyKey, String response) {
-        String redisKey = Constants.REDIS_IDEMPOTENCY_KEY + idempotencyKey;
-        if (redisTemplate != null) {
-            redisTemplate.opsForValue().set(redisKey, response,
+        StringRedisTemplate redis = redisProvider.getIfAvailable();
+        if (redis != null) {
+            redis.opsForValue().set(redisKey(idempotencyKey), response,
                     Duration.ofHours(Constants.IDEMPOTENCY_TTL_HOURS));
             log.debug("Idempotency response saved to Redis for key: {}", idempotencyKey);
         } else {
-            fallbackStore.put(idempotencyKey, response);
-            log.debug("Idempotency response saved to in-memory store for key: {}", idempotencyKey);
+            fallbackCache.put(idempotencyKey, response);
+            log.debug("Idempotency response saved to Caffeine for key: {}", idempotencyKey);
         }
+    }
+
+    @Override
+    public void releaseClaim(String idempotencyKey) {
+        StringRedisTemplate redis = redisProvider.getIfAvailable();
+        if (redis != null) {
+            redis.delete(redisKey(idempotencyKey));
+        } else {
+            fallbackCache.invalidate(idempotencyKey);
+        }
+    }
+
+    private String redisKey(String idempotencyKey) {
+        return Constants.REDIS_IDEMPOTENCY_KEY + idempotencyKey;
     }
 }
