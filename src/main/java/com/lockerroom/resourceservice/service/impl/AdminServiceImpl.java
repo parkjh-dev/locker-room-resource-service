@@ -37,7 +37,6 @@ public class AdminServiceImpl implements AdminService {
     private final PostRepository postRepository;
     private final NoticeRepository noticeRepository;
     private final SportRepository sportRepository;
-    private final BoardRepository boardRepository;
     private final InquiryRepository inquiryRepository;
     private final InquiryReplyRepository inquiryReplyRepository;
     private final RequestRepository requestRepository;

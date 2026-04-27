@@ -12,6 +12,7 @@ import java.util.List;
 public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT p FROM Post p " +
+           "JOIN FETCH p.user " +
            "WHERE p.board.id = :boardId " +
            "AND p.deletedAt IS NULL " +
            "AND (:cursor IS NULL OR p.id < :cursor) " +

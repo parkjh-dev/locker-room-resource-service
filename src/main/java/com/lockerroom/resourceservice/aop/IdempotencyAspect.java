@@ -70,7 +70,7 @@ public class IdempotencyAspect {
         ServletRequestAttributes attrs =
                 (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attrs == null) {
-            throw new IllegalStateException("No current request context available");
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
         return attrs.getRequest();
     }
@@ -83,7 +83,7 @@ public class IdempotencyAspect {
             return objectMapper.writeValueAsString(wrapper);
         } catch (Exception e) {
             log.warn("Failed to serialize idempotency response", e);
-            throw new IllegalStateException("Failed to serialize response for idempotency", e);
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -96,7 +96,7 @@ public class IdempotencyAspect {
             return ResponseEntity.status(statusCode.intValue()).body(body);
         } catch (Exception e) {
             log.warn("Failed to deserialize cached idempotency response", e);
-            throw new IllegalStateException("Failed to deserialize cached response", e);
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 }

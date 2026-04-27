@@ -20,10 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByNickname(String nickname);
 
-    List<User> findByDeletedAtIsNullOrderByIdDesc(Pageable pageable);
-
-    List<User> findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long cursorId, Pageable pageable);
-
     @Query("SELECT u FROM User u WHERE u.deletedAt IS NULL " +
            "AND (:keyword IS NULL OR u.nickname LIKE CONCAT('%', :keyword, '%') OR u.email LIKE CONCAT('%', :keyword, '%')) " +
            "AND (:role IS NULL OR u.role = :role) " +

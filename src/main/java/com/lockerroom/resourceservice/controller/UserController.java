@@ -34,7 +34,7 @@ public class UserController {
     @DeleteMapping("/me")
     public ResponseEntity<Void> withdraw(
             @CurrentUserId Long userId,
-            @RequestBody WithdrawRequest request) {
+            @Valid @RequestBody WithdrawRequest request) {
         userService.withdraw(userId, request);
         return ResponseEntity.noContent().build();
     }

@@ -1,5 +1,6 @@
 package com.lockerroom.resourceservice.dto.request;
 
+import com.lockerroom.resourceservice.utils.Constants;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
@@ -15,10 +16,10 @@ public class CursorPageRequest {
     private String cursor;
 
     @Min(1)
-    @Max(100)
-    private int size = 20;
+    @Max(Constants.MAX_PAGE_SIZE)
+    private int size = Constants.DEFAULT_PAGE_SIZE;
 
-    private String sort = "createdAt";
+    private String sort = Constants.DEFAULT_SORT;
 
     public Long decodeCursor() {
         if (cursor == null || cursor.isBlank()) {

@@ -18,7 +18,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
         ErrorCode errorCode = e.getErrorCode();
         String message = MessageUtils.getMessage(errorCode.getCode());
-        log.error("CustomException: {} - {}", errorCode.getCode(), message);
+        if (errorCode.getHttpStatus().is5xxServerError()) {
+            log.error("CustomException: {} - {}", errorCode.getCode(), message);
+        } else {
+            log.warn("CustomException: {} - {}", errorCode.getCode(), message);
+        }
 
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
@@ -32,7 +36,7 @@ public class GlobalExceptionHandler {
                 .map(error -> new FieldError(error.getField(), error.getDefaultMessage()))
                 .toList();
 
-        log.error("Validation failed: {}", fieldErrors);
+        log.warn("Validation failed: {}", fieldErrors);
 
         return ResponseEntity
                 .badRequest()

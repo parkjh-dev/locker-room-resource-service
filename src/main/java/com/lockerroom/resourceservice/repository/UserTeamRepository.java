@@ -10,8 +10,6 @@ public interface UserTeamRepository extends JpaRepository<UserTeam, Long> {
 
     List<UserTeam> findByUserId(Long userId);
 
-    boolean existsByUserIdAndTeamId(Long userId, Long teamId);
-
     Optional<UserTeam> findFirstByUserIdOrderByIdAsc(Long userId);
 
     List<UserTeam> findByUserIdIn(List<Long> userIds);

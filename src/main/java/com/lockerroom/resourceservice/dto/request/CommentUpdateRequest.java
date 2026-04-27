@@ -1,8 +1,9 @@
 package com.lockerroom.resourceservice.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public record CommentUpdateRequest(
-        @NotBlank String content
+        @NotBlank @Size(max = 1000) String content
 ) {
 }

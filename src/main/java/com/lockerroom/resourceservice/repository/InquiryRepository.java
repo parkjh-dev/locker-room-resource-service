@@ -16,11 +16,9 @@ public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
 
     List<Inquiry> findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long userId, Long cursorId, Pageable pageable);
 
-    List<Inquiry> findByDeletedAtIsNullOrderByIdDesc(Pageable pageable);
-
-    List<Inquiry> findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long cursorId, Pageable pageable);
-
-    @Query("SELECT i FROM Inquiry i WHERE i.deletedAt IS NULL " +
+    @Query("SELECT i FROM Inquiry i " +
+           "JOIN FETCH i.user " +
+           "WHERE i.deletedAt IS NULL " +
            "AND (:status IS NULL OR i.status = :status) " +
            "AND (:type IS NULL OR i.type = :type) " +
            "AND (:cursorId IS NULL OR i.id < :cursorId) " +

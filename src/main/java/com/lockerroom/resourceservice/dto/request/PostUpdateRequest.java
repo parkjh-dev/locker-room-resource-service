@@ -7,7 +7,7 @@ import java.util.List;
 
 public record PostUpdateRequest(
         @NotBlank @Size(max = 200) String title,
-        @NotBlank String content,
-        List<Long> fileIds
+        @NotBlank @Size(max = 10000) String content,
+        @Size(max = 5) List<Long> fileIds
 ) {
 }

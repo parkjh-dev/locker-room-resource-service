@@ -15,7 +15,6 @@ public final class Constants {
     // File
     public static final long MAX_IMAGE_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     public static final long MAX_DOCUMENT_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-    public static final long MAX_FILE_SIZE = MAX_DOCUMENT_FILE_SIZE;
     public static final int MAX_FILE_COUNT = 5;
 
     // Allowed MIME types
@@ -35,8 +34,6 @@ public final class Constants {
 
     // Redis key prefix
     public static final String REDIS_KEY_PREFIX = "resource-service:";
-    public static final String REDIS_USER_KEY = REDIS_KEY_PREFIX + "user:";
-    public static final String REDIS_POST_KEY = REDIS_KEY_PREFIX + "post:";
     public static final String REDIS_IDEMPOTENCY_KEY = REDIS_KEY_PREFIX + "idempotency:";
     public static final long IDEMPOTENCY_TTL_HOURS = 24;
 

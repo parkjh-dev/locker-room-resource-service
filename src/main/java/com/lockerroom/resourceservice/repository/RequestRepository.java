@@ -16,11 +16,9 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
 
     List<Request> findByUserIdAndDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long userId, Long cursorId, Pageable pageable);
 
-    List<Request> findByDeletedAtIsNullOrderByIdDesc(Pageable pageable);
-
-    List<Request> findByDeletedAtIsNullAndIdLessThanOrderByIdDesc(Long cursorId, Pageable pageable);
-
-    @Query("SELECT r FROM Request r WHERE r.deletedAt IS NULL " +
+    @Query("SELECT r FROM Request r " +
+           "JOIN FETCH r.user " +
+           "WHERE r.deletedAt IS NULL " +
            "AND (:status IS NULL OR r.status = :status) " +
            "AND (:type IS NULL OR r.type = :type) " +
            "AND (:cursorId IS NULL OR r.id < :cursorId) " +
