@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.model.enums;
+package com.lockerroom.resourceservice.sport.model.enums;
 
 public enum TagScope {
     COMMON, SPORT

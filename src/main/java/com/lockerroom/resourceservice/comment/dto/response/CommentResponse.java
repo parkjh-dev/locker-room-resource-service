@@ -1,4 +1,6 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.comment.dto.response;
+
+import com.lockerroom.resourceservice.common.dto.response.AuthorInfo;
 
 import java.time.LocalDateTime;
 import java.util.List;

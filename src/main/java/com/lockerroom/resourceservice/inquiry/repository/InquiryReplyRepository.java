@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.inquiry.repository;
 
-import com.lockerroom.resourceservice.model.entity.InquiryReply;
+import com.lockerroom.resourceservice.inquiry.model.entity.InquiryReply;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

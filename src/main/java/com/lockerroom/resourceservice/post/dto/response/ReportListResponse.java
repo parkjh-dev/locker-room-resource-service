@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.post.dto.response;
 
-import com.lockerroom.resourceservice.model.enums.ReportStatus;
+import com.lockerroom.resourceservice.post.model.enums.ReportStatus;
 
 import java.time.LocalDateTime;
 

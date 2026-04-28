@@ -1,12 +1,14 @@
-package com.lockerroom.resourceservice.mapper;
+package com.lockerroom.resourceservice.inquiry.mapper;
 
-import com.lockerroom.resourceservice.dto.response.AdminInquiryListResponse;
-import com.lockerroom.resourceservice.dto.response.InquiryDetailResponse;
-import com.lockerroom.resourceservice.dto.response.InquiryListResponse;
-import com.lockerroom.resourceservice.dto.response.InquiryReplyResponse;
-import com.lockerroom.resourceservice.dto.response.FileResponse;
-import com.lockerroom.resourceservice.model.entity.Inquiry;
-import com.lockerroom.resourceservice.model.entity.InquiryReply;
+import com.lockerroom.resourceservice.file.mapper.FileMapper;
+
+import com.lockerroom.resourceservice.inquiry.dto.response.AdminInquiryListResponse;
+import com.lockerroom.resourceservice.inquiry.dto.response.InquiryDetailResponse;
+import com.lockerroom.resourceservice.inquiry.dto.response.InquiryListResponse;
+import com.lockerroom.resourceservice.inquiry.dto.response.InquiryReplyResponse;
+import com.lockerroom.resourceservice.file.dto.response.FileResponse;
+import com.lockerroom.resourceservice.inquiry.model.entity.Inquiry;
+import com.lockerroom.resourceservice.inquiry.model.entity.InquiryReply;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

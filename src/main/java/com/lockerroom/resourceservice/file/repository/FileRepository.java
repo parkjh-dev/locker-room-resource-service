@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.file.repository;
 
-import com.lockerroom.resourceservice.model.entity.FileEntity;
-import com.lockerroom.resourceservice.model.enums.TargetType;
+import com.lockerroom.resourceservice.file.model.entity.FileEntity;
+import com.lockerroom.resourceservice.file.model.enums.TargetType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

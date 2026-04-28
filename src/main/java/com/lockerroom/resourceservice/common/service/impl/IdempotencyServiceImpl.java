@@ -1,9 +1,9 @@
-package com.lockerroom.resourceservice.service.impl;
+package com.lockerroom.resourceservice.common.service.impl;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.lockerroom.resourceservice.service.IdempotencyService;
-import com.lockerroom.resourceservice.utils.Constants;
+import com.lockerroom.resourceservice.common.service.IdempotencyService;
+import com.lockerroom.resourceservice.infrastructure.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.redis.core.StringRedisTemplate;

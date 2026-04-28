@@ -1,10 +1,10 @@
-package com.lockerroom.resourceservice.service;
+package com.lockerroom.resourceservice.request.service;
 
-import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
-import com.lockerroom.resourceservice.dto.request.RequestCreateRequest;
-import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
-import com.lockerroom.resourceservice.dto.response.RequestDetailResponse;
-import com.lockerroom.resourceservice.dto.response.RequestListResponse;
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+import com.lockerroom.resourceservice.request.dto.request.RequestCreateRequest;
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
+import com.lockerroom.resourceservice.request.dto.response.RequestDetailResponse;
+import com.lockerroom.resourceservice.request.dto.response.RequestListResponse;
 
 public interface RequestService {
 

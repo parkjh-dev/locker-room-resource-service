@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.dto.request;
+package com.lockerroom.resourceservice.admin.dto.request;
 
-import com.lockerroom.resourceservice.model.enums.ReportAction;
-import com.lockerroom.resourceservice.model.enums.ReportStatus;
+import com.lockerroom.resourceservice.post.model.enums.ReportAction;
+import com.lockerroom.resourceservice.post.model.enums.ReportStatus;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

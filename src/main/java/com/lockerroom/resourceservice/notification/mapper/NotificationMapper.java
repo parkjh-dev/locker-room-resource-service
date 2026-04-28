@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.mapper;
+package com.lockerroom.resourceservice.notification.mapper;
 
-import com.lockerroom.resourceservice.dto.response.NotificationResponse;
-import com.lockerroom.resourceservice.model.entity.Notification;
+import com.lockerroom.resourceservice.notification.dto.response.NotificationResponse;
+import com.lockerroom.resourceservice.notification.model.entity.Notification;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

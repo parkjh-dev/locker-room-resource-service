@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.dto.request;
+package com.lockerroom.resourceservice.user.dto.request;
 
 import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.URL;

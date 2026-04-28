@@ -1,7 +1,9 @@
-package com.lockerroom.resourceservice.aop;
+package com.lockerroom.resourceservice.infrastructure.aop;
 
-import com.lockerroom.resourceservice.exceptions.CustomException;
-import com.lockerroom.resourceservice.exceptions.ErrorCode;
+import com.lockerroom.resourceservice.infrastructure.aop.RateLimit;
+
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;

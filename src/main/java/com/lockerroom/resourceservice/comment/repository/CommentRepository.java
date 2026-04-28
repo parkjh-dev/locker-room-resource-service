@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.comment.repository;
 
-import com.lockerroom.resourceservice.model.entity.Comment;
+import com.lockerroom.resourceservice.comment.model.entity.Comment;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 

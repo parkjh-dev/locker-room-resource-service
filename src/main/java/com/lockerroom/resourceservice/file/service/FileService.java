@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.service;
+package com.lockerroom.resourceservice.file.service;
 
-import com.lockerroom.resourceservice.dto.response.FileResponse;
-import com.lockerroom.resourceservice.model.enums.TargetType;
+import com.lockerroom.resourceservice.file.dto.response.FileResponse;
+import com.lockerroom.resourceservice.file.model.enums.TargetType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

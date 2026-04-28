@@ -1,9 +1,9 @@
-package com.lockerroom.resourceservice.service;
+package com.lockerroom.resourceservice.notice.service;
 
-import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
-import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
-import com.lockerroom.resourceservice.dto.response.NoticeDetailResponse;
-import com.lockerroom.resourceservice.dto.response.NoticeListResponse;
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
+import com.lockerroom.resourceservice.notice.dto.response.NoticeDetailResponse;
+import com.lockerroom.resourceservice.notice.dto.response.NoticeListResponse;
 
 public interface NoticeService {
 

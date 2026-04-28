@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.common.dto.response;
 
 public record AuthorInfo(
         Long id,

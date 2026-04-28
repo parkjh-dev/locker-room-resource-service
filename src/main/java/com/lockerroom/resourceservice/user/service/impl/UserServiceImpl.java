@@ -1,17 +1,58 @@
-package com.lockerroom.resourceservice.service.impl;
+package com.lockerroom.resourceservice.user.service.impl;
 
-import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
-import com.lockerroom.resourceservice.dto.request.UserUpdateRequest;
-import com.lockerroom.resourceservice.dto.request.WithdrawRequest;
-import com.lockerroom.resourceservice.dto.response.*;
-import com.lockerroom.resourceservice.exceptions.CustomException;
-import com.lockerroom.resourceservice.exceptions.ErrorCode;
-import com.lockerroom.resourceservice.mapper.CommentMapper;
-import com.lockerroom.resourceservice.mapper.PostMapper;
-import com.lockerroom.resourceservice.mapper.UserMapper;
-import com.lockerroom.resourceservice.model.entity.*;
-import com.lockerroom.resourceservice.repository.*;
-import com.lockerroom.resourceservice.service.UserService;
+import com.lockerroom.resourceservice.post.dto.response.UserLikeListResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.UserPostListResponse;
+
+import com.lockerroom.resourceservice.post.repository.PostLikeRepository;
+
+import com.lockerroom.resourceservice.post.repository.PostRepository;
+
+import com.lockerroom.resourceservice.post.model.entity.PostLike;
+
+import com.lockerroom.resourceservice.post.model.entity.Post;
+
+import com.lockerroom.resourceservice.comment.dto.response.UserCommentListResponse;
+
+import com.lockerroom.resourceservice.comment.repository.CommentRepository;
+
+import com.lockerroom.resourceservice.comment.model.entity.Comment;
+
+import com.lockerroom.resourceservice.user.dto.response.UserTeamInfo;
+
+import com.lockerroom.resourceservice.user.dto.response.UserResponse;
+
+import com.lockerroom.resourceservice.user.repository.UserWithdrawalRepository;
+
+import com.lockerroom.resourceservice.user.repository.UserTeamRepository;
+
+import com.lockerroom.resourceservice.user.repository.UserRepository;
+
+import com.lockerroom.resourceservice.user.model.entity.UserWithdrawal;
+
+import com.lockerroom.resourceservice.user.model.entity.UserTeam;
+
+import com.lockerroom.resourceservice.user.model.entity.User;
+
+import com.lockerroom.resourceservice.sport.repository.FootballTeamRepository;
+
+import com.lockerroom.resourceservice.sport.repository.BaseballTeamRepository;
+
+import com.lockerroom.resourceservice.sport.model.entity.FootballTeam;
+
+import com.lockerroom.resourceservice.sport.model.entity.BaseballTeam;
+
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
+
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+import com.lockerroom.resourceservice.user.dto.request.UserUpdateRequest;
+import com.lockerroom.resourceservice.user.dto.request.WithdrawRequest;
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
+import com.lockerroom.resourceservice.comment.mapper.CommentMapper;
+import com.lockerroom.resourceservice.post.mapper.PostMapper;
+import com.lockerroom.resourceservice.user.mapper.UserMapper;
+import com.lockerroom.resourceservice.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;

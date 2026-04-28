@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.configuration;
+package com.lockerroom.resourceservice.infrastructure.configuration;
 
-import com.lockerroom.resourceservice.security.KeycloakRoleConverter;
+import com.lockerroom.resourceservice.infrastructure.security.KeycloakRoleConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;

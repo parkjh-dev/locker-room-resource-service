@@ -1,7 +1,9 @@
-package com.lockerroom.resourceservice.model.entity;
+package com.lockerroom.resourceservice.user.model.entity;
 
-import com.lockerroom.resourceservice.model.enums.OAuthProvider;
-import com.lockerroom.resourceservice.model.enums.Role;
+import com.lockerroom.resourceservice.common.model.entity.BaseEntity;
+
+import com.lockerroom.resourceservice.user.model.enums.OAuthProvider;
+import com.lockerroom.resourceservice.common.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

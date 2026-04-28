@@ -1,4 +1,6 @@
-package com.lockerroom.resourceservice.exceptions;
+package com.lockerroom.resourceservice.infrastructure.exceptions;
+
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
 
 import lombok.Getter;
 

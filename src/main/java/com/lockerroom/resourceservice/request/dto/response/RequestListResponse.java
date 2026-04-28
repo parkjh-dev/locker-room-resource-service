@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.request.dto.response;
 
-import com.lockerroom.resourceservice.model.enums.RequestStatus;
-import com.lockerroom.resourceservice.model.enums.RequestType;
+import com.lockerroom.resourceservice.request.model.enums.RequestStatus;
+import com.lockerroom.resourceservice.request.model.enums.RequestType;
 
 import java.time.LocalDateTime;
 

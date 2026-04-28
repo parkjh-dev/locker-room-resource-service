@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.service;
+package com.lockerroom.resourceservice.common.service;
 
 public interface IdempotencyService {
 

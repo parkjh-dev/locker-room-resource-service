@@ -1,10 +1,10 @@
-package com.lockerroom.resourceservice.service;
+package com.lockerroom.resourceservice.comment.service;
 
-import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
-import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
-import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
-import com.lockerroom.resourceservice.dto.response.CommentResponse;
-import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
+import com.lockerroom.resourceservice.comment.dto.request.CommentCreateRequest;
+import com.lockerroom.resourceservice.comment.dto.request.CommentUpdateRequest;
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+import com.lockerroom.resourceservice.comment.dto.response.CommentResponse;
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
 
 public interface CommentService {
 

@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.service;
+package com.lockerroom.resourceservice.sport.service;
 
-import com.lockerroom.resourceservice.dto.response.SportResponse;
+import com.lockerroom.resourceservice.sport.dto.response.SportResponse;
 
 import java.util.List;
 

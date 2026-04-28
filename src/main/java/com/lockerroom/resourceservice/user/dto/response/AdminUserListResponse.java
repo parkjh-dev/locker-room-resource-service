@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.user.dto.response;
 
-import com.lockerroom.resourceservice.model.enums.OAuthProvider;
-import com.lockerroom.resourceservice.model.enums.Role;
+import com.lockerroom.resourceservice.user.model.enums.OAuthProvider;
+import com.lockerroom.resourceservice.common.model.enums.Role;
 
 import java.time.LocalDateTime;
 

@@ -1,15 +1,15 @@
-package com.lockerroom.resourceservice.service.impl;
+package com.lockerroom.resourceservice.notification.service.impl;
 
-import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
-import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
-import com.lockerroom.resourceservice.dto.response.NotificationResponse;
-import com.lockerroom.resourceservice.dto.response.UnreadCountResponse;
-import com.lockerroom.resourceservice.exceptions.CustomException;
-import com.lockerroom.resourceservice.exceptions.ErrorCode;
-import com.lockerroom.resourceservice.mapper.NotificationMapper;
-import com.lockerroom.resourceservice.model.entity.Notification;
-import com.lockerroom.resourceservice.repository.NotificationRepository;
-import com.lockerroom.resourceservice.service.NotificationService;
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
+import com.lockerroom.resourceservice.notification.dto.response.NotificationResponse;
+import com.lockerroom.resourceservice.notification.dto.response.UnreadCountResponse;
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
+import com.lockerroom.resourceservice.notification.mapper.NotificationMapper;
+import com.lockerroom.resourceservice.notification.model.entity.Notification;
+import com.lockerroom.resourceservice.notification.repository.NotificationRepository;
+import com.lockerroom.resourceservice.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

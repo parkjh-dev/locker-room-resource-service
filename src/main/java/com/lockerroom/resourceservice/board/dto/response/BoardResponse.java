@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.board.dto.response;
 
-import com.lockerroom.resourceservice.model.enums.BoardType;
+import com.lockerroom.resourceservice.board.model.enums.BoardType;
 
 public record BoardResponse(
         Long id,

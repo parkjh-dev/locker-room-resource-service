@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.notification.dto.response;
 
-import com.lockerroom.resourceservice.model.enums.NotificationType;
-import com.lockerroom.resourceservice.model.enums.TargetType;
+import com.lockerroom.resourceservice.notification.model.enums.NotificationType;
+import com.lockerroom.resourceservice.file.model.enums.TargetType;
 
 import java.time.LocalDateTime;
 

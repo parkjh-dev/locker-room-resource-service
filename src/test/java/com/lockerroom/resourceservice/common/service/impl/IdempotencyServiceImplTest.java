@@ -1,6 +1,8 @@
-package com.lockerroom.resourceservice.service.impl;
+package com.lockerroom.resourceservice.common.service.impl;
 
-import com.lockerroom.resourceservice.utils.Constants;
+import com.lockerroom.resourceservice.common.service.impl.IdempotencyServiceImpl;
+
+import com.lockerroom.resourceservice.infrastructure.utils.Constants;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

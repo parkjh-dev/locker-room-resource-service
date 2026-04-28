@@ -1,9 +1,9 @@
-package com.lockerroom.resourceservice.mapper;
+package com.lockerroom.resourceservice.comment.mapper;
 
-import com.lockerroom.resourceservice.dto.response.AuthorInfo;
-import com.lockerroom.resourceservice.dto.response.CommentResponse;
-import com.lockerroom.resourceservice.dto.response.UserCommentListResponse;
-import com.lockerroom.resourceservice.model.entity.Comment;
+import com.lockerroom.resourceservice.common.dto.response.AuthorInfo;
+import com.lockerroom.resourceservice.comment.dto.response.CommentResponse;
+import com.lockerroom.resourceservice.comment.dto.response.UserCommentListResponse;
+import com.lockerroom.resourceservice.comment.model.entity.Comment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

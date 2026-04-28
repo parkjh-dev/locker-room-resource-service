@@ -1,8 +1,47 @@
-package com.lockerroom.resourceservice.service;
+package com.lockerroom.resourceservice.admin.service;
 
-import com.lockerroom.resourceservice.dto.request.*;
-import com.lockerroom.resourceservice.dto.response.*;
-import com.lockerroom.resourceservice.model.enums.*;
+import com.lockerroom.resourceservice.admin.dto.response.AdminDashboardResponse;
+
+import com.lockerroom.resourceservice.admin.dto.request.ReportProcessRequest;
+
+import com.lockerroom.resourceservice.admin.dto.request.SuspendRequest;
+
+import com.lockerroom.resourceservice.post.dto.response.ReportListResponse;
+
+import com.lockerroom.resourceservice.post.model.enums.ReportStatus;
+
+import com.lockerroom.resourceservice.user.dto.response.AdminUserListResponse;
+
+import com.lockerroom.resourceservice.inquiry.dto.response.AdminInquiryListResponse;
+
+import com.lockerroom.resourceservice.inquiry.dto.response.InquiryDetailResponse;
+
+import com.lockerroom.resourceservice.inquiry.dto.request.InquiryReplyRequest;
+
+import com.lockerroom.resourceservice.inquiry.model.enums.InquiryType;
+
+import com.lockerroom.resourceservice.inquiry.model.enums.InquiryStatus;
+
+import com.lockerroom.resourceservice.notice.dto.response.NoticeDetailResponse;
+
+import com.lockerroom.resourceservice.notice.dto.request.NoticeCreateRequest;
+
+import com.lockerroom.resourceservice.request.dto.response.AdminRequestListResponse;
+
+import com.lockerroom.resourceservice.request.dto.response.RequestDetailResponse;
+
+import com.lockerroom.resourceservice.request.dto.request.RequestProcessRequest;
+
+import com.lockerroom.resourceservice.request.model.enums.RequestType;
+
+import com.lockerroom.resourceservice.request.model.enums.RequestStatus;
+
+import com.lockerroom.resourceservice.common.model.enums.Role;
+
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
+
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+
 
 public interface AdminService {
 

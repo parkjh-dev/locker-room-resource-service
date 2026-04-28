@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.dto.request;
+package com.lockerroom.resourceservice.user.dto.request;
 
 public record WithdrawRequest(
         String reason,

@@ -1,7 +1,11 @@
-package com.lockerroom.resourceservice.model.entity;
+package com.lockerroom.resourceservice.request.model.entity;
 
-import com.lockerroom.resourceservice.model.enums.RequestStatus;
-import com.lockerroom.resourceservice.model.enums.RequestType;
+import com.lockerroom.resourceservice.user.model.entity.User;
+
+import com.lockerroom.resourceservice.common.model.entity.BaseEntity;
+
+import com.lockerroom.resourceservice.request.model.enums.RequestStatus;
+import com.lockerroom.resourceservice.request.model.enums.RequestType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

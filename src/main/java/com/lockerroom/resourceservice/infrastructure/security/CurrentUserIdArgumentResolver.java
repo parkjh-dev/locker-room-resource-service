@@ -1,8 +1,10 @@
-package com.lockerroom.resourceservice.security;
+package com.lockerroom.resourceservice.infrastructure.security;
 
-import com.lockerroom.resourceservice.exceptions.CustomException;
-import com.lockerroom.resourceservice.exceptions.ErrorCode;
-import com.lockerroom.resourceservice.repository.UserRepository;
+import com.lockerroom.resourceservice.infrastructure.security.CurrentUserId;
+
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
+import com.lockerroom.resourceservice.user.repository.UserRepository;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

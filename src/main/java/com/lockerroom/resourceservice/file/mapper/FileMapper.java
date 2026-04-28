@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.mapper;
+package com.lockerroom.resourceservice.file.mapper;
 
-import com.lockerroom.resourceservice.dto.response.FileResponse;
-import com.lockerroom.resourceservice.model.entity.FileEntity;
+import com.lockerroom.resourceservice.file.dto.response.FileResponse;
+import com.lockerroom.resourceservice.file.model.entity.FileEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

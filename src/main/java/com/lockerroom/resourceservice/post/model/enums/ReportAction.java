@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.model.enums;
+package com.lockerroom.resourceservice.post.model.enums;
 
 public enum ReportAction {
     DELETE_POST,

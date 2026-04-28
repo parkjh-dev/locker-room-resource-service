@@ -1,10 +1,23 @@
-package com.lockerroom.resourceservice.mapper;
+package com.lockerroom.resourceservice.post.mapper;
 
-import com.lockerroom.resourceservice.dto.response.*;
-import com.lockerroom.resourceservice.model.entity.Board;
-import com.lockerroom.resourceservice.model.entity.Post;
-import com.lockerroom.resourceservice.model.entity.PostReport;
-import com.lockerroom.resourceservice.model.entity.Sport;
+import com.lockerroom.resourceservice.post.dto.response.ReportListResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.ReportResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.UserLikeListResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.UserPostListResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.PostListResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.PostDetailResponse;
+
+import com.lockerroom.resourceservice.file.dto.response.FileResponse;
+
+import com.lockerroom.resourceservice.common.dto.response.AuthorInfo;
+
+import com.lockerroom.resourceservice.post.model.entity.Post;
+import com.lockerroom.resourceservice.post.model.entity.PostReport;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -53,9 +66,4 @@ public interface PostMapper {
     @Mapping(source = "post.title", target = "postTitle")
     @Mapping(source = "user.nickname", target = "reporterNickname")
     ReportListResponse toReportListResponse(PostReport report);
-
-    BoardResponse toBoardResponse(Board board);
-
-    @Mapping(source = "active", target = "isActive")
-    SportResponse toSportResponse(Sport sport);
 }

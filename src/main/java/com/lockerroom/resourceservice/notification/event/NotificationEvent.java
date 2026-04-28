@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.kafka.event;
+package com.lockerroom.resourceservice.notification.event;
 
-import com.lockerroom.resourceservice.model.enums.NotificationType;
+import com.lockerroom.resourceservice.notification.model.enums.NotificationType;
 
 import java.time.LocalDateTime;
 

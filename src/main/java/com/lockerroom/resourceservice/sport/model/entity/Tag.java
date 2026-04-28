@@ -1,6 +1,8 @@
-package com.lockerroom.resourceservice.model.entity;
+package com.lockerroom.resourceservice.sport.model.entity;
 
-import com.lockerroom.resourceservice.model.enums.TagScope;
+import com.lockerroom.resourceservice.common.model.entity.BaseEntity;
+
+import com.lockerroom.resourceservice.sport.model.enums.TagScope;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

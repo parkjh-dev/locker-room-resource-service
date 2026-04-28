@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.notice.repository;
 
-import com.lockerroom.resourceservice.model.entity.Notice;
+import com.lockerroom.resourceservice.notice.model.entity.Notice;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 

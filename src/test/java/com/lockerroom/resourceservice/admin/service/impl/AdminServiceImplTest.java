@@ -1,15 +1,133 @@
-package com.lockerroom.resourceservice.service.impl;
+package com.lockerroom.resourceservice.admin.service.impl;
 
-import com.lockerroom.resourceservice.dto.request.*;
-import com.lockerroom.resourceservice.dto.response.*;
-import com.lockerroom.resourceservice.exceptions.CustomException;
-import com.lockerroom.resourceservice.exceptions.ErrorCode;
-import com.lockerroom.resourceservice.kafka.KafkaProducerService;
-import com.lockerroom.resourceservice.mapper.*;
-import com.lockerroom.resourceservice.model.entity.*;
-import com.lockerroom.resourceservice.model.enums.*;
-import com.lockerroom.resourceservice.repository.*;
-import com.lockerroom.resourceservice.utils.Constants;
+import com.lockerroom.resourceservice.admin.dto.request.ReportProcessRequest;
+
+import com.lockerroom.resourceservice.admin.dto.request.SuspendRequest;
+
+import com.lockerroom.resourceservice.post.dto.response.ReportListResponse;
+
+import com.lockerroom.resourceservice.post.mapper.PostMapper;
+
+import com.lockerroom.resourceservice.post.repository.PostReportRepository;
+
+import com.lockerroom.resourceservice.post.repository.PostRepository;
+
+import com.lockerroom.resourceservice.post.model.enums.ReportAction;
+
+import com.lockerroom.resourceservice.post.model.enums.ReportStatus;
+
+import com.lockerroom.resourceservice.post.model.entity.PostReport;
+
+import com.lockerroom.resourceservice.post.model.entity.Post;
+
+import com.lockerroom.resourceservice.user.dto.response.AdminUserListResponse;
+
+import com.lockerroom.resourceservice.user.mapper.UserMapper;
+
+import com.lockerroom.resourceservice.user.repository.UserSuspensionRepository;
+
+import com.lockerroom.resourceservice.user.repository.UserRepository;
+
+import com.lockerroom.resourceservice.user.model.entity.UserSuspension;
+
+import com.lockerroom.resourceservice.user.model.entity.User;
+
+import com.lockerroom.resourceservice.board.repository.ActiveFootballBoardRepository;
+
+import com.lockerroom.resourceservice.board.repository.ActiveBaseballBoardRepository;
+
+import com.lockerroom.resourceservice.board.repository.FootballBoardRepository;
+
+import com.lockerroom.resourceservice.board.repository.BaseballBoardRepository;
+
+import com.lockerroom.resourceservice.board.repository.BoardRepository;
+
+import com.lockerroom.resourceservice.board.model.entity.ActiveFootballBoard;
+
+import com.lockerroom.resourceservice.board.model.entity.FootballBoard;
+
+import com.lockerroom.resourceservice.sport.repository.FootballTeamRepository;
+
+import com.lockerroom.resourceservice.sport.repository.FootballLeagueRepository;
+
+import com.lockerroom.resourceservice.sport.repository.BaseballTeamRepository;
+
+import com.lockerroom.resourceservice.sport.repository.BaseballLeagueRepository;
+
+import com.lockerroom.resourceservice.sport.repository.SportRepository;
+
+import com.lockerroom.resourceservice.sport.model.entity.Country;
+
+import com.lockerroom.resourceservice.sport.model.entity.FootballTeam;
+
+import com.lockerroom.resourceservice.sport.model.entity.FootballLeague;
+
+import com.lockerroom.resourceservice.sport.model.entity.Sport;
+
+import com.lockerroom.resourceservice.inquiry.dto.response.AdminInquiryListResponse;
+
+import com.lockerroom.resourceservice.inquiry.dto.response.InquiryReplyResponse;
+
+import com.lockerroom.resourceservice.inquiry.dto.response.InquiryDetailResponse;
+
+import com.lockerroom.resourceservice.inquiry.dto.request.InquiryReplyRequest;
+
+import com.lockerroom.resourceservice.inquiry.mapper.InquiryMapper;
+
+import com.lockerroom.resourceservice.inquiry.repository.InquiryReplyRepository;
+
+import com.lockerroom.resourceservice.inquiry.repository.InquiryRepository;
+
+import com.lockerroom.resourceservice.inquiry.model.enums.InquiryType;
+
+import com.lockerroom.resourceservice.inquiry.model.enums.InquiryStatus;
+
+import com.lockerroom.resourceservice.inquiry.model.entity.InquiryReply;
+
+import com.lockerroom.resourceservice.inquiry.model.entity.Inquiry;
+
+import com.lockerroom.resourceservice.file.mapper.FileMapper;
+
+import com.lockerroom.resourceservice.file.repository.FileRepository;
+
+import com.lockerroom.resourceservice.file.model.enums.TargetType;
+
+import com.lockerroom.resourceservice.request.model.entity.Request;
+
+import com.lockerroom.resourceservice.notice.dto.response.NoticeDetailResponse;
+
+import com.lockerroom.resourceservice.notice.dto.request.NoticeCreateRequest;
+
+import com.lockerroom.resourceservice.notice.mapper.NoticeMapper;
+
+import com.lockerroom.resourceservice.notice.repository.NoticeRepository;
+
+import com.lockerroom.resourceservice.notice.model.entity.Notice;
+
+import com.lockerroom.resourceservice.request.dto.response.AdminRequestListResponse;
+
+import com.lockerroom.resourceservice.request.dto.response.RequestDetailResponse;
+
+import com.lockerroom.resourceservice.request.dto.request.RequestProcessRequest;
+
+import com.lockerroom.resourceservice.request.mapper.RequestMapper;
+
+import com.lockerroom.resourceservice.request.repository.RequestRepository;
+
+import com.lockerroom.resourceservice.request.model.enums.RequestType;
+
+import com.lockerroom.resourceservice.request.model.enums.RequestStatus;
+
+import com.lockerroom.resourceservice.common.model.enums.Role;
+
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
+
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
+import com.lockerroom.resourceservice.infrastructure.kafka.KafkaProducerService;
+import com.lockerroom.resourceservice.infrastructure.utils.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

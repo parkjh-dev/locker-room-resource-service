@@ -1,17 +1,26 @@
-package com.lockerroom.resourceservice.controller;
+package com.lockerroom.resourceservice.post.controller;
+
+import com.lockerroom.resourceservice.post.dto.response.LikeResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.ReportResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.PostDetailResponse;
+
+import com.lockerroom.resourceservice.board.model.entity.Board;
+
+import com.lockerroom.resourceservice.common.dto.response.AuthorInfo;
 
 import tools.jackson.databind.ObjectMapper;
-import com.lockerroom.resourceservice.configuration.SecurityConfig;
-import com.lockerroom.resourceservice.configuration.WebMvcConfig;
-import com.lockerroom.resourceservice.dto.request.PostCreateRequest;
-import com.lockerroom.resourceservice.dto.request.PostUpdateRequest;
-import com.lockerroom.resourceservice.dto.request.ReportRequest;
-import com.lockerroom.resourceservice.dto.response.*;
-import com.lockerroom.resourceservice.model.entity.User;
-import com.lockerroom.resourceservice.model.enums.ReportStatus;
-import com.lockerroom.resourceservice.model.enums.Role;
-import com.lockerroom.resourceservice.repository.UserRepository;
-import com.lockerroom.resourceservice.service.PostService;
+import com.lockerroom.resourceservice.infrastructure.configuration.SecurityConfig;
+import com.lockerroom.resourceservice.infrastructure.configuration.WebMvcConfig;
+import com.lockerroom.resourceservice.post.dto.request.PostCreateRequest;
+import com.lockerroom.resourceservice.post.dto.request.PostUpdateRequest;
+import com.lockerroom.resourceservice.post.dto.request.ReportRequest;
+import com.lockerroom.resourceservice.user.model.entity.User;
+import com.lockerroom.resourceservice.post.model.enums.ReportStatus;
+import com.lockerroom.resourceservice.common.model.enums.Role;
+import com.lockerroom.resourceservice.user.repository.UserRepository;
+import com.lockerroom.resourceservice.post.service.PostService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

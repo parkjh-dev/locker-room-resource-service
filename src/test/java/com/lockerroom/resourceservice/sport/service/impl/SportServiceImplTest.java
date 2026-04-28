@@ -1,9 +1,9 @@
-package com.lockerroom.resourceservice.service.impl;
+package com.lockerroom.resourceservice.sport.service.impl;
 
-import com.lockerroom.resourceservice.dto.response.SportResponse;
-import com.lockerroom.resourceservice.mapper.PostMapper;
-import com.lockerroom.resourceservice.model.entity.Sport;
-import com.lockerroom.resourceservice.repository.SportRepository;
+import com.lockerroom.resourceservice.sport.dto.response.SportResponse;
+import com.lockerroom.resourceservice.sport.mapper.SportMapper;
+import com.lockerroom.resourceservice.sport.model.entity.Sport;
+import com.lockerroom.resourceservice.sport.repository.SportRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 class SportServiceImplTest {
 
     @Mock private SportRepository sportRepository;
-    @Mock private PostMapper postMapper;
+    @Mock private SportMapper sportMapper;
 
     @InjectMocks private SportServiceImpl sportService;
 
@@ -58,8 +58,8 @@ class SportServiceImplTest {
             SportResponse baseballResponse = new SportResponse(2L, "야구", "Baseball", true);
 
             when(sportRepository.findByIsActiveTrue()).thenReturn(List.of(soccer, baseball));
-            when(postMapper.toSportResponse(soccer)).thenReturn(soccerResponse);
-            when(postMapper.toSportResponse(baseball)).thenReturn(baseballResponse);
+            when(sportMapper.toSportResponse(soccer)).thenReturn(soccerResponse);
+            when(sportMapper.toSportResponse(baseball)).thenReturn(baseballResponse);
 
             List<SportResponse> result = sportService.getSports();
 

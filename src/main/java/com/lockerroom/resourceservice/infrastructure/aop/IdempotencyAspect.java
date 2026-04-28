@@ -1,9 +1,11 @@
-package com.lockerroom.resourceservice.aop;
+package com.lockerroom.resourceservice.infrastructure.aop;
+
+import com.lockerroom.resourceservice.infrastructure.aop.Idempotent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lockerroom.resourceservice.exceptions.CustomException;
-import com.lockerroom.resourceservice.exceptions.ErrorCode;
-import com.lockerroom.resourceservice.service.IdempotencyService;
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
+import com.lockerroom.resourceservice.common.service.IdempotencyService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.dto.request;
+package com.lockerroom.resourceservice.request.dto.request;
 
-import com.lockerroom.resourceservice.model.enums.RequestStatus;
+import com.lockerroom.resourceservice.request.model.enums.RequestStatus;
 import jakarta.validation.constraints.NotNull;
 
 public record RequestProcessRequest(

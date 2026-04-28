@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.post.repository;
 
-import com.lockerroom.resourceservice.model.entity.PostReport;
-import com.lockerroom.resourceservice.model.enums.ReportStatus;
+import com.lockerroom.resourceservice.post.model.entity.PostReport;
+import com.lockerroom.resourceservice.post.model.enums.ReportStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

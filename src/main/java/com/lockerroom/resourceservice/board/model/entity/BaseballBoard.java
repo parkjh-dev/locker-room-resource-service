@@ -1,6 +1,10 @@
-package com.lockerroom.resourceservice.model.entity;
+package com.lockerroom.resourceservice.board.model.entity;
 
-import com.lockerroom.resourceservice.model.enums.SportBoardType;
+import com.lockerroom.resourceservice.sport.model.entity.BaseballTeam;
+
+import com.lockerroom.resourceservice.common.model.entity.BaseEntity;
+
+import com.lockerroom.resourceservice.sport.model.enums.SportBoardType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

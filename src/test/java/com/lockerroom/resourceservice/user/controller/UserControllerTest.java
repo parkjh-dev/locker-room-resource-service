@@ -1,16 +1,29 @@
-package com.lockerroom.resourceservice.controller;
+package com.lockerroom.resourceservice.user.controller;
+
+import com.lockerroom.resourceservice.post.dto.response.UserLikeListResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.UserPostListResponse;
+
+import com.lockerroom.resourceservice.post.model.entity.Post;
+
+import com.lockerroom.resourceservice.comment.dto.response.UserCommentListResponse;
+
+import com.lockerroom.resourceservice.user.dto.response.UserResponse;
+
+import com.lockerroom.resourceservice.board.model.entity.Board;
+
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
 
 import tools.jackson.databind.ObjectMapper;
-import com.lockerroom.resourceservice.configuration.SecurityConfig;
-import com.lockerroom.resourceservice.configuration.WebMvcConfig;
-import com.lockerroom.resourceservice.dto.request.UserUpdateRequest;
-import com.lockerroom.resourceservice.dto.request.WithdrawRequest;
-import com.lockerroom.resourceservice.dto.response.*;
-import com.lockerroom.resourceservice.model.entity.User;
-import com.lockerroom.resourceservice.model.enums.OAuthProvider;
-import com.lockerroom.resourceservice.model.enums.Role;
-import com.lockerroom.resourceservice.repository.UserRepository;
-import com.lockerroom.resourceservice.service.UserService;
+import com.lockerroom.resourceservice.infrastructure.configuration.SecurityConfig;
+import com.lockerroom.resourceservice.infrastructure.configuration.WebMvcConfig;
+import com.lockerroom.resourceservice.user.dto.request.UserUpdateRequest;
+import com.lockerroom.resourceservice.user.dto.request.WithdrawRequest;
+import com.lockerroom.resourceservice.user.model.entity.User;
+import com.lockerroom.resourceservice.user.model.enums.OAuthProvider;
+import com.lockerroom.resourceservice.common.model.enums.Role;
+import com.lockerroom.resourceservice.user.repository.UserRepository;
+import com.lockerroom.resourceservice.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

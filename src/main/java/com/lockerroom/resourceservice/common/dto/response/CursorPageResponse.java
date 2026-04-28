@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.common.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;

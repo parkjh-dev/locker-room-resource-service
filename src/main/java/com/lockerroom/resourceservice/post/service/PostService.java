@@ -1,12 +1,12 @@
-package com.lockerroom.resourceservice.service;
+package com.lockerroom.resourceservice.post.service;
 
-import com.lockerroom.resourceservice.dto.request.PostCreateRequest;
-import com.lockerroom.resourceservice.dto.request.PostUpdateRequest;
-import com.lockerroom.resourceservice.dto.request.ReportRequest;
-import com.lockerroom.resourceservice.dto.response.LikeResponse;
-import com.lockerroom.resourceservice.dto.response.PostDetailResponse;
-import com.lockerroom.resourceservice.dto.response.PostListResponse;
-import com.lockerroom.resourceservice.dto.response.ReportResponse;
+import com.lockerroom.resourceservice.post.dto.request.PostCreateRequest;
+import com.lockerroom.resourceservice.post.dto.request.PostUpdateRequest;
+import com.lockerroom.resourceservice.post.dto.request.ReportRequest;
+import com.lockerroom.resourceservice.post.dto.response.LikeResponse;
+import com.lockerroom.resourceservice.post.dto.response.PostDetailResponse;
+import com.lockerroom.resourceservice.post.dto.response.PostListResponse;
+import com.lockerroom.resourceservice.post.dto.response.ReportResponse;
 
 import java.util.List;
 

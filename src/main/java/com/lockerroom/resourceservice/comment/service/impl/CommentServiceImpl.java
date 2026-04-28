@@ -1,21 +1,43 @@
-package com.lockerroom.resourceservice.service.impl;
+package com.lockerroom.resourceservice.comment.service.impl;
 
-import com.lockerroom.resourceservice.dto.request.CommentCreateRequest;
-import com.lockerroom.resourceservice.dto.request.CommentUpdateRequest;
-import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
-import com.lockerroom.resourceservice.dto.response.CommentResponse;
-import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
-import com.lockerroom.resourceservice.exceptions.CustomException;
-import com.lockerroom.resourceservice.exceptions.ErrorCode;
-import com.lockerroom.resourceservice.kafka.KafkaProducerService;
-import com.lockerroom.resourceservice.kafka.event.NotificationEvent;
-import com.lockerroom.resourceservice.mapper.CommentMapper;
-import com.lockerroom.resourceservice.model.entity.*;
-import com.lockerroom.resourceservice.model.enums.NotificationType;
-import com.lockerroom.resourceservice.model.enums.Role;
-import com.lockerroom.resourceservice.repository.*;
-import com.lockerroom.resourceservice.service.CommentService;
-import com.lockerroom.resourceservice.utils.Constants;
+import com.lockerroom.resourceservice.post.repository.PostRepository;
+
+import com.lockerroom.resourceservice.post.model.entity.Post;
+
+import com.lockerroom.resourceservice.comment.repository.CommentRepository;
+
+import com.lockerroom.resourceservice.comment.model.entity.Comment;
+
+import com.lockerroom.resourceservice.user.repository.UserTeamRepository;
+
+import com.lockerroom.resourceservice.user.repository.UserRepository;
+
+import com.lockerroom.resourceservice.user.model.entity.UserTeam;
+
+import com.lockerroom.resourceservice.user.model.entity.User;
+
+import com.lockerroom.resourceservice.sport.repository.FootballTeamRepository;
+
+import com.lockerroom.resourceservice.sport.repository.BaseballTeamRepository;
+
+import com.lockerroom.resourceservice.sport.model.entity.FootballTeam;
+
+import com.lockerroom.resourceservice.sport.model.entity.BaseballTeam;
+
+import com.lockerroom.resourceservice.comment.dto.request.CommentCreateRequest;
+import com.lockerroom.resourceservice.comment.dto.request.CommentUpdateRequest;
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+import com.lockerroom.resourceservice.comment.dto.response.CommentResponse;
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
+import com.lockerroom.resourceservice.infrastructure.kafka.KafkaProducerService;
+import com.lockerroom.resourceservice.notification.event.NotificationEvent;
+import com.lockerroom.resourceservice.comment.mapper.CommentMapper;
+import com.lockerroom.resourceservice.notification.model.enums.NotificationType;
+import com.lockerroom.resourceservice.common.model.enums.Role;
+import com.lockerroom.resourceservice.comment.service.CommentService;
+import com.lockerroom.resourceservice.infrastructure.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;

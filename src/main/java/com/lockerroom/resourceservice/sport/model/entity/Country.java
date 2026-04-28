@@ -1,4 +1,6 @@
-package com.lockerroom.resourceservice.model.entity;
+package com.lockerroom.resourceservice.sport.model.entity;
+
+import com.lockerroom.resourceservice.sport.model.entity.Continent;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

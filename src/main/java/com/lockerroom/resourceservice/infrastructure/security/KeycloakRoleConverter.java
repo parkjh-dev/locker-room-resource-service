@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.security;
+package com.lockerroom.resourceservice.infrastructure.security;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;

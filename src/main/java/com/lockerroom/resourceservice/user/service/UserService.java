@@ -1,9 +1,18 @@
-package com.lockerroom.resourceservice.service;
+package com.lockerroom.resourceservice.user.service;
 
-import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
-import com.lockerroom.resourceservice.dto.request.UserUpdateRequest;
-import com.lockerroom.resourceservice.dto.request.WithdrawRequest;
-import com.lockerroom.resourceservice.dto.response.*;
+import com.lockerroom.resourceservice.post.dto.response.UserLikeListResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.UserPostListResponse;
+
+import com.lockerroom.resourceservice.comment.dto.response.UserCommentListResponse;
+
+import com.lockerroom.resourceservice.user.dto.response.UserResponse;
+
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
+
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+import com.lockerroom.resourceservice.user.dto.request.UserUpdateRequest;
+import com.lockerroom.resourceservice.user.dto.request.WithdrawRequest;
 
 public interface UserService {
 

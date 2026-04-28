@@ -1,7 +1,13 @@
-package com.lockerroom.resourceservice.exceptions;
+package com.lockerroom.resourceservice.infrastructure.exceptions;
 
-import com.lockerroom.resourceservice.dto.response.ApiResponse;
-import com.lockerroom.resourceservice.utils.MessageUtils;
+import com.lockerroom.resourceservice.infrastructure.exceptions.FieldError;
+
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
+
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+
+import com.lockerroom.resourceservice.common.dto.response.ApiResponse;
+import com.lockerroom.resourceservice.infrastructure.utils.MessageUtils;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

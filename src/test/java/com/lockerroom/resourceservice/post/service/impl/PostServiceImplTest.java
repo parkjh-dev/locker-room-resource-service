@@ -1,22 +1,49 @@
-package com.lockerroom.resourceservice.service.impl;
+package com.lockerroom.resourceservice.post.service.impl;
 
-import com.lockerroom.resourceservice.dto.request.PostCreateRequest;
-import com.lockerroom.resourceservice.dto.request.PostUpdateRequest;
-import com.lockerroom.resourceservice.dto.request.ReportRequest;
-import com.lockerroom.resourceservice.dto.response.*;
-import com.lockerroom.resourceservice.exceptions.CustomException;
-import com.lockerroom.resourceservice.exceptions.ErrorCode;
-import com.lockerroom.resourceservice.kafka.KafkaProducerService;
-import com.lockerroom.resourceservice.mapper.FileMapper;
-import com.lockerroom.resourceservice.mapper.PostMapper;
-import com.lockerroom.resourceservice.model.entity.*;
-import com.lockerroom.resourceservice.model.enums.BoardType;
-import com.lockerroom.resourceservice.model.enums.ReportStatus;
-import com.lockerroom.resourceservice.model.enums.Role;
-import com.lockerroom.resourceservice.model.enums.TargetType;
-import com.lockerroom.resourceservice.repository.*;
-import com.lockerroom.resourceservice.service.BoardService;
-import com.lockerroom.resourceservice.service.FileService;
+import com.lockerroom.resourceservice.post.dto.response.LikeResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.ReportResponse;
+
+import com.lockerroom.resourceservice.post.dto.response.PostDetailResponse;
+
+import com.lockerroom.resourceservice.post.repository.PostReportRepository;
+
+import com.lockerroom.resourceservice.post.repository.PostLikeRepository;
+
+import com.lockerroom.resourceservice.post.repository.PostRepository;
+
+import com.lockerroom.resourceservice.post.model.entity.PostReport;
+
+import com.lockerroom.resourceservice.post.model.entity.PostLike;
+
+import com.lockerroom.resourceservice.post.model.entity.Post;
+
+import com.lockerroom.resourceservice.user.repository.UserTeamRepository;
+
+import com.lockerroom.resourceservice.user.repository.UserRepository;
+
+import com.lockerroom.resourceservice.user.model.entity.User;
+
+import com.lockerroom.resourceservice.board.model.entity.Board;
+
+import com.lockerroom.resourceservice.file.repository.FileRepository;
+
+import com.lockerroom.resourceservice.common.dto.response.AuthorInfo;
+
+import com.lockerroom.resourceservice.post.dto.request.PostCreateRequest;
+import com.lockerroom.resourceservice.post.dto.request.PostUpdateRequest;
+import com.lockerroom.resourceservice.post.dto.request.ReportRequest;
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
+import com.lockerroom.resourceservice.infrastructure.kafka.KafkaProducerService;
+import com.lockerroom.resourceservice.file.mapper.FileMapper;
+import com.lockerroom.resourceservice.post.mapper.PostMapper;
+import com.lockerroom.resourceservice.board.model.enums.BoardType;
+import com.lockerroom.resourceservice.post.model.enums.ReportStatus;
+import com.lockerroom.resourceservice.common.model.enums.Role;
+import com.lockerroom.resourceservice.file.model.enums.TargetType;
+import com.lockerroom.resourceservice.board.service.BoardService;
+import com.lockerroom.resourceservice.file.service.FileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

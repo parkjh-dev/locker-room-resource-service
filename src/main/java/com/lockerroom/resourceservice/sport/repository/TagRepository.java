@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.sport.repository;
 
-import com.lockerroom.resourceservice.model.entity.Tag;
-import com.lockerroom.resourceservice.model.enums.TagScope;
+import com.lockerroom.resourceservice.sport.model.entity.Tag;
+import com.lockerroom.resourceservice.sport.model.enums.TagScope;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

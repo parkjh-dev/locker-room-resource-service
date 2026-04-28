@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.inquiry.dto.response;
 
 import java.time.LocalDateTime;
 

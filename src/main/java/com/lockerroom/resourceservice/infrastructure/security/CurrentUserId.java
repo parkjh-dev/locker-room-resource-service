@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.security;
+package com.lockerroom.resourceservice.infrastructure.security;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.dto.request;
+package com.lockerroom.resourceservice.admin.dto.request;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;

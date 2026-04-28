@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.dto.request;
+package com.lockerroom.resourceservice.request.dto.request;
 
-import com.lockerroom.resourceservice.model.enums.RequestType;
+import com.lockerroom.resourceservice.request.model.enums.RequestType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

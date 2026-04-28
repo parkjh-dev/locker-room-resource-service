@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.admin.dto.response;
 
 public record AdminDashboardResponse(
         long pendingReportCount,

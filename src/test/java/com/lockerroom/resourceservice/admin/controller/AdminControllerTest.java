@@ -1,20 +1,31 @@
-package com.lockerroom.resourceservice.controller;
+package com.lockerroom.resourceservice.admin.controller;
+
+import com.lockerroom.resourceservice.post.dto.response.ReportListResponse;
+
+import com.lockerroom.resourceservice.post.model.entity.Post;
+
+import com.lockerroom.resourceservice.user.dto.response.AdminUserListResponse;
+
+import com.lockerroom.resourceservice.notice.dto.response.NoticeDetailResponse;
+
+import com.lockerroom.resourceservice.notice.model.entity.Notice;
+
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
 
 import tools.jackson.databind.ObjectMapper;
-import com.lockerroom.resourceservice.configuration.SecurityConfig;
-import com.lockerroom.resourceservice.configuration.WebMvcConfig;
-import com.lockerroom.resourceservice.dto.request.NoticeCreateRequest;
-import com.lockerroom.resourceservice.dto.request.ReportProcessRequest;
-import com.lockerroom.resourceservice.model.enums.ReportAction;
-import com.lockerroom.resourceservice.dto.request.SuspendRequest;
-import com.lockerroom.resourceservice.dto.response.*;
-import com.lockerroom.resourceservice.model.entity.User;
-import com.lockerroom.resourceservice.model.enums.OAuthProvider;
-import com.lockerroom.resourceservice.model.enums.ReportStatus;
-import com.lockerroom.resourceservice.model.enums.Role;
-import com.lockerroom.resourceservice.repository.UserRepository;
-import com.lockerroom.resourceservice.service.AdminService;
-import com.lockerroom.resourceservice.service.NoticeService;
+import com.lockerroom.resourceservice.infrastructure.configuration.SecurityConfig;
+import com.lockerroom.resourceservice.infrastructure.configuration.WebMvcConfig;
+import com.lockerroom.resourceservice.notice.dto.request.NoticeCreateRequest;
+import com.lockerroom.resourceservice.admin.dto.request.ReportProcessRequest;
+import com.lockerroom.resourceservice.post.model.enums.ReportAction;
+import com.lockerroom.resourceservice.admin.dto.request.SuspendRequest;
+import com.lockerroom.resourceservice.user.model.entity.User;
+import com.lockerroom.resourceservice.user.model.enums.OAuthProvider;
+import com.lockerroom.resourceservice.post.model.enums.ReportStatus;
+import com.lockerroom.resourceservice.common.model.enums.Role;
+import com.lockerroom.resourceservice.user.repository.UserRepository;
+import com.lockerroom.resourceservice.admin.service.AdminService;
+import com.lockerroom.resourceservice.notice.service.NoticeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

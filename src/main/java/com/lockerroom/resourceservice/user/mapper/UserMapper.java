@@ -1,10 +1,10 @@
-package com.lockerroom.resourceservice.mapper;
+package com.lockerroom.resourceservice.user.mapper;
 
-import com.lockerroom.resourceservice.dto.response.AdminUserListResponse;
-import com.lockerroom.resourceservice.dto.response.UserResponse;
-import com.lockerroom.resourceservice.dto.response.UserTeamInfo;
-import com.lockerroom.resourceservice.model.entity.User;
-import com.lockerroom.resourceservice.model.entity.UserTeam;
+import com.lockerroom.resourceservice.user.dto.response.AdminUserListResponse;
+import com.lockerroom.resourceservice.user.dto.response.UserResponse;
+import com.lockerroom.resourceservice.user.dto.response.UserTeamInfo;
+import com.lockerroom.resourceservice.user.model.entity.User;
+import com.lockerroom.resourceservice.user.model.entity.UserTeam;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.dto.request;
+package com.lockerroom.resourceservice.comment.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

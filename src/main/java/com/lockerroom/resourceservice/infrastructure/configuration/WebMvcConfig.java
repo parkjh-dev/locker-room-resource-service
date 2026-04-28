@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.configuration;
+package com.lockerroom.resourceservice.infrastructure.configuration;
 
-import com.lockerroom.resourceservice.repository.UserRepository;
-import com.lockerroom.resourceservice.security.CurrentUserIdArgumentResolver;
+import com.lockerroom.resourceservice.user.repository.UserRepository;
+import com.lockerroom.resourceservice.infrastructure.security.CurrentUserIdArgumentResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

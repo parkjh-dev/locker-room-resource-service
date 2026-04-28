@@ -1,9 +1,9 @@
-package com.lockerroom.resourceservice.mapper;
+package com.lockerroom.resourceservice.request.mapper;
 
-import com.lockerroom.resourceservice.dto.response.AdminRequestListResponse;
-import com.lockerroom.resourceservice.dto.response.RequestDetailResponse;
-import com.lockerroom.resourceservice.dto.response.RequestListResponse;
-import com.lockerroom.resourceservice.model.entity.Request;
+import com.lockerroom.resourceservice.request.dto.response.AdminRequestListResponse;
+import com.lockerroom.resourceservice.request.dto.response.RequestDetailResponse;
+import com.lockerroom.resourceservice.request.dto.response.RequestListResponse;
+import com.lockerroom.resourceservice.request.model.entity.Request;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

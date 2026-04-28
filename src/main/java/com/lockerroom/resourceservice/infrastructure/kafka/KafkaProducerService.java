@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.kafka;
+package com.lockerroom.resourceservice.infrastructure.kafka;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

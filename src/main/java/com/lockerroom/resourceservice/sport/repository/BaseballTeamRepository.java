@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.sport.repository;
 
-import com.lockerroom.resourceservice.model.entity.BaseballTeam;
+import com.lockerroom.resourceservice.sport.model.entity.BaseballTeam;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -1,8 +1,8 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.request.repository;
 
-import com.lockerroom.resourceservice.model.entity.Request;
-import com.lockerroom.resourceservice.model.enums.RequestStatus;
-import com.lockerroom.resourceservice.model.enums.RequestType;
+import com.lockerroom.resourceservice.request.model.entity.Request;
+import com.lockerroom.resourceservice.request.model.enums.RequestStatus;
+import com.lockerroom.resourceservice.request.model.enums.RequestType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

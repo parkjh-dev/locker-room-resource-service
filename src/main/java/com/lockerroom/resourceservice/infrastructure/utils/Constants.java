@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.utils;
+package com.lockerroom.resourceservice.infrastructure.utils;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

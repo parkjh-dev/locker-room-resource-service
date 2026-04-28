@@ -1,11 +1,13 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.user.repository;
 
-import com.lockerroom.resourceservice.model.entity.User;
-import com.lockerroom.resourceservice.model.enums.Role;
+import com.lockerroom.resourceservice.user.repository.UserRepository;
+
+import com.lockerroom.resourceservice.user.model.entity.User;
+import com.lockerroom.resourceservice.common.model.enums.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import com.lockerroom.resourceservice.configuration.JpaConfig;
+import com.lockerroom.resourceservice.infrastructure.configuration.JpaConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;

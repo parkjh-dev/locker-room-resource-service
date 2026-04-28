@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.configuration;
+package com.lockerroom.resourceservice.infrastructure.configuration;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

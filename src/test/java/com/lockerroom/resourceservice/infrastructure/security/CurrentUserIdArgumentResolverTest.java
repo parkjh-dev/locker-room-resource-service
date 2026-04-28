@@ -1,10 +1,14 @@
-package com.lockerroom.resourceservice.security;
+package com.lockerroom.resourceservice.infrastructure.security;
 
-import com.lockerroom.resourceservice.exceptions.CustomException;
-import com.lockerroom.resourceservice.exceptions.ErrorCode;
-import com.lockerroom.resourceservice.model.entity.User;
-import com.lockerroom.resourceservice.model.enums.Role;
-import com.lockerroom.resourceservice.repository.UserRepository;
+import com.lockerroom.resourceservice.infrastructure.security.CurrentUserIdArgumentResolver;
+
+import com.lockerroom.resourceservice.infrastructure.security.CurrentUserId;
+
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
+import com.lockerroom.resourceservice.user.model.entity.User;
+import com.lockerroom.resourceservice.common.model.enums.Role;
+import com.lockerroom.resourceservice.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

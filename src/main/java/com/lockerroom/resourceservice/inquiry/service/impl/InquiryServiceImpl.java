@@ -1,23 +1,32 @@
-package com.lockerroom.resourceservice.service.impl;
+package com.lockerroom.resourceservice.inquiry.service.impl;
 
-import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
-import com.lockerroom.resourceservice.dto.request.InquiryCreateRequest;
-import com.lockerroom.resourceservice.dto.response.*;
-import com.lockerroom.resourceservice.exceptions.CustomException;
-import com.lockerroom.resourceservice.exceptions.ErrorCode;
-import com.lockerroom.resourceservice.mapper.FileMapper;
-import com.lockerroom.resourceservice.mapper.InquiryMapper;
-import com.lockerroom.resourceservice.model.entity.FileEntity;
-import com.lockerroom.resourceservice.model.entity.Inquiry;
-import com.lockerroom.resourceservice.model.entity.InquiryReply;
-import com.lockerroom.resourceservice.model.entity.User;
-import com.lockerroom.resourceservice.model.enums.TargetType;
-import com.lockerroom.resourceservice.repository.FileRepository;
-import com.lockerroom.resourceservice.repository.InquiryReplyRepository;
-import com.lockerroom.resourceservice.repository.InquiryRepository;
-import com.lockerroom.resourceservice.repository.UserRepository;
-import com.lockerroom.resourceservice.service.FileService;
-import com.lockerroom.resourceservice.service.InquiryService;
+import com.lockerroom.resourceservice.inquiry.dto.response.InquiryReplyResponse;
+
+import com.lockerroom.resourceservice.inquiry.dto.response.InquiryListResponse;
+
+import com.lockerroom.resourceservice.inquiry.dto.response.InquiryDetailResponse;
+
+import com.lockerroom.resourceservice.file.dto.response.FileResponse;
+
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
+
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+import com.lockerroom.resourceservice.inquiry.dto.request.InquiryCreateRequest;
+import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
+import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
+import com.lockerroom.resourceservice.file.mapper.FileMapper;
+import com.lockerroom.resourceservice.inquiry.mapper.InquiryMapper;
+import com.lockerroom.resourceservice.file.model.entity.FileEntity;
+import com.lockerroom.resourceservice.inquiry.model.entity.Inquiry;
+import com.lockerroom.resourceservice.inquiry.model.entity.InquiryReply;
+import com.lockerroom.resourceservice.user.model.entity.User;
+import com.lockerroom.resourceservice.file.model.enums.TargetType;
+import com.lockerroom.resourceservice.file.repository.FileRepository;
+import com.lockerroom.resourceservice.inquiry.repository.InquiryReplyRepository;
+import com.lockerroom.resourceservice.inquiry.repository.InquiryRepository;
+import com.lockerroom.resourceservice.user.repository.UserRepository;
+import com.lockerroom.resourceservice.file.service.FileService;
+import com.lockerroom.resourceservice.inquiry.service.InquiryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

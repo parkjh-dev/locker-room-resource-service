@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.dto.response;
+package com.lockerroom.resourceservice.file.dto.response;
 
 public record FileResponse(
         Long id,

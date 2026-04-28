@@ -1,11 +1,11 @@
-package com.lockerroom.resourceservice.service;
+package com.lockerroom.resourceservice.board.service;
 
-import com.lockerroom.resourceservice.dto.request.CursorPageRequest;
-import com.lockerroom.resourceservice.dto.response.BoardResponse;
-import com.lockerroom.resourceservice.dto.response.CursorPageResponse;
-import com.lockerroom.resourceservice.dto.response.PostListResponse;
-import com.lockerroom.resourceservice.model.entity.Board;
-import com.lockerroom.resourceservice.model.enums.SearchType;
+import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+import com.lockerroom.resourceservice.board.dto.response.BoardResponse;
+import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
+import com.lockerroom.resourceservice.post.dto.response.PostListResponse;
+import com.lockerroom.resourceservice.board.model.entity.Board;
+import com.lockerroom.resourceservice.board.model.enums.SearchType;
 
 import java.util.List;
 

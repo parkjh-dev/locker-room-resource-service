@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.model.enums;
+package com.lockerroom.resourceservice.board.model.enums;
 
 public enum BoardType {
     COMMON, QNA, NOTICE

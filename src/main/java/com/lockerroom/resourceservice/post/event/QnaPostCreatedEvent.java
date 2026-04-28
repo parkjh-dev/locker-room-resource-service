@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.kafka.event;
+package com.lockerroom.resourceservice.post.event;
 
 import java.time.LocalDateTime;
 

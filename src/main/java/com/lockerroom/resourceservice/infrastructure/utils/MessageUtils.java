@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.utils;
+package com.lockerroom.resourceservice.infrastructure.utils;
 
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;

@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.dto.request;
+package com.lockerroom.resourceservice.common.dto.request;
 
-import com.lockerroom.resourceservice.utils.Constants;
+import com.lockerroom.resourceservice.infrastructure.utils.Constants;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;

@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.post.repository;
 
-import com.lockerroom.resourceservice.model.entity.FootballPostTagMapping;
+import com.lockerroom.resourceservice.post.model.entity.FootballPostTagMapping;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

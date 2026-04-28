@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.board.repository;
 
-import com.lockerroom.resourceservice.model.entity.Board;
-import com.lockerroom.resourceservice.model.enums.BoardType;
+import com.lockerroom.resourceservice.board.model.entity.Board;
+import com.lockerroom.resourceservice.board.model.enums.BoardType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

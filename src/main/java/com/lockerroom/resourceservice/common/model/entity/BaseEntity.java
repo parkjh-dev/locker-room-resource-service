@@ -1,4 +1,4 @@
-package com.lockerroom.resourceservice.model.entity;
+package com.lockerroom.resourceservice.common.model.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

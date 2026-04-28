@@ -1,6 +1,6 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.user.repository;
 
-import com.lockerroom.resourceservice.model.entity.UserSuspension;
+import com.lockerroom.resourceservice.user.model.entity.UserSuspension;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

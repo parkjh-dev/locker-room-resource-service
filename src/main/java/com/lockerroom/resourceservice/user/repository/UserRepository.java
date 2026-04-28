@@ -1,7 +1,7 @@
-package com.lockerroom.resourceservice.repository;
+package com.lockerroom.resourceservice.user.repository;
 
-import com.lockerroom.resourceservice.model.entity.User;
-import com.lockerroom.resourceservice.model.enums.Role;
+import com.lockerroom.resourceservice.user.model.entity.User;
+import com.lockerroom.resourceservice.common.model.enums.Role;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
