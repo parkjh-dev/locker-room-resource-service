@@ -15,33 +15,54 @@ Locker Room 스포츠 커뮤니티 플랫폼의 리소스 관리 마이크로서
 
 ## Project Structure
 
+**Package-by-Feature** 구조. 도메인 단위로 controller/service/repository/model/mapper/dto를 한 폴더에 묶어 응집도를 높이고 향후 모듈러 모놀리스/DDD 진화를 쉽게 합니다.
+
 ```
 src/main/java/com/lockerroom/resourceservice/
-├── aop/               # IdempotencyAspect, @Idempotent
-├── configuration/     # Security, JPA, Redis, S3, Swagger, CORS, MessageSource
-├── controller/        # REST API 컨트롤러
-├── dto/
-│   ├── request/       # 요청 DTO (Jakarta Validation)
-│   └── response/      # 응답 DTO (Java Record)
-├── exceptions/        # CustomException, ErrorCode, GlobalExceptionHandler
-├── kafka/             # KafkaProducerService, Event 클래스
-├── mapper/            # MapStruct Mapper 인터페이스
-├── model/
-│   ├── entity/        # JPA Entity (sport별 분리: Football*/Baseball*)
-│   └── enums/         # 도메인 Enum
-├── repository/        # Spring Data JPA Repository
-├── security/          # KeycloakRoleConverter, @CurrentUserId Resolver
-├── service/           # Service 인터페이스 + impl/
-└── utils/             # Constants, MessageUtils
+├── common/                  # 전 도메인 공유 (응답 래퍼, 페이징, BaseEntity, Role)
+├── infrastructure/          # 기술 인프라 (도메인 비특정)
+│   ├── aop/                 #   @Idempotent, @RateLimit
+│   ├── configuration/       #   Security, JPA, Redis, S3, Swagger, MessageSource
+│   ├── controller/          #   InfoController (운영 정보)
+│   ├── exceptions/          #   CustomException, ErrorCode, GlobalExceptionHandler
+│   ├── kafka/               #   KafkaProducerService
+│   ├── security/            #   KeycloakRoleConverter, @CurrentUserId
+│   └── utils/               #   Constants, MessageUtils
+│
+├── user/                    # 사용자 (User, UserTeam, UserSuspension, UserWithdrawal)
+├── post/                    # 게시글 + 좋아요 + 신고 (sport별 분리)
+├── comment/                 # 댓글 (depth 1까지)
+├── board/                   # 게시판 (sport별 분리: Football/Baseball)
+├── sport/                   # 스포츠/리그/팀/태그/국가
+├── file/                    # 파일 업로드 (S3 + TargetType 추상화)
+├── inquiry/                 # 1:1 문의 + 답변
+├── request/                 # 신규 팀/리그 등록 요청
+├── notice/                  # 공지사항
+├── notification/            # 알림 (Kafka 이벤트 수신)
+├── admin/                   # 관리자 cross-cutting (사용자/신고/공지/문의/요청)
+└── ResourceServiceApplication.java
 ```
 
-> 일부 도메인(Post/Board/Team/League)은 sport별 테이블로 분리되어 있어 `Football*`, `Baseball*` 접두사 엔티티가 함께 존재합니다.
+각 도메인 폴더는 다음 표준 구조를 따릅니다:
+
+```
+{domain}/
+├── controller/              # REST API 엔드포인트
+├── service/{,impl/}         # 인터페이스 + 구현체
+├── repository/              # Spring Data JPA Repository
+├── model/{entity,enums}/    # JPA Entity, 도메인 Enum
+├── mapper/                  # MapStruct (단일 도메인 한정)
+├── event/                   # Kafka 이벤트 (해당 도메인이 발행하는 경우)
+└── dto/{request,response}/  # 요청/응답 DTO
+```
+
+> **Sport-specific 분리**: Post/Board/Team/League는 종목별 테이블로 분리되어 있어 `Football*`, `Baseball*` 접두사 엔티티가 함께 존재합니다.
 
 ## API Endpoints
 
 | Domain | Endpoints | Base Path |
 |--------|:---------:|-----------|
-| Info | 2 | `/api` |
+| Info | 2 | `/api/v1/info` |
 | Users | 6 | `/api/v1/users` |
 | Sports | 1 | `/api/v1/sports` |
 | Boards | 2 | `/api/v1/boards` |
@@ -54,6 +75,8 @@ src/main/java/com/lockerroom/resourceservice/
 | Files | 2 | `/api/v1/files` |
 | Admin | 14 | `/api/v1/admin` |
 | **Total** | **51** | |
+
+전 엔드포인트는 한국어 `@Tag` / `@Operation` / `@ApiResponse` 어노테이션과 DTO 필드 단위 `@Schema` 메타데이터를 가집니다. Swagger UI에서 의미·예시·필수 여부·에러 코드를 모두 확인할 수 있습니다.
 
 ## Getting Started
 
@@ -89,6 +112,7 @@ src/main/java/com/lockerroom/resourceservice/
 - Application: `http://localhost:8082`
 - Swagger UI: `http://localhost:8082/swagger-ui.html`
 - OpenAPI JSON: `http://localhost:8082/api-docs`
+- 운영 정보: `http://localhost:8082/api/v1/info/{name,version}`
 
 ### Run Tests
 
@@ -128,10 +152,15 @@ OAuth2 Resource Server를 사용해 **Keycloak JWT를 직접 검증**합니다 (
 |------|------|
 | `GET /api/v1/notices/**`, `/api/v1/sports/**`, `/api/v1/boards/**` | 인증 불필요 |
 | `GET /api/v1/posts/{postId}`, `/api/v1/posts/popular`, `/api/v1/posts/{postId}/comments` | 인증 불필요 |
+| `GET /api/v1/info/**` | 인증 불필요 |
+| `/swagger-ui/**`, `/api-docs/**`, `/actuator/health`, `/actuator/info` | 인증 불필요 |
 | `/api/v1/admin/**`, `/actuator/**` (health/info 제외) | `ROLE_ADMIN` |
-| `/swagger-ui/**`, `/api-docs/**`, `/api/name`, `/api/version`, `/actuator/health`, `/actuator/info` | 인증 불필요 |
 | 그 외 | 인증 필요 |
+
+Swagger 측면에서는 `SwaggerConfig`가 모든 엔드포인트에 `bearerAuth` 보안 스키마를 기본 적용하며, 익명 허용 엔드포인트는 컨트롤러에 `@SecurityRequirements`(빈 배열)로 자물쇠를 제거합니다.
 
 ## Idempotency
 
 쓰기 성격의 일부 엔드포인트는 `@Idempotent` AOP로 멱등성을 강제합니다. 클라이언트는 `Idempotency-Key` 헤더(최대 128자)를 보내야 하며, 동일 키 재전송 시 캐싱된 응답을 그대로 반환합니다. Redis가 미가용이면 인메모리 fallback을 사용합니다.
+
+적용 엔드포인트 (예): `POST /api/v1/posts`, `POST /api/v1/posts/{postId}/like`, `POST /api/v1/posts/{postId}/report`, `POST /api/v1/posts/{postId}/comments`, `POST /api/v1/comments/{commentId}/replies`, `POST /api/v1/inquiries`, `POST /api/v1/requests`.
