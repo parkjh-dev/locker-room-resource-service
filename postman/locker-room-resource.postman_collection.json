@@ -823,7 +823,7 @@
 				{
 					"name": "알림 읽음 처리",
 					"request": {
-						"method": "PUT",
+						"method": "PATCH",
 						"header": [
 							{
 								"key": "X-User-Id",
@@ -840,7 +840,7 @@
 				{
 					"name": "전체 읽음 처리",
 					"request": {
-						"method": "PUT",
+						"method": "PATCH",
 						"header": [
 							{
 								"key": "X-User-Id",
