@@ -42,16 +42,28 @@ import com.lockerroom.resourceservice.file.repository.FileRepository;
 
 import com.lockerroom.resourceservice.file.model.entity.FileEntity;
 
+import com.lockerroom.resourceservice.post.dto.request.PollPayload;
+import com.lockerroom.resourceservice.post.dto.request.PollVoteRequest;
 import com.lockerroom.resourceservice.post.dto.request.PostCreateRequest;
 import com.lockerroom.resourceservice.post.dto.request.PostUpdateRequest;
 import com.lockerroom.resourceservice.post.dto.request.ReportRequest;
+import com.lockerroom.resourceservice.post.dto.response.PollResponse;
+import com.lockerroom.resourceservice.post.model.entity.Poll;
+import com.lockerroom.resourceservice.post.model.entity.PollOption;
+import com.lockerroom.resourceservice.post.model.entity.PollVote;
+import com.lockerroom.resourceservice.post.model.enums.PostCategory;
+import com.lockerroom.resourceservice.post.repository.PollOptionRepository;
+import com.lockerroom.resourceservice.post.repository.PollRepository;
+import com.lockerroom.resourceservice.post.repository.PollVoteRepository;
 import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
 import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
 import com.lockerroom.resourceservice.infrastructure.kafka.KafkaProducerService;
 import com.lockerroom.resourceservice.post.event.QnaPostCreatedEvent;
 import com.lockerroom.resourceservice.file.mapper.FileMapper;
+import com.lockerroom.resourceservice.post.mapper.PollMapper;
 import com.lockerroom.resourceservice.post.mapper.PostMapper;
 import com.lockerroom.resourceservice.board.model.enums.BoardType;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.lockerroom.resourceservice.common.model.enums.Role;
 import com.lockerroom.resourceservice.file.model.enums.TargetType;
 import com.lockerroom.resourceservice.board.service.BoardService;
@@ -74,6 +86,9 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final PostLikeRepository postLikeRepository;
     private final PostReportRepository postReportRepository;
+    private final PollRepository pollRepository;
+    private final PollOptionRepository pollOptionRepository;
+    private final PollVoteRepository pollVoteRepository;
     private final UserRepository userRepository;
     private final UserTeamRepository userTeamRepository;
     private final FootballTeamRepository footballTeamRepository;
@@ -83,13 +98,16 @@ public class PostServiceImpl implements PostService {
     private final FileService fileService;
     private final KafkaProducerService kafkaProducerService;
     private final PostMapper postMapper;
+    private final PollMapper pollMapper;
     private final FileMapper fileMapper;
 
     @Override
     public List<PostListResponse> getPopularPosts(int size, Integer days) {
         LocalDateTime since = (days != null) ? LocalDateTime.now().minusDays(days) : null;
         List<Post> posts = postRepository.findPopularPosts(since, PageRequest.of(0, size));
-        return posts.stream().map(postMapper::toListResponse).toList();
+        return posts.stream()
+                .map(p -> postMapper.toListResponse(p, pollRepository.existsByPostId(p.getId())))
+                .toList();
     }
 
     @Override
@@ -98,16 +116,27 @@ public class PostServiceImpl implements PostService {
         User user = findUserById(userId);
         Board board = boardService.validateBoardAccess(request.boardId(), userId);
 
+        // 카테고리 — 미지정 시 게시판 type별 default (QNA→QUESTION, 그 외→GENERAL)
+        PostCategory category = (request.category() != null)
+                ? request.category()
+                : PostCategory.defaultFor(board.getType());
+
         Post post = Post.builder()
                 .board(board)
                 .user(user)
                 .title(request.title())
                 .content(request.content())
+                .category(category)
                 .build();
 
         Post saved = postRepository.save(post);
 
         fileService.linkFilesToTarget(request.fileIds(), TargetType.POST, saved.getId(), userId);
+
+        // 투표 — payload 있으면 함께 생성
+        if (request.poll() != null) {
+            createPollFor(saved, request.poll());
+        }
 
         if (board.getType() == BoardType.QNA) {
             kafkaProducerService.send(
@@ -127,6 +156,23 @@ public class PostServiceImpl implements PostService {
         return toDetailResponse(saved, userId);
     }
 
+    private void createPollFor(Post post, PollPayload payload) {
+        Poll poll = Poll.builder()
+                .post(post)
+                .question(payload.question())
+                .expiresAt(payload.expiresAt())
+                .build();
+        Poll savedPoll = pollRepository.save(poll);
+
+        for (String text : payload.options()) {
+            PollOption opt = PollOption.builder()
+                    .poll(savedPoll)
+                    .text(text.trim())
+                    .build();
+            pollOptionRepository.save(opt);
+        }
+    }
+
     @Override
     @Transactional
     public PostDetailResponse getDetail(Long postId, Long userId) {
@@ -143,6 +189,10 @@ public class PostServiceImpl implements PostService {
 
         post.updateTitle(request.title());
         post.updateContent(request.content());
+        if (request.category() != null) {
+            post.updateCategory(request.category());
+        }
+        // 투표는 수정 불가 (참여자 표 보호)
 
         syncFiles(postId, request.fileIds(), userId);
 
@@ -216,7 +266,74 @@ public class PostServiceImpl implements PostService {
 
         String teamName = resolveTeamName(post.getUser().getId());
 
-        return postMapper.toDetailResponse(post, isLiked, fileResponses, teamName);
+        PollResponse pollResponse = buildPollResponse(post.getId(), userId);
+
+        return postMapper.toDetailResponse(post, isLiked, fileResponses, teamName, pollResponse);
+    }
+
+    /** 투표 정보 매핑 — Poll이 없으면 null. 익명 사용자(userId=null)는 myVoteOptionId 항상 null. */
+    private PollResponse buildPollResponse(Long postId, Long userId) {
+        return pollRepository.findByPostId(postId)
+                .map(poll -> {
+                    List<PollOption> options = pollOptionRepository.findByPollIdOrderByIdAsc(poll.getId());
+                    Long myVoteOptionId = (userId != null)
+                            ? pollVoteRepository.findByPollIdAndUserId(poll.getId(), userId)
+                                    .map(v -> v.getOption().getId())
+                                    .orElse(null)
+                            : null;
+                    return pollMapper.toResponse(poll, options, myVoteOptionId);
+                })
+                .orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public PollResponse vote(Long postId, Long userId, PollVoteRequest request) {
+        Poll poll = pollRepository.findByPostId(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POLL_NOT_FOUND));
+
+        if (LocalDateTime.now().isAfter(poll.getExpiresAt())) {
+            throw new CustomException(ErrorCode.POLL_EXPIRED);
+        }
+
+        PollOption option = pollOptionRepository.findById(request.optionId())
+                .orElseThrow(() -> new CustomException(ErrorCode.POLL_OPTION_INVALID));
+
+        // 옵션이 해당 투표 소속인지 검증
+        if (!option.getPoll().getId().equals(poll.getId())) {
+            throw new CustomException(ErrorCode.POLL_OPTION_INVALID);
+        }
+
+        // 멱등성 — 이미 투표한 경우 현재 상태만 반환
+        if (pollVoteRepository.findByPollIdAndUserId(poll.getId(), userId).isPresent()) {
+            return buildPollResponseFor(poll, userId);
+        }
+
+        User user = findUserById(userId);
+
+        try {
+            PollVote pollVote = PollVote.builder()
+                    .poll(poll)
+                    .option(option)
+                    .user(user)
+                    .build();
+            pollVoteRepository.saveAndFlush(pollVote); // UNIQUE 위반 즉시 catch
+
+            option.incrementVoteCount();
+            poll.incrementTotalVotes();
+        } catch (DataIntegrityViolationException race) {
+            // 동시성 race condition — 다른 트랜잭션이 먼저 투표한 상태이므로 멱등 처리
+        }
+
+        return buildPollResponseFor(poll, userId);
+    }
+
+    private PollResponse buildPollResponseFor(Poll poll, Long userId) {
+        List<PollOption> options = pollOptionRepository.findByPollIdOrderByIdAsc(poll.getId());
+        Long myVoteOptionId = pollVoteRepository.findByPollIdAndUserId(poll.getId(), userId)
+                .map(v -> v.getOption().getId())
+                .orElse(null);
+        return pollMapper.toResponse(poll, options, myVoteOptionId);
     }
 
     private Post findPostById(Long postId) {

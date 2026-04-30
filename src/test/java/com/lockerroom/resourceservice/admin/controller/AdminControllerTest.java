@@ -196,10 +196,11 @@ class AdminControllerTest {
         void createNotice_asAdmin_success() throws Exception {
             // given
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "Important Notice", "Notice content", true
+                    "Important Notice", "Notice content", true, null, null
             );
             NoticeDetailResponse response = new NoticeDetailResponse(
                     1L, "Important Notice", "Notice content", true,
+                    com.lockerroom.resourceservice.notice.model.enums.NoticeScope.ALL, null, null,
                     "admin1", LocalDateTime.now(), LocalDateTime.now()
             );
             when(adminService.createNotice(eq(ADMIN_ID), any(NoticeCreateRequest.class))).thenReturn(response);
@@ -222,7 +223,7 @@ class AdminControllerTest {
         void createNotice_asUser_returns403() throws Exception {
             // given
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "Notice", "Content", false
+                    "Notice", "Content", false, null, null
             );
 
             // when & then
@@ -240,7 +241,7 @@ class AdminControllerTest {
         void createNotice_blankTitle_returns400() throws Exception {
             // given
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "", "Content", false
+                    "", "Content", false, null, null
             );
 
             // when & then
@@ -347,10 +348,11 @@ class AdminControllerTest {
         void updateNotice_asAdmin_success() throws Exception {
             // given
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "Updated Notice", "Updated content", false
+                    "Updated Notice", "Updated content", false, null, null
             );
             NoticeDetailResponse response = new NoticeDetailResponse(
                     1L, "Updated Notice", "Updated content", false,
+                    com.lockerroom.resourceservice.notice.model.enums.NoticeScope.ALL, null, null,
                     "admin1", LocalDateTime.now(), LocalDateTime.now()
             );
             when(adminService.updateNotice(eq(1L), eq(ADMIN_ID), any(NoticeCreateRequest.class))).thenReturn(response);

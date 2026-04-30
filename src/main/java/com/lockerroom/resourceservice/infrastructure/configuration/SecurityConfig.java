@@ -27,6 +27,10 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers(HttpMethod.GET, "/api/v1/notices/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/sports/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/leagues/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/continents").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/stats/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/teams/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/popular").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/{postId}").permitAll()

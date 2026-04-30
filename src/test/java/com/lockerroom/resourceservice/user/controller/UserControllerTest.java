@@ -86,11 +86,14 @@ class UserControllerTest {
         return new UserResponse(
                 USER_ID,
                 "test@example.com",
+                false,
+                null,
                 "testUser",
                 Role.USER,
                 OAuthProvider.GOOGLE,
                 null,
                 List.of(),
+                null,
                 LocalDateTime.now()
         );
     }
@@ -130,8 +133,8 @@ class UserControllerTest {
             // given
             UserUpdateRequest request = new UserUpdateRequest("newNickname", null, null, null);
             UserResponse response = new UserResponse(
-                    USER_ID, "test@example.com", "newNickname",
-                    Role.USER, OAuthProvider.GOOGLE, null, List.of(), LocalDateTime.now()
+                    USER_ID, "test@example.com", false, null, "newNickname",
+                    Role.USER, OAuthProvider.GOOGLE, null, List.of(), null, LocalDateTime.now()
             );
             when(userService.updateMyInfo(eq(USER_ID), any(UserUpdateRequest.class))).thenReturn(response);
 

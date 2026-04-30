@@ -38,13 +38,18 @@ import com.lockerroom.resourceservice.sport.repository.FootballTeamRepository;
 
 import com.lockerroom.resourceservice.sport.repository.BaseballTeamRepository;
 
+import com.lockerroom.resourceservice.sport.repository.SportRepository;
+
 import com.lockerroom.resourceservice.sport.model.entity.FootballTeam;
 
 import com.lockerroom.resourceservice.sport.model.entity.BaseballTeam;
 
+import com.lockerroom.resourceservice.sport.model.entity.Sport;
+
 import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
 
 import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
+import com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest;
 import com.lockerroom.resourceservice.user.dto.request.UserUpdateRequest;
 import com.lockerroom.resourceservice.user.dto.request.WithdrawRequest;
 import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
@@ -77,6 +82,7 @@ public class UserServiceImpl implements UserService {
     private final PostLikeRepository postLikeRepository;
     private final FootballTeamRepository footballTeamRepository;
     private final BaseballTeamRepository baseballTeamRepository;
+    private final SportRepository sportRepository;
     private final UserMapper userMapper;
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
@@ -260,6 +266,56 @@ public class UserServiceImpl implements UserService {
                 .nextCursor(nextCursor)
                 .hasNext(hasNext)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public UserResponse addUserTeams(Long userId, AddUserTeamsRequest request) {
+        User user = findUserById(userId);
+
+        for (AddUserTeamsRequest.TeamSelection sel : request.teams()) {
+            Sport sport = sportRepository.findById(sel.sportId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.SPORT_NOT_FOUND));
+
+            // 종목별 락 — 이미 등록한 종목이면 409 (전체 트랜잭션 롤백)
+            if (userTeamRepository.existsByUserIdAndSportId(userId, sel.sportId())) {
+                throw new CustomException(ErrorCode.DUPLICATE_USER_TEAM);
+            }
+
+            // 팀 유효성 검증 — 종목과 매칭되지 않거나 존재하지 않는 팀 차단
+            validateTeamForSport(sport, sel.teamId());
+
+            UserTeam userTeam = UserTeam.builder()
+                    .user(user)
+                    .sport(sport)
+                    .teamId(sel.teamId())
+                    .build();
+            userTeamRepository.save(userTeam);
+        }
+
+        // 응원팀 등록 = 온보딩 완료 (이미 셋된 경우 무시 — idempotent)
+        user.completeOnboardingIfAbsent();
+
+        return getMyInfo(userId);
+    }
+
+    @Override
+    @Transactional
+    public UserResponse skipOnboarding(Long userId) {
+        User user = findUserById(userId);
+        user.completeOnboardingIfAbsent();
+        return getMyInfo(userId);
+    }
+
+    private void validateTeamForSport(Sport sport, Long teamId) {
+        boolean valid = switch (sport.getNameEn()) {
+            case "Football" -> footballTeamRepository.existsById(teamId);
+            case "Baseball" -> baseballTeamRepository.existsById(teamId);
+            default -> false;
+        };
+        if (!valid) {
+            throw new CustomException(ErrorCode.INVALID_TEAM_FOR_SPORT);
+        }
     }
 
     private User findUserById(Long userId) {

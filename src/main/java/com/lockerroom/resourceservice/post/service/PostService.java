@@ -1,9 +1,11 @@
 package com.lockerroom.resourceservice.post.service;
 
+import com.lockerroom.resourceservice.post.dto.request.PollVoteRequest;
 import com.lockerroom.resourceservice.post.dto.request.PostCreateRequest;
 import com.lockerroom.resourceservice.post.dto.request.PostUpdateRequest;
 import com.lockerroom.resourceservice.post.dto.request.ReportRequest;
 import com.lockerroom.resourceservice.post.dto.response.LikeResponse;
+import com.lockerroom.resourceservice.post.dto.response.PollResponse;
 import com.lockerroom.resourceservice.post.dto.response.PostDetailResponse;
 import com.lockerroom.resourceservice.post.dto.response.PostListResponse;
 import com.lockerroom.resourceservice.post.dto.response.ReportResponse;
@@ -25,4 +27,12 @@ public interface PostService {
     LikeResponse toggleLike(Long postId, Long userId);
 
     ReportResponse report(Long postId, Long userId, ReportRequest request);
+
+    /**
+     * 게시글 투표. 한 번 투표하면 변경 불가 (idempotent).
+     * - 마감 지난 경우: POLL_EXPIRED (400)
+     * - 잘못된 옵션: POLL_OPTION_INVALID (400)
+     * - 이미 투표: 200 OK + 현재 상태 (DB UNIQUE + catch 처리)
+     */
+    PollResponse vote(Long postId, Long userId, PollVoteRequest request);
 }

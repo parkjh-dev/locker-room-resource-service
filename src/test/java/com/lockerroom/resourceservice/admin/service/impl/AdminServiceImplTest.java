@@ -378,12 +378,12 @@ class AdminServiceImplTest {
         @DisplayName("should create notice successfully")
         void createNotice_success() {
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "공지 제목", "공지 내용", true);
+                    "공지 제목", "공지 내용", true, null, null);
             Notice notice = Notice.builder()
                     .id(1L).title("공지 제목").content("공지 내용").isPinned(true).admin(admin)
                     .build();
             NoticeDetailResponse response = new NoticeDetailResponse(
-                    1L, "공지 제목", "공지 내용", true, "admin", null, null);
+                    1L, "공지 제목", "공지 내용", true, com.lockerroom.resourceservice.notice.model.enums.NoticeScope.ALL, null, null, "admin", null, null);
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
             when(noticeRepository.save(any(Notice.class))).thenReturn(notice);
@@ -407,9 +407,9 @@ class AdminServiceImplTest {
                     .id(1L).title("원래 제목").content("원래 내용").isPinned(false).admin(admin)
                     .build();
             NoticeCreateRequest request = new NoticeCreateRequest(
-                    "수정 제목", "수정 내용", true);
+                    "수정 제목", "수정 내용", true, null, null);
             NoticeDetailResponse response = new NoticeDetailResponse(
-                    1L, "수정 제목", "수정 내용", true, "admin", null, null);
+                    1L, "수정 제목", "수정 내용", true, com.lockerroom.resourceservice.notice.model.enums.NoticeScope.ALL, null, null, "admin", null, null);
 
             when(noticeRepository.findById(1L)).thenReturn(Optional.of(notice));
             when(noticeMapper.toDetailResponse(notice)).thenReturn(response);
@@ -424,7 +424,7 @@ class AdminServiceImplTest {
         @Test
         @DisplayName("should throw exception when notice not found")
         void updateNotice_notFound() {
-            NoticeCreateRequest request = new NoticeCreateRequest("제목", "내용", false);
+            NoticeCreateRequest request = new NoticeCreateRequest("제목", "내용", false, null, null);
             when(noticeRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
@@ -436,7 +436,7 @@ class AdminServiceImplTest {
         @Test
         @DisplayName("should throw exception when entity not found")
         void updateNotice_deleted() {
-            NoticeCreateRequest request = new NoticeCreateRequest("제목", "내용", false);
+            NoticeCreateRequest request = new NoticeCreateRequest("제목", "내용", false, null, null);
             when(noticeRepository.findById(1L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,

@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -18,7 +20,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(name = "uk_users_email", columnNames = "email"),
-        @UniqueConstraint(name = "uk_users_keycloak_id", columnNames = "keycloak_id")
+        @UniqueConstraint(name = "uk_users_keycloak_id", columnNames = "keycloak_id"),
+        @UniqueConstraint(name = "uk_users_phone", columnNames = "phone")
 })
 public class User extends BaseEntity {
 
@@ -31,6 +34,13 @@ public class User extends BaseEntity {
 
     @Column(nullable = false)
     private String email;
+
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Column(length = 20)
+    private String phone;
 
     private String password;
 
@@ -50,6 +60,9 @@ public class User extends BaseEntity {
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
 
+    @Column(name = "onboarding_completed_at")
+    private LocalDateTime onboardingCompletedAt;
+
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }
@@ -60,5 +73,23 @@ public class User extends BaseEntity {
 
     public void updateProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
+    }
+
+    public void verifyEmail() {
+        this.emailVerified = true;
+    }
+
+    public void updatePhone(String phone) {
+        this.phone = phone;
+    }
+
+    /**
+     * 온보딩 완료 시각을 idempotent하게 셋 (이미 셋된 경우 무시).
+     * 응원팀 등록·온보딩 skip 양쪽에서 호출.
+     */
+    public void completeOnboardingIfAbsent() {
+        if (this.onboardingCompletedAt == null) {
+            this.onboardingCompletedAt = LocalDateTime.now();
+        }
     }
 }

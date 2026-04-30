@@ -6,6 +6,8 @@ import com.lockerroom.resourceservice.board.model.entity.BaseballBoard;
 
 import com.lockerroom.resourceservice.common.model.entity.BaseEntity;
 
+import com.lockerroom.resourceservice.post.model.enums.PostCategory;
+
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -41,6 +43,11 @@ public class BaseballPost extends BaseEntity {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private PostCategory category = PostCategory.GENERAL;
 
     @Column(nullable = false)
     @Builder.Default

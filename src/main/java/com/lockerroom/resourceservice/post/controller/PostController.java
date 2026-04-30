@@ -3,10 +3,12 @@ package com.lockerroom.resourceservice.post.controller;
 import com.lockerroom.resourceservice.common.dto.response.ApiResponse;
 import com.lockerroom.resourceservice.infrastructure.aop.Idempotent;
 import com.lockerroom.resourceservice.infrastructure.security.CurrentUserId;
+import com.lockerroom.resourceservice.post.dto.request.PollVoteRequest;
 import com.lockerroom.resourceservice.post.dto.request.PostCreateRequest;
 import com.lockerroom.resourceservice.post.dto.request.PostUpdateRequest;
 import com.lockerroom.resourceservice.post.dto.request.ReportRequest;
 import com.lockerroom.resourceservice.post.dto.response.LikeResponse;
+import com.lockerroom.resourceservice.post.dto.response.PollResponse;
 import com.lockerroom.resourceservice.post.dto.response.PostDetailResponse;
 import com.lockerroom.resourceservice.post.dto.response.PostListResponse;
 import com.lockerroom.resourceservice.post.dto.response.ReportResponse;
@@ -127,5 +129,22 @@ public class PostController {
             @Valid @RequestBody ReportRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("신고가 접수되었습니다.", postService.report(postId, userId, request)));
+    }
+
+    @Operation(summary = "게시글 투표",
+            description = "투표에 참여합니다. 한 번 투표하면 변경 불가 (idempotent — 재호출 시 현재 상태 반환).")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "투표 처리 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "POLL_EXPIRED / POLL_OPTION_INVALID"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "POLL_NOT_FOUND")
+    })
+    @Idempotent
+    @PostMapping("/{postId}/vote")
+    public ResponseEntity<ApiResponse<PollResponse>> vote(
+            @PathVariable Long postId,
+            @CurrentUserId Long userId,
+            @Valid @RequestBody PollVoteRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success("투표가 처리되었습니다.", postService.vote(postId, userId, request)));
     }
 }

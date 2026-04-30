@@ -288,10 +288,20 @@ public class AdminServiceImpl implements AdminService {
     public NoticeDetailResponse createNotice(Long adminId, NoticeCreateRequest request) {
         User admin = findUserById(adminId);
 
+        com.lockerroom.resourceservice.notice.model.enums.NoticeScope scope =
+                (request.scope() != null) ? request.scope()
+                        : com.lockerroom.resourceservice.notice.model.enums.NoticeScope.ALL;
+        String teamName = (scope == com.lockerroom.resourceservice.notice.model.enums.NoticeScope.TEAM)
+                ? resolveTeamName(request.teamId()) : null;
+
         Notice notice = Notice.builder()
                 .title(request.title())
                 .content(request.content())
                 .isPinned(request.isPinned())
+                .scope(scope)
+                .teamId(scope == com.lockerroom.resourceservice.notice.model.enums.NoticeScope.TEAM
+                        ? request.teamId() : null)
+                .teamName(teamName)
                 .admin(admin)
                 .build();
 
@@ -309,7 +319,26 @@ public class AdminServiceImpl implements AdminService {
         notice.updateContent(request.content());
         notice.updateIsPinned(request.isPinned());
 
+        com.lockerroom.resourceservice.notice.model.enums.NoticeScope scope =
+                (request.scope() != null) ? request.scope()
+                        : com.lockerroom.resourceservice.notice.model.enums.NoticeScope.ALL;
+        String teamName = (scope == com.lockerroom.resourceservice.notice.model.enums.NoticeScope.TEAM)
+                ? resolveTeamName(request.teamId()) : null;
+        notice.updateScope(scope, request.teamId(), teamName);
+
         return noticeMapper.toDetailResponse(notice);
+    }
+
+    /**
+     * teamId로 Football/Baseball 팀 조회해 teamName 반환. 매칭 없으면 null.
+     */
+    private String resolveTeamName(Long teamId) {
+        if (teamId == null) return null;
+        return footballTeamRepository.findById(teamId)
+                .map(com.lockerroom.resourceservice.sport.model.entity.FootballTeam::getNameKo)
+                .orElseGet(() -> baseballTeamRepository.findById(teamId)
+                        .map(com.lockerroom.resourceservice.sport.model.entity.BaseballTeam::getNameKo)
+                        .orElse(null));
     }
 
     @Override

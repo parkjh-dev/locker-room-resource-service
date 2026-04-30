@@ -15,7 +15,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-@Table(name = "boards")
+@Table(name = "boards", indexes = {
+        @Index(name = "idx_boards_team", columnList = "team_id")
+})
 public class Board extends BaseEntity {
 
     @Id
@@ -28,4 +30,15 @@ public class Board extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BoardType type;
+
+    /**
+     * 팀 게시판일 때만 셋 — type=TEAM이면 NotNull. 그 외엔 null.
+     * sport-agnostic 글로벌 team_id (FootballTeam·BaseballTeam이 동일 시퀀스 또는 의도적 분리).
+     */
+    @Column(name = "team_id")
+    private Long teamId;
+
+    /** 팀 게시판일 때 캐싱된 팀명 — 매 요청마다 join 회피용. */
+    @Column(name = "team_name", length = 100)
+    private String teamName;
 }

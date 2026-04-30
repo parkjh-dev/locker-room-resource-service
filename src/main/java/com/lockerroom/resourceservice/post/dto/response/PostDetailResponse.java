@@ -2,12 +2,13 @@ package com.lockerroom.resourceservice.post.dto.response;
 
 import com.lockerroom.resourceservice.common.dto.response.AuthorInfo;
 import com.lockerroom.resourceservice.file.dto.response.FileResponse;
+import com.lockerroom.resourceservice.post.model.enums.PostCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Schema(description = "게시글 상세 응답. 본문/첨부/좋아요 상태 포함.")
+@Schema(description = "게시글 상세 응답. 본문·말머리·투표·첨부·좋아요 상태 포함.")
 public record PostDetailResponse(
         @Schema(description = "게시글 ID", example = "1024")
         Long id,
@@ -24,8 +25,14 @@ public record PostDetailResponse(
         @Schema(description = "제목", example = "두산 베어스 응원합니다")
         String title,
 
-        @Schema(description = "본문", example = "오늘 경기 정말 좋았습니다.")
+        @Schema(description = "본문 (Tiptap HTML)", example = "<p>오늘 경기 정말 좋았습니다.</p>")
         String content,
+
+        @Schema(description = "말머리(카테고리)")
+        PostCategory category,
+
+        @Schema(description = "투표 정보. 투표 없는 글은 null. 마감 후에도 결과 유지.", nullable = true)
+        PollResponse poll,
 
         @Schema(description = "조회수", example = "1234")
         int viewCount,

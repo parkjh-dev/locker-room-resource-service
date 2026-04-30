@@ -14,11 +14,14 @@ public interface UserMapper {
         return new UserResponse(
                 user.getId(),
                 user.getEmail(),
+                user.isEmailVerified(),
+                user.getPhone(),
                 user.getNickname(),
                 user.getRole(),
                 user.getProvider(),
                 user.getProfileImageUrl(),
                 teams,
+                user.getOnboardingCompletedAt(),
                 user.getCreatedAt()
         );
     }

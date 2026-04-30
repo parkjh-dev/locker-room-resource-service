@@ -78,7 +78,7 @@ class NoticeServiceImplTest {
             pageRequest.setSize(1);
 
             NoticeListResponse response1 = new NoticeListResponse(
-                    2L, "Pinned Notice", true, null
+                    2L, "Pinned Notice", true, com.lockerroom.resourceservice.notice.model.enums.NoticeScope.ALL, null, null
             );
 
             when(noticeRepository.findByDeletedAtIsNullOrderByIsPinnedDescCreatedAtDesc(any(PageRequest.class)))
@@ -99,10 +99,10 @@ class NoticeServiceImplTest {
             pageRequest.setSize(10);
 
             NoticeListResponse response1 = new NoticeListResponse(
-                    2L, "Pinned Notice", true, null
+                    2L, "Pinned Notice", true, com.lockerroom.resourceservice.notice.model.enums.NoticeScope.ALL, null, null
             );
             NoticeListResponse response2 = new NoticeListResponse(
-                    1L, "Notice Title", false, null
+                    1L, "Notice Title", false, com.lockerroom.resourceservice.notice.model.enums.NoticeScope.ALL, null, null
             );
 
             when(noticeRepository.findByDeletedAtIsNullOrderByIsPinnedDescCreatedAtDesc(any(PageRequest.class)))
@@ -142,8 +142,9 @@ class NoticeServiceImplTest {
         @DisplayName("should return notice detail successfully")
         void getDetail_success() {
             NoticeDetailResponse expectedResponse = new NoticeDetailResponse(
-                    1L, "Notice Title", "Notice Content",
-                    false, "admin", null, null
+                    1L, "Notice Title", "Notice Content", false,
+                    com.lockerroom.resourceservice.notice.model.enums.NoticeScope.ALL, null, null,
+                    "admin", null, null
             );
 
             when(noticeRepository.findById(1L)).thenReturn(Optional.of(notice));

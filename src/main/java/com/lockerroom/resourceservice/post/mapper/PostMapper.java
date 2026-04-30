@@ -8,6 +8,8 @@ import com.lockerroom.resourceservice.post.dto.response.UserLikeListResponse;
 
 import com.lockerroom.resourceservice.post.dto.response.UserPostListResponse;
 
+import com.lockerroom.resourceservice.post.dto.response.PollResponse;
+
 import com.lockerroom.resourceservice.post.dto.response.PostListResponse;
 
 import com.lockerroom.resourceservice.post.dto.response.PostDetailResponse;
@@ -26,11 +28,32 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface PostMapper {
 
-    @Mapping(source = "user.nickname", target = "authorNickname")
-    @Mapping(source = "aiGenerated", target = "isAiGenerated")
-    PostListResponse toListResponse(Post post);
+    /** hasPoll까지 결정된 후 호출. Service에서 hasPoll 채워서 사용. */
+    default PostListResponse toListResponse(Post post, boolean hasPoll) {
+        return new PostListResponse(
+                post.getId(),
+                post.getTitle(),
+                post.getUser().getNickname(),
+                post.getCategory(),
+                hasPoll,
+                post.getViewCount(),
+                post.getLikeCount(),
+                post.getCommentCount(),
+                post.isAiGenerated(),
+                post.getCreatedAt()
+        );
+    }
 
-    default PostDetailResponse toDetailResponse(Post post, boolean isLiked, List<FileResponse> files, String teamName) {
+    /** 호환용 — hasPoll 정보 없을 때 (기존 호출처용, 점진 교체). */
+    default PostListResponse toListResponse(Post post) {
+        return toListResponse(post, false);
+    }
+
+    default PostDetailResponse toDetailResponse(Post post,
+                                                boolean isLiked,
+                                                List<FileResponse> files,
+                                                String teamName,
+                                                PollResponse poll) {
         return new PostDetailResponse(
                 post.getId(),
                 post.getBoard().getId(),
@@ -38,6 +61,8 @@ public interface PostMapper {
                 new AuthorInfo(post.getUser().getId(), post.getUser().getNickname(), teamName, post.getUser().getProfileImageUrl()),
                 post.getTitle(),
                 post.getContent(),
+                post.getCategory(),
+                poll,
                 post.getViewCount(),
                 post.getLikeCount(),
                 post.getCommentCount(),

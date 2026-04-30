@@ -74,11 +74,12 @@ class BoardServiceImplTest {
         @Test
         @DisplayName("should return COMMON, QNA, NOTICE boards")
         void getBoards_success() {
-            BoardResponse commonResponse = new BoardResponse(1L, "공통 게시판", BoardType.COMMON);
-            BoardResponse qnaResponse = new BoardResponse(2L, "Q&A 게시판", BoardType.QNA);
-            BoardResponse noticeResponse = new BoardResponse(3L, "공지 게시판", BoardType.NOTICE);
+            BoardResponse commonResponse = new BoardResponse(1L, "공통 게시판", BoardType.COMMON, null, null);
+            BoardResponse qnaResponse = new BoardResponse(2L, "Q&A 게시판", BoardType.QNA, null, null);
+            BoardResponse noticeResponse = new BoardResponse(3L, "공지 게시판", BoardType.NOTICE, null, null);
 
-            when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE)))
+            when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE,
+                            BoardType.TEAM, BoardType.NEWS)))
                     .thenReturn(List.of(commonBoard, qnaBoard, noticeBoard));
             when(boardMapper.toBoardResponse(commonBoard)).thenReturn(commonResponse);
             when(boardMapper.toBoardResponse(qnaBoard)).thenReturn(qnaResponse);
@@ -94,9 +95,10 @@ class BoardServiceImplTest {
         @Test
         @DisplayName("should return same boards for null userId")
         void getBoards_noAuth() {
-            BoardResponse commonResponse = new BoardResponse(1L, "공통 게시판", BoardType.COMMON);
+            BoardResponse commonResponse = new BoardResponse(1L, "공통 게시판", BoardType.COMMON, null, null);
 
-            when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE)))
+            when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE,
+                            BoardType.TEAM, BoardType.NEWS)))
                     .thenReturn(List.of(commonBoard));
             when(boardMapper.toBoardResponse(commonBoard)).thenReturn(commonResponse);
 
@@ -145,7 +147,9 @@ class BoardServiceImplTest {
             User user = User.builder().id(1L).nickname("testuser").build();
             Post post = Post.builder().id(1L).board(commonBoard).user(user).title("Test").content("Content").build();
             PostListResponse postResponse = new PostListResponse(
-                    1L, "Test", "testuser", 0, 0, 0, false, null);
+                    1L, "Test", "testuser",
+                    com.lockerroom.resourceservice.post.model.enums.PostCategory.GENERAL, false,
+                    0, 0, 0, false, null);
 
             when(boardRepository.findById(1L)).thenReturn(Optional.of(commonBoard));
             when(postRepository.searchByBoard(eq(1L), isNull(), isNull(), isNull(), any(PageRequest.class)))
@@ -169,7 +173,9 @@ class BoardServiceImplTest {
             Post post1 = Post.builder().id(1L).board(commonBoard).user(user).title("Test1").content("C").build();
             Post post2 = Post.builder().id(2L).board(commonBoard).user(user).title("Test2").content("C").build();
             PostListResponse postResponse = new PostListResponse(
-                    1L, "Test1", "testuser", 0, 0, 0, false, null);
+                    1L, "Test1", "testuser",
+                    com.lockerroom.resourceservice.post.model.enums.PostCategory.GENERAL, false,
+                    0, 0, 0, false, null);
 
             when(boardRepository.findById(1L)).thenReturn(Optional.of(commonBoard));
             when(postRepository.searchByBoard(eq(1L), isNull(), isNull(), isNull(), any(PageRequest.class)))

@@ -88,6 +88,8 @@ class PostControllerTest {
                 new AuthorInfo(USER_ID, "testUser", null, null),
                 "Test Title",
                 "Test Content",
+                com.lockerroom.resourceservice.post.model.enums.PostCategory.GENERAL,
+                null,    // poll
                 10,
                 5,
                 3,
@@ -107,7 +109,7 @@ class PostControllerTest {
         @DisplayName("should create a post and return 201")
         void create_success() throws Exception {
             // given
-            PostCreateRequest request = new PostCreateRequest(1L, "Test Title", "Test Content", List.of());
+            PostCreateRequest request = new PostCreateRequest(1L, "Test Title", "Test Content", null, null, List.of());
             PostDetailResponse response = createPostDetailResponse();
             when(postService.create(eq(USER_ID), any(PostCreateRequest.class))).thenReturn(response);
 
@@ -128,7 +130,7 @@ class PostControllerTest {
         @DisplayName("should return 400 when title is blank")
         void create_blankTitle_returns400() throws Exception {
             // given
-            PostCreateRequest request = new PostCreateRequest(1L, "", "Test Content", List.of());
+            PostCreateRequest request = new PostCreateRequest(1L, "", "Test Content", null, null, List.of());
 
             // when & then
             mockMvc.perform(post(BASE_URL)
@@ -144,7 +146,7 @@ class PostControllerTest {
         @DisplayName("should return 400 when boardId is null")
         void create_nullBoardId_returns400() throws Exception {
             // given
-            PostCreateRequest request = new PostCreateRequest(null, "Title", "Content", List.of());
+            PostCreateRequest request = new PostCreateRequest(null, "Title", "Content", null, null, List.of());
 
             // when & then
             mockMvc.perform(post(BASE_URL)
@@ -203,11 +205,13 @@ class PostControllerTest {
         @DisplayName("should update a post and return 200")
         void update_success() throws Exception {
             // given
-            PostUpdateRequest request = new PostUpdateRequest("Updated Title", "Updated Content", List.of());
+            PostUpdateRequest request = new PostUpdateRequest("Updated Title", "Updated Content", null, List.of());
             PostDetailResponse response = new PostDetailResponse(
                     POST_ID, 1L, "Free Board",
                     new AuthorInfo(USER_ID, "testUser", null, null),
                     "Updated Title", "Updated Content",
+                    com.lockerroom.resourceservice.post.model.enums.PostCategory.GENERAL,
+                    null,
                     10, 5, 3, false, false, List.of(),
                     LocalDateTime.now(), LocalDateTime.now()
             );
@@ -230,7 +234,7 @@ class PostControllerTest {
         @DisplayName("should return 400 when title is blank")
         void update_blankTitle_returns400() throws Exception {
             // given
-            PostUpdateRequest request = new PostUpdateRequest("", "Updated Content", List.of());
+            PostUpdateRequest request = new PostUpdateRequest("", "Updated Content", null, List.of());
 
             // when & then
             mockMvc.perform(put(BASE_URL + "/{postId}", POST_ID)

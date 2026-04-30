@@ -6,6 +6,8 @@ import com.lockerroom.resourceservice.board.model.entity.Board;
 
 import com.lockerroom.resourceservice.common.model.entity.BaseEntity;
 
+import com.lockerroom.resourceservice.post.model.enums.PostCategory;
+
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -42,6 +44,11 @@ public class Post extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private PostCategory category = PostCategory.GENERAL;
+
     @Column(nullable = false)
     @Builder.Default
     private int viewCount = 0;
@@ -76,5 +83,9 @@ public class Post extends BaseEntity {
 
     public void updateCommentCount(int commentCount) {
         this.commentCount = commentCount;
+    }
+
+    public void updateCategory(PostCategory category) {
+        this.category = category;
     }
 }

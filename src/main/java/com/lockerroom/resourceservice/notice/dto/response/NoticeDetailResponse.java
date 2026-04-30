@@ -1,5 +1,6 @@
 package com.lockerroom.resourceservice.notice.dto.response;
 
+import com.lockerroom.resourceservice.notice.model.enums.NoticeScope;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,15 @@ public record NoticeDetailResponse(
 
         @Schema(description = "상단 고정 여부", example = "true")
         boolean isPinned,
+
+        @Schema(description = "공지 노출 범위 (ALL=전체, TEAM=특정 팀)")
+        NoticeScope scope,
+
+        @Schema(description = "팀 한정 공지일 때 팀 ID. 그 외 null.", example = "101", nullable = true)
+        Long teamId,
+
+        @Schema(description = "팀 한정 공지일 때 팀명. 그 외 null.", example = "전북 현대 모터스", nullable = true)
+        String teamName,
 
         @Schema(description = "작성한 관리자 닉네임", example = "운영자")
         String adminNickname,

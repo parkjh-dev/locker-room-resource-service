@@ -7,6 +7,7 @@ import com.lockerroom.resourceservice.comment.dto.response.UserCommentListRespon
 import com.lockerroom.resourceservice.infrastructure.security.CurrentUserId;
 import com.lockerroom.resourceservice.post.dto.response.UserLikeListResponse;
 import com.lockerroom.resourceservice.post.dto.response.UserPostListResponse;
+import com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest;
 import com.lockerroom.resourceservice.user.dto.request.UserUpdateRequest;
 import com.lockerroom.resourceservice.user.dto.request.WithdrawRequest;
 import com.lockerroom.resourceservice.user.dto.response.UserResponse;
@@ -86,5 +87,33 @@ public class UserController {
             @CurrentUserId Long userId,
             @ModelAttribute CursorPageRequest pageRequest) {
         return ResponseEntity.ok(ApiResponse.success(userService.getMyLikes(userId, pageRequest)));
+    }
+
+    @Operation(summary = "응원팀 등록",
+            description = "종목별 락 — 한 번 등록한 종목의 팀은 변경 불가. 미등록 종목만 추가 가능. 호출 성공 시 onboardingCompletedAt 자동 셋.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "등록 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "USER_TEAM_INVALID_FOR_SPORT"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "USER_NOT_FOUND / SPORT_NOT_FOUND"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "USER_TEAM_ALREADY_REGISTERED")
+    })
+    @PostMapping("/me/teams")
+    public ResponseEntity<ApiResponse<UserResponse>> addUserTeams(
+            @CurrentUserId Long userId,
+            @Valid @RequestBody AddUserTeamsRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success("응원팀이 등록되었습니다.", userService.addUserTeams(userId, request)));
+    }
+
+    @Operation(summary = "온보딩 건너뛰기",
+            description = "응원팀 등록 없이 onboardingCompletedAt만 셋. 자유 게시판만 사용하는 사용자용. idempotent.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "처리 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "USER_NOT_FOUND")
+    })
+    @PostMapping("/me/onboarding/skip")
+    public ResponseEntity<ApiResponse<UserResponse>> skipOnboarding(
+            @CurrentUserId Long userId) {
+        return ResponseEntity.ok(ApiResponse.success(userService.skipOnboarding(userId)));
     }
 }

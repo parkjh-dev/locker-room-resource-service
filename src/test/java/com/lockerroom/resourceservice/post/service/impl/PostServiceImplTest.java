@@ -69,13 +69,19 @@ class PostServiceImplTest {
     @Mock private PostRepository postRepository;
     @Mock private PostLikeRepository postLikeRepository;
     @Mock private PostReportRepository postReportRepository;
+    @Mock private com.lockerroom.resourceservice.post.repository.PollRepository pollRepository;
+    @Mock private com.lockerroom.resourceservice.post.repository.PollOptionRepository pollOptionRepository;
+    @Mock private com.lockerroom.resourceservice.post.repository.PollVoteRepository pollVoteRepository;
     @Mock private UserRepository userRepository;
     @Mock private FileRepository fileRepository;
     @Mock private UserTeamRepository userTeamRepository;
+    @Mock private com.lockerroom.resourceservice.sport.repository.FootballTeamRepository footballTeamRepository;
+    @Mock private com.lockerroom.resourceservice.sport.repository.BaseballTeamRepository baseballTeamRepository;
     @Mock private BoardService boardService;
     @Mock private FileService fileService;
     @Mock private KafkaProducerService kafkaProducerService;
     @Mock private PostMapper postMapper;
+    @Mock private com.lockerroom.resourceservice.post.mapper.PollMapper pollMapper;
     @Mock private FileMapper fileMapper;
 
     @InjectMocks private PostServiceImpl postService;
@@ -130,12 +136,13 @@ class PostServiceImplTest {
         @Test
         @DisplayName("should create post successfully for COMMON board")
         void create_success() {
-            PostCreateRequest request = new PostCreateRequest(1L, "Test Title", "Test Content", null);
+            PostCreateRequest request = new PostCreateRequest(1L, "Test Title", "Test Content", null, null, null);
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     1L, 1L, "Free Board",
                     new AuthorInfo(1L, "testuser", null, null),
                     "Test Title", "Test Content",
-                    0, 0, 0, false, false,
+                    com.lockerroom.resourceservice.post.model.enums.PostCategory.GENERAL, null,
+                     0, 0, 0, false, false,
                     Collections.emptyList(), null, null
             );
 
@@ -147,7 +154,7 @@ class PostServiceImplTest {
                     .thenReturn(Collections.emptyList());
             when(fileMapper.toResponseList(anyList())).thenReturn(Collections.emptyList());
             when(userTeamRepository.findFirstByUserIdOrderByIdAsc(anyLong())).thenReturn(Optional.empty());
-            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any())).thenReturn(expectedResponse);
+            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any(), any())).thenReturn(expectedResponse);
 
             PostDetailResponse result = postService.create(1L, request);
 
@@ -169,12 +176,13 @@ class PostServiceImplTest {
                     .content("QnA Content")
                     .build();
 
-            PostCreateRequest request = new PostCreateRequest(2L, "QnA Title", "QnA Content", null);
+            PostCreateRequest request = new PostCreateRequest(2L, "QnA Title", "QnA Content", null, null, null);
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     2L, 2L, "QnA Board",
                     new AuthorInfo(1L, "testuser", null, null),
                     "QnA Title", "QnA Content",
-                    0, 0, 0, false, false,
+                    com.lockerroom.resourceservice.post.model.enums.PostCategory.GENERAL, null,
+                     0, 0, 0, false, false,
                     Collections.emptyList(), null, null
             );
 
@@ -186,7 +194,7 @@ class PostServiceImplTest {
                     .thenReturn(Collections.emptyList());
             when(fileMapper.toResponseList(anyList())).thenReturn(Collections.emptyList());
             when(userTeamRepository.findFirstByUserIdOrderByIdAsc(anyLong())).thenReturn(Optional.empty());
-            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any())).thenReturn(expectedResponse);
+            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any(), any())).thenReturn(expectedResponse);
 
             PostDetailResponse result = postService.create(1L, request);
 
@@ -197,7 +205,7 @@ class PostServiceImplTest {
         @Test
         @DisplayName("should throw exception when user not found")
         void create_userNotFound_throwsException() {
-            PostCreateRequest request = new PostCreateRequest(1L, "Title", "Content", null);
+            PostCreateRequest request = new PostCreateRequest(1L, "Title", "Content", null, null, null);
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
@@ -218,7 +226,8 @@ class PostServiceImplTest {
                     1L, 1L, "Free Board",
                     new AuthorInfo(1L, "testuser", null, null),
                     "Test Title", "Test Content",
-                    1, 0, 0, false, false,
+                    com.lockerroom.resourceservice.post.model.enums.PostCategory.GENERAL, null,
+                     1, 0, 0, false, false,
                     Collections.emptyList(), null, null
             );
 
@@ -228,7 +237,7 @@ class PostServiceImplTest {
                     .thenReturn(Collections.emptyList());
             when(fileMapper.toResponseList(anyList())).thenReturn(Collections.emptyList());
             when(userTeamRepository.findFirstByUserIdOrderByIdAsc(anyLong())).thenReturn(Optional.empty());
-            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any())).thenReturn(expectedResponse);
+            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any(), any())).thenReturn(expectedResponse);
 
             PostDetailResponse result = postService.getDetail(1L, 1L);
 
@@ -266,12 +275,13 @@ class PostServiceImplTest {
         @Test
         @DisplayName("should update post successfully")
         void update_success() {
-            PostUpdateRequest request = new PostUpdateRequest("Updated Title", "Updated Content", null);
+            PostUpdateRequest request = new PostUpdateRequest("Updated Title", "Updated Content", null, null);
             PostDetailResponse expectedResponse = new PostDetailResponse(
                     1L, 1L, "Free Board",
                     new AuthorInfo(1L, "testuser", null, null),
                     "Updated Title", "Updated Content",
-                    0, 0, 0, false, false,
+                    com.lockerroom.resourceservice.post.model.enums.PostCategory.GENERAL, null,
+                     0, 0, 0, false, false,
                     Collections.emptyList(), null, null
             );
 
@@ -281,7 +291,7 @@ class PostServiceImplTest {
                     .thenReturn(Collections.emptyList());
             when(fileMapper.toResponseList(anyList())).thenReturn(Collections.emptyList());
             when(userTeamRepository.findFirstByUserIdOrderByIdAsc(anyLong())).thenReturn(Optional.empty());
-            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any())).thenReturn(expectedResponse);
+            when(postMapper.toDetailResponse(any(Post.class), eq(false), anyList(), any(), any())).thenReturn(expectedResponse);
 
             PostDetailResponse result = postService.update(1L, 1L, request);
 
@@ -293,7 +303,7 @@ class PostServiceImplTest {
         @Test
         @DisplayName("should throw exception when user is not the owner")
         void update_notOwner_throwsException() {
-            PostUpdateRequest request = new PostUpdateRequest("Updated", "Updated", null);
+            PostUpdateRequest request = new PostUpdateRequest("Updated", "Updated", null, null);
             when(postRepository.findById(1L)).thenReturn(Optional.of(post));
             when(userRepository.findById(2L)).thenReturn(Optional.of(otherUser));
 
@@ -306,7 +316,7 @@ class PostServiceImplTest {
         @Test
         @DisplayName("should throw exception when post not found")
         void update_postNotFound_throwsException() {
-            PostUpdateRequest request = new PostUpdateRequest("Updated", "Updated", null);
+            PostUpdateRequest request = new PostUpdateRequest("Updated", "Updated", null, null);
             when(postRepository.findById(999L)).thenReturn(Optional.empty());
 
             CustomException exception = assertThrows(CustomException.class,
@@ -492,6 +502,166 @@ class PostServiceImplTest {
                     () -> postService.report(1L, 999L, request));
 
             assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+    /* ────────── Phase 4: 게시글 투표 ────────── */
+
+    @Nested
+    @DisplayName("vote (게시글 투표 멱등성)")
+    class Vote {
+
+        private com.lockerroom.resourceservice.post.model.entity.Poll poll;
+        private com.lockerroom.resourceservice.post.model.entity.PollOption option1;
+
+        @BeforeEach
+        void setupPoll() {
+            poll = com.lockerroom.resourceservice.post.model.entity.Poll.builder()
+                    .id(10L).post(post).question("Q?")
+                    .expiresAt(java.time.LocalDateTime.now().plusDays(3))
+                    .build();
+            option1 = com.lockerroom.resourceservice.post.model.entity.PollOption.builder()
+                    .id(100L).poll(poll).text("Option A").build();
+        }
+
+        @Test
+        @DisplayName("투표 없는 게시글은 POLL_NOT_FOUND")
+        void vote_pollNotFound() {
+            com.lockerroom.resourceservice.post.dto.request.PollVoteRequest req =
+                    new com.lockerroom.resourceservice.post.dto.request.PollVoteRequest(100L);
+
+            when(pollRepository.findByPostId(1L)).thenReturn(Optional.empty());
+
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> postService.vote(1L, 1L, req));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.POLL_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("마감된 투표는 POLL_EXPIRED")
+        void vote_expired_throws() {
+            com.lockerroom.resourceservice.post.model.entity.Poll expiredPoll =
+                    com.lockerroom.resourceservice.post.model.entity.Poll.builder()
+                            .id(10L).post(post)
+                            .expiresAt(java.time.LocalDateTime.now().minusDays(1))
+                            .build();
+            com.lockerroom.resourceservice.post.dto.request.PollVoteRequest req =
+                    new com.lockerroom.resourceservice.post.dto.request.PollVoteRequest(100L);
+
+            when(pollRepository.findByPostId(1L)).thenReturn(Optional.of(expiredPoll));
+
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> postService.vote(1L, 1L, req));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.POLL_EXPIRED);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 옵션 ID는 POLL_OPTION_INVALID")
+        void vote_invalidOption_throws() {
+            com.lockerroom.resourceservice.post.dto.request.PollVoteRequest req =
+                    new com.lockerroom.resourceservice.post.dto.request.PollVoteRequest(999L);
+
+            when(pollRepository.findByPostId(1L)).thenReturn(Optional.of(poll));
+            when(pollOptionRepository.findById(999L)).thenReturn(Optional.empty());
+
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> postService.vote(1L, 1L, req));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.POLL_OPTION_INVALID);
+        }
+
+        @Test
+        @DisplayName("다른 투표의 옵션 ID는 POLL_OPTION_INVALID")
+        void vote_optionFromDifferentPoll_throws() {
+            com.lockerroom.resourceservice.post.model.entity.Poll otherPoll =
+                    com.lockerroom.resourceservice.post.model.entity.Poll.builder().id(99L).build();
+            com.lockerroom.resourceservice.post.model.entity.PollOption otherOption =
+                    com.lockerroom.resourceservice.post.model.entity.PollOption.builder()
+                            .id(100L).poll(otherPoll).text("Wrong poll").build();
+
+            com.lockerroom.resourceservice.post.dto.request.PollVoteRequest req =
+                    new com.lockerroom.resourceservice.post.dto.request.PollVoteRequest(100L);
+
+            when(pollRepository.findByPostId(1L)).thenReturn(Optional.of(poll));
+            when(pollOptionRepository.findById(100L)).thenReturn(Optional.of(otherOption));
+
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> postService.vote(1L, 1L, req));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.POLL_OPTION_INVALID);
+        }
+
+        @Test
+        @DisplayName("이미 투표한 사용자가 다시 호출하면 멱등 — 신규 vote 저장 안 됨")
+        void vote_alreadyVoted_idempotent() {
+            com.lockerroom.resourceservice.post.model.entity.PollVote existingVote =
+                    com.lockerroom.resourceservice.post.model.entity.PollVote.builder()
+                            .id(1L).poll(poll).option(option1).user(user).build();
+
+            com.lockerroom.resourceservice.post.dto.request.PollVoteRequest req =
+                    new com.lockerroom.resourceservice.post.dto.request.PollVoteRequest(100L);
+
+            when(pollRepository.findByPostId(1L)).thenReturn(Optional.of(poll));
+            when(pollOptionRepository.findById(100L)).thenReturn(Optional.of(option1));
+            when(pollVoteRepository.findByPollIdAndUserId(10L, 1L)).thenReturn(Optional.of(existingVote));
+            when(pollOptionRepository.findByPollIdOrderByIdAsc(10L)).thenReturn(List.of(option1));
+            when(pollMapper.toResponse(eq(poll), anyList(), eq(100L))).thenReturn(
+                    new com.lockerroom.resourceservice.post.dto.response.PollResponse(
+                            "Q?", List.of(), poll.getExpiresAt(), 0, 100L));
+
+            postService.vote(1L, 1L, req);
+
+            verify(pollVoteRepository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        @DisplayName("최초 투표는 PollVote 저장 + voteCount 증가")
+        void vote_firstTime_savesAndIncrements() {
+            com.lockerroom.resourceservice.post.dto.request.PollVoteRequest req =
+                    new com.lockerroom.resourceservice.post.dto.request.PollVoteRequest(100L);
+
+            when(pollRepository.findByPostId(1L)).thenReturn(Optional.of(poll));
+            when(pollOptionRepository.findById(100L)).thenReturn(Optional.of(option1));
+            when(pollVoteRepository.findByPollIdAndUserId(10L, 1L))
+                    .thenReturn(Optional.empty())  // 최초 호출 시 없음
+                    .thenReturn(Optional.of(com.lockerroom.resourceservice.post.model.entity.PollVote.builder()
+                            .id(1L).poll(poll).option(option1).user(user).build())); // 두 번째 호출(빌드 응답용)
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(pollOptionRepository.findByPollIdOrderByIdAsc(10L)).thenReturn(List.of(option1));
+            when(pollMapper.toResponse(eq(poll), anyList(), any())).thenReturn(
+                    new com.lockerroom.resourceservice.post.dto.response.PollResponse(
+                            "Q?", List.of(), poll.getExpiresAt(), 1, 100L));
+
+            int beforeOption = option1.getVoteCount();
+            int beforeTotal = poll.getTotalVotes();
+            postService.vote(1L, 1L, req);
+
+            verify(pollVoteRepository).saveAndFlush(any(com.lockerroom.resourceservice.post.model.entity.PollVote.class));
+            assertThat(option1.getVoteCount()).isEqualTo(beforeOption + 1);
+            assertThat(poll.getTotalVotes()).isEqualTo(beforeTotal + 1);
+        }
+
+        @Test
+        @DisplayName("동시성 race — saveAndFlush가 UNIQUE 위반하면 멱등 처리")
+        void vote_uniqueConstraintRace_idempotent() {
+            com.lockerroom.resourceservice.post.dto.request.PollVoteRequest req =
+                    new com.lockerroom.resourceservice.post.dto.request.PollVoteRequest(100L);
+
+            when(pollRepository.findByPostId(1L)).thenReturn(Optional.of(poll));
+            when(pollOptionRepository.findById(100L)).thenReturn(Optional.of(option1));
+            when(pollVoteRepository.findByPollIdAndUserId(10L, 1L))
+                    .thenReturn(Optional.empty())
+                    .thenReturn(Optional.of(com.lockerroom.resourceservice.post.model.entity.PollVote.builder()
+                            .id(1L).poll(poll).option(option1).user(user).build()));
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(pollVoteRepository.saveAndFlush(any()))
+                    .thenThrow(new org.springframework.dao.DataIntegrityViolationException("UNIQUE violated"));
+            when(pollOptionRepository.findByPollIdOrderByIdAsc(10L)).thenReturn(List.of(option1));
+            when(pollMapper.toResponse(eq(poll), anyList(), any())).thenReturn(
+                    new com.lockerroom.resourceservice.post.dto.response.PollResponse(
+                            "Q?", List.of(), poll.getExpiresAt(), 1, 100L));
+
+            // 예외가 service 밖으로 새지 않고 정상 응답되어야 함
+            postService.vote(1L, 1L, req);
+            verify(pollVoteRepository).saveAndFlush(any());
         }
     }
 }

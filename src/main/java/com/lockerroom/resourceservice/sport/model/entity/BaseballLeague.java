@@ -17,13 +17,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @Table(name = "baseball_leagues", indexes = {
-        @Index(name = "idx_baseball_leagues_country", columnList = "country_id")
+        @Index(name = "idx_baseball_leagues_country", columnList = "country_id"),
+        @Index(name = "idx_baseball_leagues_sport", columnList = "sport_id")
 })
 public class BaseballLeague extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sport_id", nullable = false)
+    private Sport sport;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "country_id", nullable = false)

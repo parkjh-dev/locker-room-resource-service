@@ -1,10 +1,11 @@
 package com.lockerroom.resourceservice.post.dto.response;
 
+import com.lockerroom.resourceservice.post.model.enums.PostCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 
-@Schema(description = "게시글 목록 행 응답 (요약). 본문은 미포함.")
+@Schema(description = "게시글 목록 행 응답 (요약). 본문·투표 상세는 미포함.")
 public record PostListResponse(
         @Schema(description = "게시글 ID", example = "1024")
         Long id,
@@ -14,6 +15,12 @@ public record PostListResponse(
 
         @Schema(description = "작성자 닉네임", example = "야구사랑러")
         String authorNickname,
+
+        @Schema(description = "말머리(카테고리)")
+        PostCategory category,
+
+        @Schema(description = "투표 포함 여부 (목록 카드의 📊 아이콘 표시용)", example = "false")
+        boolean hasPoll,
 
         @Schema(description = "조회수", example = "1234")
         int viewCount,

@@ -34,8 +34,11 @@ public class BoardServiceImpl implements BoardService {
 
     @Override
     public List<BoardResponse> getBoards(Long userId) {
+        // TODO 사용자별 필터링 — 일반 사용자는 자기 응원팀(TEAM) 게시판만 노출, 관리자는 전체.
+        // 현재는 모든 게시판 반환 (프론트가 teamId·user.teams 매칭으로 필터링).
         List<Board> boards = boardRepository.findByTypeIn(
-                List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE));
+                List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE,
+                        BoardType.TEAM, BoardType.NEWS));
 
         return boards.stream()
                 .map(boardMapper::toBoardResponse)

@@ -87,6 +87,7 @@ class UserServiceImplTest {
     @Mock private PostLikeRepository postLikeRepository;
     @Mock private FootballTeamRepository footballTeamRepository;
     @Mock private BaseballTeamRepository baseballTeamRepository;
+    @Mock private com.lockerroom.resourceservice.sport.repository.SportRepository sportRepository;
     @Mock private UserMapper userMapper;
     @Mock private PostMapper postMapper;
     @Mock private CommentMapper commentMapper;
@@ -132,8 +133,8 @@ class UserServiceImplTest {
         void getMyInfo_success() {
             List<UserTeamInfo> teamInfos = Collections.emptyList();
             UserResponse expectedResponse = new UserResponse(
-                    1L, "user@test.com", "testuser",
-                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
+                    1L, "user@test.com", false, null, "testuser",
+                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null, null
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -157,8 +158,8 @@ class UserServiceImplTest {
             UserTeamInfo teamInfo = new UserTeamInfo(10L, "울산 HD FC", 1L, "축구");
             List<UserTeamInfo> teamInfos = List.of(teamInfo);
             UserResponse expectedResponse = new UserResponse(
-                    1L, "user@test.com", "testuser",
-                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
+                    1L, "user@test.com", false, null, "testuser",
+                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null, null
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -206,8 +207,8 @@ class UserServiceImplTest {
             UserUpdateRequest request = new UserUpdateRequest("newnickname", null, null, null);
             List<UserTeamInfo> teamInfos = Collections.emptyList();
             UserResponse expectedResponse = new UserResponse(
-                    1L, "user@test.com", "newnickname",
-                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
+                    1L, "user@test.com", false, null, "newnickname",
+                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null, null
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -227,8 +228,8 @@ class UserServiceImplTest {
             UserUpdateRequest request = new UserUpdateRequest(null, "oldpass", "newpassword", null);
             List<UserTeamInfo> teamInfos = Collections.emptyList();
             UserResponse expectedResponse = new UserResponse(
-                    1L, "user@test.com", "testuser",
-                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
+                    1L, "user@test.com", false, null, "testuser",
+                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null, null
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -261,8 +262,8 @@ class UserServiceImplTest {
             UserUpdateRequest request = new UserUpdateRequest("testuser", null, null, null);
             List<UserTeamInfo> teamInfos = Collections.emptyList();
             UserResponse expectedResponse = new UserResponse(
-                    1L, "user@test.com", "testuser",
-                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null
+                    1L, "user@test.com", false, null, "testuser",
+                    Role.USER, OAuthProvider.GOOGLE, null, teamInfos, null, null
             );
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -473,6 +474,151 @@ class UserServiceImplTest {
             assertThat(result.getItems()).isEmpty();
             assertThat(result.isHasNext()).isFalse();
             assertThat(result.getNextCursor()).isNull();
+        }
+    }
+
+    /* ────────── Phase 3: 응원팀 등록 + 온보딩 skip ────────── */
+
+    @Nested
+    @DisplayName("addUserTeams (응원팀 등록 + 종목별 락)")
+    class AddUserTeams {
+
+        private Sport football;
+        private Sport baseball;
+
+        @BeforeEach
+        void setupSports() {
+            football = Sport.builder().id(1L).nameKo("축구").nameEn("Football").build();
+            baseball = Sport.builder().id(2L).nameKo("야구").nameEn("Baseball").build();
+        }
+
+        @Test
+        @DisplayName("새 종목 팀 등록 시 onboardingCompletedAt이 셋팅된다")
+        void addUserTeams_newSport_setsOnboarding() {
+            com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest req =
+                    new com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest(
+                            List.of(new com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest.TeamSelection(1L, 101L)));
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(sportRepository.findById(1L)).thenReturn(Optional.of(football));
+            when(userTeamRepository.existsByUserIdAndSportId(1L, 1L)).thenReturn(false);
+            when(footballTeamRepository.existsById(101L)).thenReturn(true);
+            // getMyInfo 분기 — 빈 teams 응답
+            when(userTeamRepository.findByUserIdWithSport(1L)).thenReturn(Collections.emptyList());
+            when(userMapper.toResponse(eq(user), anyList())).thenReturn(
+                    new UserResponse(1L, "user@test.com", false, null, "testuser",
+                            Role.USER, OAuthProvider.GOOGLE, null, List.of(), null, null));
+
+            userService.addUserTeams(1L, req);
+
+            assertThat(user.getOnboardingCompletedAt()).isNotNull();
+            verify(userTeamRepository).save(any(UserTeam.class));
+        }
+
+        @Test
+        @DisplayName("이미 등록된 종목에 다시 등록 시 DUPLICATE_USER_TEAM 예외")
+        void addUserTeams_duplicateSport_throws() {
+            com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest req =
+                    new com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest(
+                            List.of(new com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest.TeamSelection(1L, 101L)));
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(sportRepository.findById(1L)).thenReturn(Optional.of(football));
+            when(userTeamRepository.existsByUserIdAndSportId(1L, 1L)).thenReturn(true); // 이미 등록됨
+
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> userService.addUserTeams(1L, req));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.DUPLICATE_USER_TEAM);
+            verify(userTeamRepository, never()).save(any(UserTeam.class));
+        }
+
+        @Test
+        @DisplayName("팀이 종목과 매칭 안 되면 INVALID_TEAM_FOR_SPORT 예외")
+        void addUserTeams_invalidTeamForSport_throws() {
+            com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest req =
+                    new com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest(
+                            List.of(new com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest.TeamSelection(1L, 999L)));
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(sportRepository.findById(1L)).thenReturn(Optional.of(football));
+            when(userTeamRepository.existsByUserIdAndSportId(1L, 1L)).thenReturn(false);
+            when(footballTeamRepository.existsById(999L)).thenReturn(false); // 매칭 X
+
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> userService.addUserTeams(1L, req));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_TEAM_FOR_SPORT);
+        }
+
+        @Test
+        @DisplayName("미지원 종목(농구·배구)은 INVALID_TEAM_FOR_SPORT — switch default 분기")
+        void addUserTeams_unsupportedSport_throws() {
+            Sport basketball = Sport.builder().id(3L).nameKo("농구").nameEn("Basketball").build();
+            com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest req =
+                    new com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest(
+                            List.of(new com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest.TeamSelection(3L, 301L)));
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(sportRepository.findById(3L)).thenReturn(Optional.of(basketball));
+            when(userTeamRepository.existsByUserIdAndSportId(1L, 3L)).thenReturn(false);
+
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> userService.addUserTeams(1L, req));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.INVALID_TEAM_FOR_SPORT);
+        }
+
+        @Test
+        @DisplayName("Sport ID가 존재하지 않으면 SPORT_NOT_FOUND")
+        void addUserTeams_sportNotFound_throws() {
+            com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest req =
+                    new com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest(
+                            List.of(new com.lockerroom.resourceservice.user.dto.request.AddUserTeamsRequest.TeamSelection(99L, 101L)));
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(sportRepository.findById(99L)).thenReturn(Optional.empty());
+
+            CustomException ex = assertThrows(CustomException.class,
+                    () -> userService.addUserTeams(1L, req));
+            assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.SPORT_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("skipOnboarding")
+    class SkipOnboarding {
+
+        @Test
+        @DisplayName("최초 호출 시 onboardingCompletedAt이 셋팅된다")
+        void skipOnboarding_firstCall_setsTimestamp() {
+            when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+            when(userTeamRepository.findByUserIdWithSport(1L)).thenReturn(Collections.emptyList());
+            when(userMapper.toResponse(eq(user), anyList())).thenReturn(
+                    new UserResponse(1L, "user@test.com", false, null, "testuser",
+                            Role.USER, OAuthProvider.GOOGLE, null, List.of(), null, null));
+
+            assertThat(user.getOnboardingCompletedAt()).isNull();
+            userService.skipOnboarding(1L);
+            assertThat(user.getOnboardingCompletedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("이미 셋된 사용자가 다시 호출해도 idempotent — 기존 시각 유지")
+        void skipOnboarding_idempotent() {
+            java.time.LocalDateTime original = java.time.LocalDateTime.of(2026, 1, 1, 0, 0);
+            // reflection으로 셋
+            User onboardedUser = User.builder()
+                    .id(1L).email("user@test.com").nickname("testuser")
+                    .password("p").role(Role.USER).provider(OAuthProvider.GOOGLE)
+                    .onboardingCompletedAt(original)
+                    .build();
+
+            when(userRepository.findById(1L)).thenReturn(Optional.of(onboardedUser));
+            when(userTeamRepository.findByUserIdWithSport(1L)).thenReturn(Collections.emptyList());
+            when(userMapper.toResponse(eq(onboardedUser), anyList())).thenReturn(
+                    new UserResponse(1L, "user@test.com", false, null, "testuser",
+                            Role.USER, OAuthProvider.GOOGLE, null, List.of(), original, null));
+
+            userService.skipOnboarding(1L);
+            assertThat(onboardedUser.getOnboardingCompletedAt()).isEqualTo(original);
         }
     }
 }

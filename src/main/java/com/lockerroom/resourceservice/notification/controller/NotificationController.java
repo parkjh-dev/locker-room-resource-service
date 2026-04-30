@@ -38,12 +38,12 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success(notificationService.getUnreadCount(userId)));
     }
 
-    @Operation(summary = "알림 읽음 처리", description = "지정 알림을 읽음으로 표시합니다. (부분 상태 변경이라 PATCH)")
+    @Operation(summary = "알림 읽음 처리", description = "지정 알림을 읽음으로 표시합니다.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "처리 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "NOTIFICATION_NOT_FOUND")
     })
-    @PatchMapping("/{notificationId}/read")
+    @PutMapping("/{notificationId}/read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @PathVariable Long notificationId,
             @CurrentUserId Long userId) {
@@ -51,8 +51,8 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("알림을 읽음 처리했습니다."));
     }
 
-    @Operation(summary = "전체 알림 읽음 처리", description = "본인의 모든 미읽음 알림을 일괄 읽음 처리합니다. 처리된 개수를 반환. (부분 상태 변경이라 PATCH)")
-    @PatchMapping("/read-all")
+    @Operation(summary = "전체 알림 읽음 처리", description = "본인의 모든 미읽음 알림을 일괄 읽음 처리합니다. 처리된 개수를 반환.")
+    @PutMapping("/read-all")
     public ResponseEntity<ApiResponse<MarkAllReadResponse>> markAllAsRead(
             @CurrentUserId Long userId) {
         int updatedCount = notificationService.markAllAsRead(userId);
