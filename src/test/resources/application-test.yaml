@@ -1,0 +1,28 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.MariaDBDialect
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+  # OAuth2 JWT 설정은 의도적으로 셋하지 않음 — IntegrationTestBase의 @Primary JwtDecoder mock이
+  # 실제 디코딩 호출을 차단. with(jwt())가 SecurityContext를 우회 셋해서 디코더 자체는 호출 안 됨.
+
+aws:
+  s3:
+    bucket: test-bucket
+    region: ap-northeast-2
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+    allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+    allowed-headers: "*"
