@@ -94,7 +94,7 @@ public class AdminController {
     @GetMapping("/reports")
     public ResponseEntity<ApiResponse<CursorPageResponse<ReportListResponse>>> getReports(
             @ModelAttribute CursorPageRequest pageRequest,
-            @Parameter(description = "신고 처리 상태 (PENDING, PROCESSED, DISMISSED)") @RequestParam(required = false) ReportStatus status) {
+            @Parameter(description = "신고 처리 상태 (PENDING, APPROVED, REJECTED)") @RequestParam(required = false) ReportStatus status) {
         return ResponseEntity.ok(ApiResponse.success(adminService.getReports(pageRequest, status)));
     }
 
