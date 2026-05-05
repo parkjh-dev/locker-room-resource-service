@@ -18,6 +18,9 @@ public record BoardResponse(
         Long teamId,
 
         @Schema(description = "팀 게시판일 때 팀명. 그 외엔 null.", example = "전북 현대 모터스", nullable = true)
-        String teamName
+        String teamName,
+
+        @Schema(description = "팀 게시판일 때 팀 로고 URL. 그 외엔 null.", nullable = true)
+        String teamLogoUrl
 ) {
 }

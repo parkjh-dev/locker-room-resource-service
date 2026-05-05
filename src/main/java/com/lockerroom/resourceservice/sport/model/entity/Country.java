@@ -37,4 +37,7 @@ public class Country {
 
     @Column(nullable = false, length = 10)
     private String code;
+
+    @Column(name = "flag_url", length = 500)
+    private String flagUrl;
 }

@@ -41,4 +41,8 @@ public class Board extends BaseEntity {
     /** 팀 게시판일 때 캐싱된 팀명 — 매 요청마다 join 회피용. */
     @Column(name = "team_name", length = 100)
     private String teamName;
+
+    /** 팀 게시판일 때 캐싱된 팀 로고 URL. */
+    @Column(name = "team_logo_url", length = 500)
+    private String teamLogoUrl;
 }

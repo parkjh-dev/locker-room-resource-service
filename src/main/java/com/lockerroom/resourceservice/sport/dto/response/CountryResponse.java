@@ -14,6 +14,9 @@ public record CountryResponse(
         String code,
 
         @Schema(description = "소속 대륙 ID", example = "1")
-        Long continentId
+        Long continentId,
+
+        @Schema(description = "국기 이미지 URL", nullable = true)
+        String flagUrl
 ) {
 }
