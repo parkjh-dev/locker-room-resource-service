@@ -74,9 +74,9 @@ class BoardServiceImplTest {
         @Test
         @DisplayName("should return COMMON, QNA, NOTICE boards")
         void getBoards_success() {
-            BoardResponse commonResponse = new BoardResponse(1L, "공통 게시판", BoardType.COMMON, null, null);
-            BoardResponse qnaResponse = new BoardResponse(2L, "Q&A 게시판", BoardType.QNA, null, null);
-            BoardResponse noticeResponse = new BoardResponse(3L, "공지 게시판", BoardType.NOTICE, null, null);
+            BoardResponse commonResponse = new BoardResponse(1L, "공통 게시판", BoardType.COMMON, null, null, null);
+            BoardResponse qnaResponse = new BoardResponse(2L, "Q&A 게시판", BoardType.QNA, null, null, null);
+            BoardResponse noticeResponse = new BoardResponse(3L, "공지 게시판", BoardType.NOTICE, null, null, null);
 
             when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE,
                             BoardType.TEAM, BoardType.NEWS)))
@@ -95,7 +95,7 @@ class BoardServiceImplTest {
         @Test
         @DisplayName("should return same boards for null userId")
         void getBoards_noAuth() {
-            BoardResponse commonResponse = new BoardResponse(1L, "공통 게시판", BoardType.COMMON, null, null);
+            BoardResponse commonResponse = new BoardResponse(1L, "공통 게시판", BoardType.COMMON, null, null, null);
 
             when(boardRepository.findByTypeIn(List.of(BoardType.COMMON, BoardType.QNA, BoardType.NOTICE,
                             BoardType.TEAM, BoardType.NEWS)))
