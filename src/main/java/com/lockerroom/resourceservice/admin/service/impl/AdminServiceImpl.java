@@ -126,7 +126,6 @@ import com.lockerroom.resourceservice.request.model.enums.RequestType;
 
 import com.lockerroom.resourceservice.request.model.enums.RequestStatus;
 
-import com.lockerroom.resourceservice.notification.model.enums.NotificationType;
 
 import com.lockerroom.resourceservice.common.model.enums.Role;
 
@@ -137,7 +136,8 @@ import com.lockerroom.resourceservice.common.dto.request.CursorPageRequest;
 import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
 import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
 import com.lockerroom.resourceservice.infrastructure.kafka.KafkaProducerService;
-import com.lockerroom.resourceservice.notification.event.NotificationEvent;
+import com.lockerroom.resourceservice.admin.event.InquiryRepliedEvent;
+import com.lockerroom.resourceservice.admin.event.ReportProcessedEvent;
 import com.lockerroom.resourceservice.admin.service.AdminService;
 import com.lockerroom.resourceservice.infrastructure.utils.Constants;
 import lombok.RequiredArgsConstructor;
@@ -147,9 +147,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
+import java.util.UUID;
 import java.util.List;
 import java.util.Set;
 import com.lockerroom.resourceservice.post.model.enums.ReportAction;
@@ -271,14 +271,11 @@ public class AdminServiceImpl implements AdminService {
         kafkaProducerService.send(
                 Constants.KAFKA_TOPIC_NOTIFICATION_REPORT_PROCESSED,
                 String.valueOf(report.getUser().getId()),
-                new NotificationEvent(
+                new ReportProcessedEvent(
+                        UUID.randomUUID().toString(),
                         report.getUser().getId(),
-                        admin.getId(),
-                        admin.getNickname(),
-                        NotificationType.REPORT_PROCESSED,
                         report.getId(),
-                        "신고가 처리되었습니다.",
-                        LocalDateTime.now()
+                        request.status().name()
                 )
         );
     }
@@ -375,20 +372,17 @@ public class AdminServiceImpl implements AdminService {
                 .content(request.content())
                 .build();
 
-        inquiryReplyRepository.save(reply);
+        InquiryReply savedReply = inquiryReplyRepository.save(reply);
         inquiry.updateStatus(InquiryStatus.ANSWERED);
 
         kafkaProducerService.send(
                 Constants.KAFKA_TOPIC_NOTIFICATION_INQUIRY_REPLIED,
                 String.valueOf(inquiry.getUser().getId()),
-                new NotificationEvent(
+                new InquiryRepliedEvent(
+                        UUID.randomUUID().toString(),
                         inquiry.getUser().getId(),
-                        admin.getId(),
-                        admin.getNickname(),
-                        NotificationType.INQUIRY_REPLY,
                         inquiry.getId(),
-                        "문의에 답변이 등록되었습니다.",
-                        LocalDateTime.now()
+                        savedReply.getId()
                 )
         );
 

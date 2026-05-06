@@ -32,9 +32,9 @@ import com.lockerroom.resourceservice.common.dto.response.CursorPageResponse;
 import com.lockerroom.resourceservice.infrastructure.exceptions.CustomException;
 import com.lockerroom.resourceservice.infrastructure.exceptions.ErrorCode;
 import com.lockerroom.resourceservice.infrastructure.kafka.KafkaProducerService;
-import com.lockerroom.resourceservice.notification.event.NotificationEvent;
+import com.lockerroom.resourceservice.comment.event.CommentNotificationEvent;
+import com.lockerroom.resourceservice.comment.event.ReplyNotificationEvent;
 import com.lockerroom.resourceservice.comment.mapper.CommentMapper;
-import com.lockerroom.resourceservice.notification.model.enums.NotificationType;
 import com.lockerroom.resourceservice.common.model.enums.Role;
 import com.lockerroom.resourceservice.comment.service.CommentService;
 import com.lockerroom.resourceservice.infrastructure.utils.Constants;
@@ -43,7 +43,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,14 +82,12 @@ public class CommentServiceImpl implements CommentService {
             kafkaProducerService.send(
                     Constants.KAFKA_TOPIC_NOTIFICATION_COMMENT,
                     String.valueOf(post.getUser().getId()),
-                    new NotificationEvent(
+                    new CommentNotificationEvent(
+                            UUID.randomUUID().toString(),
                             post.getUser().getId(),
-                            user.getId(),
-                            user.getNickname(),
-                            NotificationType.COMMENT,
                             post.getId(),
-                            user.getNickname() + "님이 댓글을 작성했습니다.",
-                            LocalDateTime.now()
+                            saved.getId(),
+                            user.getNickname()
                     )
             );
         }
@@ -122,14 +120,13 @@ public class CommentServiceImpl implements CommentService {
             kafkaProducerService.send(
                     Constants.KAFKA_TOPIC_NOTIFICATION_REPLY,
                     String.valueOf(parent.getUser().getId()),
-                    new NotificationEvent(
+                    new ReplyNotificationEvent(
+                            UUID.randomUUID().toString(),
                             parent.getUser().getId(),
-                            user.getId(),
-                            user.getNickname(),
-                            NotificationType.REPLY,
                             post.getId(),
-                            user.getNickname() + "님이 대댓글을 작성했습니다.",
-                            LocalDateTime.now()
+                            parent.getId(),
+                            saved.getId(),
+                            user.getNickname()
                     )
             );
         }
